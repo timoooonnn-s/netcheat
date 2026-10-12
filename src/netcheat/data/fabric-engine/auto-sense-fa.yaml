@@ -1,0 +1,195 @@
+# Fields: see README.md -> "Adding and editing commands". Keep `commands:` as the last key.
+title: Auto-sense, Fabric Attach and Zero Touch
+description: Auto-sense ports (UNI/NNI/FA/voice states), onboarding, data and voice I-SIDs, Fabric Attach for APs and switches, and Zero Touch Fabric.
+
+commands:
+  - cmd: show interfaces gigabitEthernet auto-sense [<ports>]
+    desc: The Auto-sense state per port (WAIT, UNI, NNI, NNI-ISIS-UP, NNI-AUTH-FAIL, FA, FA-PROXY, VOICE ...).
+    kind: show
+    mode: Privileged EXEC
+    tags: [auto-sense, state, port, uni, nni, fa, onboarding]
+    example: |
+      show interfaces gigabitEthernet auto-sense
+      show interfaces gigabitEthernet auto-sense 1/5
+    notes: >
+      This is the most important Auto-sense command. The dynamic config of a state is not in the
+      running-config, so the state tells you what the port is doing. Since 9.4 every state change is
+      also logged ("Auto-sense port 1/5 entered UNI state").
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_interfaces_gigabitethernet_auto_sense.shtml
+
+  - cmd: show auto-sense [onboarding | data | voice | eapol | fa | isis | wait-interval]
+    desc: The global Auto-sense settings (onboarding/data/voice I-SIDs, EAP, FA, IS-IS auth).
+    kind: show
+    mode: User EXEC
+    tags: [auto-sense, global, onboarding, voice, data]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_auto_sense.shtml
+
+  - cmd: auto-sense enable
+    desc: Enable Auto-sense on a port. The port detects by itself whether a client, AP, phone or fabric switch is connected.
+    kind: config
+    mode: Interface Config
+    tags: [auto-sense, enable, port, zero touch]
+    notes: >
+      `no auto-sense enable convert-to-config` turns Auto-sense off but keeps the current dynamic config
+      as normal config, which is handy to "freeze" a port. Since 9.3, `default all auto-sense` resets a
+      port and re-enables Auto-sense in one step.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/auto_sense_enable.shtml
+
+  - cmd: auto-sense onboarding i-sid <isid>
+    desc: The onboarding I-SID. Unknown devices and new switches land here first (default 15999999).
+    kind: config
+    mode: Global Config
+    tags: [onboarding, isid, zero touch, auto-sense]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/auto_sense_onboarding.shtml
+
+  - cmd: auto-sense data i-sid <isid>
+    desc: The default data I-SID for untagged clients on Auto-sense UNI ports (globally or per port).
+    kind: config
+    mode: Global Config / Interface Config
+    tags: [data, isid, auto-sense, default vlan, clients]
+    notes: Set per port, it overrides the global value. With NAC, ExtremeControl usually assigns the I-SID instead.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/auto_sense_port_data.shtml
+
+  - cmd: auto-sense voice i-sid <isid> {c-vid <vid> | untagged}
+    desc: The voice I-SID and VLAN for IP phones detected on Auto-sense ports.
+    kind: config
+    mode: Global Config
+    tags: [voice, phone, isid, auto-sense, lldp-med]
+    example: auto-sense voice i-sid 20500 c-vid 500
+    notes: Add `auto-sense eapol voice lldp-auth` if phones should be authorized through LLDP instead of RADIUS.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/auto_sense_voice_i_sid_1_15999999.shtml
+
+  - cmd: auto-sense fa wap-type1 i-sid <isid>
+    desc: The management I-SID for access points that connect through Fabric Attach (FA).
+    kind: config
+    mode: Global Config
+    tags: [fa, ap, wap, wireless, management, auto-sense]
+    notes: The same pattern exists for cameras (`auto-sense fa camera i-sid`) and OVS. FA proxies such as EXOS switches use `auto-sense fa proxy management i-sid <isid> c-vid <vid>`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/auto_sense_fa_wap_type1_i_sid_1_15999999.shtml
+
+  - cmd: auto-sense isis hello-auth type hmac-sha-256 key <key>
+    desc: IS-IS hello authentication for NNIs that Auto-sense brings up.
+    kind: config
+    mode: Global Config
+    tags: [isis, authentication, auto-sense, nni, security]
+    notes: Since 9.2, a neighbor without the key makes the port go to NNI-AUTH-FAIL. Since 9.3 this also affects onboarding of new switches, so check the release notes before you upgrade.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/auto_sense_isis_hello_auth_type_hmac_sha_256.shtml
+
+  - cmd: auto-sense wait-interval <2-120>
+    desc: How long a port waits for LLDP (to detect an NNI/FA/phone) before it becomes a UNI.
+    kind: config
+    mode: Global Config / Interface Config
+    tags: [auto-sense, wait, timer, lldp]
+    notes: The default is 35 s. The range changed from 10-120 to 2-120 seconds in 9.3.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/auto_sense_wait_interval_for_a_port.shtml
+
+  - cmd: auto-sense no-nni
+    desc: Never let this Auto-sense port become an NNI (it ignores and does not send Fabric Connect TLVs).
+    kind: config
+    mode: Interface Config
+    tags: [auto-sense, nni, security, access port, rogue switch]
+    since: "9.3"
+    notes: Protects access ports against someone plugging in a fabric switch and extending the fabric.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/auto-sense_no-nni.shtml
+
+  - cmd: auto-sense auto-mlt enable
+    desc: Bundle parallel NNI links between two Auto-sense switches into an MLT automatically.
+    kind: config
+    mode: Global Config
+    tags: [auto-mlt, mlt, nni, auto-sense, aggregation]
+    since: "9.3"
+    notes: Check with `show auto-sense auto-mlt`. The ports then show the state NNI-MLT or NNI-MLT-ISIS-UP.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/auto-sense_auto-mlt_enable.shtml
+
+  - cmd: auto-sense fa proxy-no-auth force-authentication
+    desc: Force FA authentication for devices on ports in the FA-PROXY-NOAUTH state.
+    kind: config
+    mode: Global Config
+    tags: [fa, authentication, proxy, security, auto-sense]
+    since: "9.3"
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/autosense_fa_proxy-no-auth_force-authentication.shtml
+
+  - cmd: no auto-sense guest-isid enable
+    desc: Stop Auto-sense from using the onboarding I-SID as guest/fail-open I-SID when RADIUS does not answer.
+    kind: config
+    mode: Global Config
+    tags: [guest, isid, auto-sense, radius, onboarding]
+    since: "9.4"
+    notes: Applies to ports in the UNI, FA and VOICE states. It is disabled by default after a Zero Touch Deployment boot and enabled after a factorydefaults boot. Check with `show auto-sense guest-isid`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/auto-sense_guest-isid_enable.shtml
+
+  - cmd: auto-sense link-debounce {auto <ms> | on <ms> | off}
+    desc: Link Debounce for Auto-sense UNI ports. `auto` enables it only for PXE-booting devices (fixes PXE onboarding loops).
+    kind: config
+    mode: Global Config
+    tags: [link-debounce, pxe, auto-sense, flap, dhcp]
+    since: "9.4"
+    notes: Since 9.4 the interface-level `link-debounce` cannot be used on Auto-sense ports. The default timer is 3000 ms. Check with `show auto-sense link-debounce`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/auto-sense_link-debounce.shtml
+
+  - cmd: show fa elements [<ports>]
+    desc: Discovered Fabric Attach clients and proxies (APs, EXOS switches) with type and auth state.
+    kind: show
+    mode: User EXEC
+    tags: [fa, elements, ap, proxy, discovery]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_fa_elements.shtml
+
+  - cmd: show fa assignment [<ports>]
+    desc: The I-SID to VLAN assignments that FA clients requested and their state (active/rejected).
+    kind: show
+    mode: User EXEC
+    tags: [fa, assignment, isid, vlan, rejected]
+    notes: A rejected assignment usually means the I-SID is not allowed or a VLAN/I-SID conflict. Compare with the FA configuration on the client.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_fa_assignment.shtml
+
+  - cmd: show fa agent / show fa interface / show fa statistics
+    desc: The FA server settings, FA per port and FA message counters.
+    kind: show
+    mode: User EXEC
+    tags: [fa, agent, interface, statistics]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_fa_agent.shtml
+
+  - cmd: fa enable
+    desc: Enable Fabric Attach (globally and on non-Auto-sense ports).
+    kind: config
+    mode: Global Config / Interface Config
+    tags: [fa, enable, fabric attach]
+    notes: Auto-sense ports handle FA by themselves. On an EAP-enabled port, FA requires Flex UNI.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/fa_enable_for_a_port.shtml
+
+  - cmd: show endpoint-tracking bindings [summary]
+    desc: Endpoint Tracking bindings (VM/VLAN to I-SID), used for ExtremeCloud IQ Site Engine and EFA integrations.
+    kind: show
+    mode: User EXEC
+    tags: [endpoint tracking, vm, bindings, isid]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_endpoint_tracking_bindings.shtml
+
+  - cmd: service-probe enable
+    desc: Network Service Probe. A test client interface on a VLAN to check DHCP, DNS and reachability from the client's point of view.
+    kind: config
+    mode: Global Config
+    tags: [service probe, test, dhcp, dns, troubleshooting, client view]
+    since: "9.2"
+    example: |
+      service-probe vlan 100
+      service-probe ip static 10.10.100.250/24
+      service-probe default-gateway 10.10.100.1
+      service-probe enable
+      show service-probe
+      ping 10.0.0.10 service-probe
+    notes: Since 9.4 you can also test name resolution with `service-probe query dns` (primary, secondary or tertiary server).
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/service-probe_enable.shtml

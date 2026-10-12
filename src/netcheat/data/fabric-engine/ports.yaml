@@ -1,0 +1,442 @@
+# Fields: see README.md -> "Adding and editing commands". Keep `commands:` as the last key.
+title: Ports, VLANs and Loop Protection
+description: Port status, counters and settings, platform VLANs, MAC tables, LLDP, PoE, mirroring and loop protection (SLPP, BPDU Guard).
+
+commands:
+  - cmd: show interfaces gigabitEthernet name [<ports>]
+    desc: The port overview. Name, oper status, duplex, speed and VLAN per port.
+    kind: show
+    mode: Privileged EXEC
+    tags: [port, status, speed, duplex, description, overview, interface]
+    example: |
+      show interfaces gigabitEthernet name
+      show interfaces gigabitEthernet name 1/1-1/12
+    notes: The quickest overview of which ports are up. Port lists accept 1/5, 1/1-1/12, 1/1,1/5 and 1/all.
+    cisco: show interfaces status
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_interfaces_gigabitethernet_name.shtml
+
+  - cmd: show interfaces gigabitEthernet [<ports>]
+    desc: Port index, description, MTU, MAC and admin/oper state.
+    kind: show
+    mode: Privileged EXEC
+    tags: [port, status, mtu, mac, interface]
+    cisco: show interfaces
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_interfaces_gigabitethernet.shtml
+
+  - cmd: show interfaces gigabitEthernet l1-config [<ports>]
+    desc: Layer 1 settings. Auto-negotiation, configured speed and duplex.
+    kind: show
+    mode: Privileged EXEC
+    tags: [port, speed, duplex, autoneg, layer1]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_interfaces_gigabitethernet_l1_config.shtml
+
+  - cmd: show interfaces gigabitEthernet vlan [<ports>]
+    desc: Per port tagging, default VLAN (PVID), untagged/tagged discard flags and member VLANs.
+    kind: show
+    mode: Privileged EXEC
+    tags: [port, vlan, tagging, trunk, pvid, access]
+    notes: Use it when a client lands in the wrong VLAN or tagged frames get dropped.
+    cisco: show interfaces switchport
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_interfaces_gigabitethernet_vlan.shtml
+
+  - cmd: show interfaces gigabitEthernet config [<ports>]
+    desc: Port type, DiffServ/QoS settings, MLT membership and trusted state.
+    kind: show
+    mode: Privileged EXEC
+    tags: [port, qos, mlt, config]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_interfaces_gigabitethernet_config.shtml
+
+  - cmd: show interfaces gigabitEthernet statistics [<ports>]
+    desc: Traffic counters (octets, packets, unicast/multicast/broadcast) per port.
+    kind: show
+    mode: Privileged EXEC
+    tags: [port, counters, statistics, traffic]
+    example: show interfaces gigabitEthernet statistics verbose 1/12
+    notes: Add `verbose` for the detailed counters.
+    cisco: show interfaces counters
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_interfaces_gigabitethernet_statistics.shtml
+
+  - cmd: show interfaces gigabitEthernet error [verbose] [<ports>]
+    desc: Error counters such as CRC/FCS, alignment, oversize and collisions.
+    kind: show
+    mode: Privileged EXEC
+    tags: [port, errors, crc, fcs, counters, troubleshooting, cable]
+    notes: Clear the counters with `clear-stats port <port>`, then check again to see if errors still increase. Rising CRC errors usually mean a cable, connector or optic problem.
+    cisco: show interfaces counters errors
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_interfaces_gigabitethernet_error.shtml
+
+  - cmd: clear-stats [port <ports>]
+    desc: Reset the port counters, so you can see what is increasing right now.
+    kind: clear
+    mode: User EXEC
+    tags: [counters, statistics, errors, reset]
+    example: clear-stats port 1/12
+    cisco: clear counters
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/clear_stats.shtml
+
+  - cmd: show interfaces gigabitEthernet fdb-entry <ports>
+    desc: The MAC addresses learned on a port.
+    kind: show
+    mode: Privileged EXEC
+    tags: [mac, fdb, port, client, learning]
+    rare: true
+    cisco: show mac address-table interface <if>
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_interfaces_gigabitethernet_fdb_entry.shtml
+
+  - cmd: show vlan mac-address-entry [<vid> | mac <mac> | port <ports>]
+    desc: The MAC table (FDB). Find which port or tunnel a MAC was learned on.
+    kind: show
+    mode: User EXEC
+    tags: [mac, fdb, client, find, learning, table]
+    example: |
+      show vlan mac-address-entry 100
+      show vlan mac-address-entry mac 00:11:22:33:44:55
+      show vlan mac-address-entry port 1/5
+    notes: MACs learned across the fabric show the remote BEB (B-MAC/nickname) as the destination instead of a local port.
+    cisco: show mac address-table
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_vlan_mac_address_entry.shtml
+
+  - cmd: clear mac-address-table port <ports> address <mac> [interface vlan <vid>]
+    desc: Delete one MAC address from the MAC table.
+    kind: clear
+    mode: Privileged EXEC
+    tags: [mac, fdb, clear, flush]
+    example: clear mac-address-table port 1/5 address 00:11:22:33:44:55
+    rare: true
+    cisco: clear mac address-table dynamic address <mac>
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/clear_mac_address_table_port.shtml
+
+  - cmd: interface gigabitEthernet <ports>
+    desc: Enter port configuration. A range is fine, e.g. 1/1-1/24.
+    kind: config
+    mode: Global Config
+    tags: [port, interface, config]
+    example: |
+      interface gigabitEthernet 1/5
+      interface gigabitEthernet 1/1-1/24,1/48
+    cisco: interface / interface range
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/interface_gigabitethernet.shtml
+
+  - cmd: name "<description>"
+    desc: Set the port description.
+    kind: config
+    mode: Interface Config
+    tags: [port, description, name, label]
+    example: name "AP-2OG-R201"
+    cisco: description
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/name_for_a_port.shtml
+
+  - cmd: no shutdown
+    desc: Enable the port. `shutdown` disables it.
+    kind: config
+    mode: Interface Config
+    tags: [port, enable, disable, shutdown, admin]
+    caution: "`shutdown` on an uplink or NNI cuts off everything behind it."
+    cisco: no shutdown
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/shutdown.shtml
+
+  - cmd: speed <10|100|1000|2500|5000|10000|25000>
+    desc: Force the port speed. Usually used together with `no auto-negotiate enable`.
+    kind: config
+    mode: Interface Config
+    tags: [port, speed, duplex, autoneg, layer1]
+    example: |
+      no auto-negotiate enable
+      speed 1000
+    notes: The available speeds depend on the port hardware. A forced speed must match on both sides.
+    caution: The link goes down and comes back up.
+    cisco: speed
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/speed.shtml
+
+  - cmd: encapsulation dot1q
+    desc: Make the port a trunk (802.1Q tagging). Required before you can add a port to more than one VLAN.
+    kind: config
+    mode: Interface Config
+    tags: [trunk, tagging, dot1q, vlan, port]
+    example: |
+      interface gigabitEthernet 1/48
+      encapsulation dot1q
+      default-vlan-id 100
+      untag-port-default-vlan enable
+    cisco: switchport mode trunk
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/encapsulation_dot1q.shtml
+
+  - cmd: default-vlan-id <vid>
+    desc: Set the port's default VLAN (PVID) for untagged frames on a trunk.
+    kind: config
+    mode: Interface Config
+    tags: [pvid, native vlan, untagged, trunk, vlan]
+    cisco: switchport trunk native vlan
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/default_vlan_id.shtml
+
+  - cmd: untag-port-default-vlan enable
+    desc: Send the default VLAN untagged on a trunk (native VLAN behaviour).
+    kind: config
+    mode: Interface Config
+    tags: [native vlan, untagged, trunk, pvid]
+    rare: true
+    cisco: switchport trunk native vlan
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/untag_port_default_vlan.shtml
+
+  - cmd: default all [-y | auto-sense]
+    desc: Reset every setting of a port to the defaults. With auto-sense, also re-enable Auto-sense.
+    kind: config
+    mode: Interface Config
+    tags: [port, reset, default, cleanup, auto-sense]
+    since: "9.2"
+    example: |
+      interface gigabitEthernet 1/5
+      default all auto-sense
+    notes: The `auto-sense` option was added in 9.3. In 9.2 you had to run `auto-sense enable` afterwards.
+    caution: Removes all VLANs, names and settings from the port.
+    rare: true
+    cisco: default interface <if>
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/default_all.shtml
+
+  - cmd: vlan create <vid> name "<name>" type port-mstprstp 0
+    desc: Create a port-based VLAN (VLAN IDs 2-4059).
+    kind: config
+    mode: Global Config
+    tags: [vlan, create, new]
+    example: vlan create 100 name "CLIENTS" type port-mstprstp 0
+    notes: VLAN names cannot be only digits. With the vrf-scaling and spbm-config-mode boot flags, VLANs 3500-3998 are reserved too.
+    cisco: vlan <id> / name <name>
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/vlan_create.shtml
+
+  - cmd: vlan members add <vid> <ports> [portmember]
+    desc: Add ports to a VLAN. Use `vlan members remove` to remove them.
+    kind: config
+    mode: Global Config
+    tags: [vlan, port, member, access, trunk]
+    example: |
+      vlan members add 100 1/1-1/24
+      vlan members remove 1 1/1-1/24
+    notes: On an access port, also remove the port from VLAN 1. Otherwise it stays a member of both VLANs.
+    cisco: switchport access vlan / switchport trunk allowed vlan add
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/vlan_members.shtml
+
+  - cmd: vlan mlt <vid> <mlt-id>
+    desc: Add an MLT (LAG) to a VLAN.
+    kind: config
+    mode: Global Config
+    tags: [vlan, mlt, lag, trunk]
+    example: vlan mlt 100 10
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/vlan_mlt.shtml
+
+  - cmd: vlan delete <vid>
+    desc: Delete a VLAN (same as `no vlan <vid>`).
+    kind: config
+    mode: Global Config
+    tags: [vlan, delete, remove]
+    caution: Also removes the VLAN's I-SID mapping and IP interface.
+    cisco: no vlan <id>
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/vlan_delete.shtml
+
+  - cmd: show vlan basic [<vid>]
+    desc: All VLANs with name, type and STP instance. Use `show vlan i-sid` for the I-SID mapping.
+    kind: show
+    mode: User EXEC
+    tags: [vlan, list, overview]
+    cisco: show vlan brief
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_vlan_basic.shtml
+
+  - cmd: show vlan members [<vid>] [port <ports>]
+    desc: Which ports and MLTs are members of a VLAN, and in which state.
+    kind: show
+    mode: User EXEC
+    tags: [vlan, port, member]
+    example: |
+      show vlan members 100
+      show vlan members port 1/5
+    cisco: show vlan id <id>
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_vlan_members.shtml
+
+  - cmd: show lldp neighbor [summary | detail] [port <ports>]
+    desc: LLDP neighbors per port (switches, APs, phones). Shows what is plugged in where.
+    kind: show
+    mode: Privileged EXEC
+    tags: [lldp, neighbor, discovery, topology, cdp]
+    example: |
+      show lldp neighbor summary
+      show lldp neighbor detail port 1/5
+    notes: Since 9.2 `detail` also shows the chassis ID type and chassis ID.
+    cisco: show lldp neighbors / show cdp neighbors
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_lldp_neighbor.shtml
+
+  - cmd: show lldp neighbor port <ports> med
+    desc: LLDP-MED data of IP phones (voice VLAN, power).
+    kind: show
+    mode: Privileged EXEC
+    tags: [lldp, med, phone, voice]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_lldp_neighbor.shtml
+
+  - cmd: lldp cdp dual-mode-enable
+    desc: Send and receive both CDP and LLDP on a port.
+    kind: config
+    mode: Interface Config
+    tags: [cdp, lldp, cisco, discovery, phone]
+    since: "9.4"
+    notes: Up to 9.3, `lldp cdp enable` switches the port to CDP only, so CDP and LLDP could not run together.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/lldp_cdp_dual-mode-enable.shtml
+
+  - cmd: show poe-port-status
+    desc: PoE state, class and priority per port.
+    kind: show
+    mode: Privileged EXEC
+    tags: [poe, power, ap, phone, camera]
+    cisco: show power inline
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_poe_port_status.shtml
+
+  - cmd: show poe-power-measurement <ports>
+    desc: Actual power draw per PoE port (watts, voltage, current).
+    kind: show
+    mode: Privileged EXEC
+    tags: [poe, power, watt, budget]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_poe_power_measurement.shtml
+
+  - cmd: show poe-main-status
+    desc: The PoE budget of the switch (available, used, PSU state).
+    kind: show
+    mode: Privileged EXEC
+    tags: [poe, power, budget, psu]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_poe_main_status.shtml
+
+  - cmd: poe poe-shutdown
+    desc: Disable PoE on a port. Run `no poe poe-shutdown` to power the device up again (power-cycle an AP or camera).
+    kind: config
+    mode: Interface Config
+    tags: [poe, power cycle, reboot, ap, camera, phone]
+    example: |
+      interface gigabitEthernet 1/5
+      poe poe-shutdown
+      no poe poe-shutdown
+    notes: A remote power-cycle of a hung AP, phone or camera without touching the switch port state.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/poe_poe_shutdown.shtml
+
+  - cmd: poe poe-priority <critical | high | low>
+    desc: Which ports keep power first when the PoE budget runs out.
+    kind: config
+    mode: Interface Config
+    tags: [poe, priority, budget]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/poe_poe_priority.shtml
+
+  - cmd: tdr-test port <ports>
+    desc: Cable test on copper ports. Pair status and the distance to a fault.
+    kind: action
+    mode: User EXEC
+    tags: [cable, tdr, copper, test, fault, length]
+    notes: Not supported on all platforms. The link drops briefly during the test.
+    caution: Interrupts traffic on the port for a moment.
+    rare: true
+    cisco: test cable-diagnostics tdr interface <if>
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/tdr_test.shtml
+
+  - cmd: link-debounce <0-300000>
+    desc: Delay reporting link changes (ms), so short flaps do not reconverge protocols.
+    kind: config
+    mode: Interface Config
+    tags: [flap, debounce, link, carrier delay]
+    example: link-debounce 1000
+    notes: Since 9.4 this cannot be used on Auto-sense ports; use the global `auto-sense link-debounce` there. Show it with `show interfaces gigabitEthernet link-debounce`.
+    rare: true
+    cisco: carrier-delay
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/link_debounce.shtml
+
+  - cmd: mirror-by-port <id> in-port <src-ports> out-port <dst-port> mode <rx | tx | both> enable
+    desc: Port mirroring (SPAN) from source ports to a capture port.
+    kind: config
+    mode: Global Config
+    tags: [mirror, span, capture, wireshark, sniff]
+    example: |
+      mirror-by-port 1 in-port 1/5 out-port 1/48 mode both enable
+      show mirror-by-port
+      no mirror-by-port 1
+    notes: Use `monitor-mlt <id>` instead of `out-port` to mirror to an MLT. Remove the mirror when you are done.
+    rare: true
+    cisco: monitor session 1 source/destination
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/mirror_by_port.shtml
+
+  - cmd: slpp enable
+    desc: Enable SLPP (Simple Loop Prevention Protocol) globally. Then add the VLANs with `slpp vid <vid>`.
+    kind: config
+    mode: Global Config
+    tags: [loop, slpp, protection, broadcast storm]
+    example: |
+      slpp enable
+      slpp vid 100
+      interface gigabitEthernet 1/1-1/24
+      slpp packet-rx
+      slpp packet-rx-threshold 5
+    notes: SLPP sends test packets per VLAN. An access port that receives its own SLPP packets is shut down (packet-rx). Typical design is to enable packet-rx on access ports only, not on NNIs or vIST/SMLT links.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/slpp_globally.shtml
+
+  - cmd: show slpp interface gigabitEthernet [<ports>]
+    desc: The SLPP state per port. Shows which port was shut down because of a loop.
+    kind: show
+    mode: User EXEC
+    tags: [loop, slpp, shutdown, troubleshooting]
+    notes: '`show slpp` shows the global settings and VLANs.'
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_slpp_interface.shtml
+
+  - cmd: slpp-guard enable [timeout <0 | 10-65535>]
+    desc: SLPP Guard on an edge port. It shuts down the port when it receives SLPP packets from another switch.
+    kind: config
+    mode: Interface Config
+    tags: [loop, slpp-guard, edge, protection]
+    notes: Protects against loops built through downstream switches (for example ERS or EXOS stacks). Check it with `show slpp-guard`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/slpp_guard_for_a_port.shtml
+
+  - cmd: spanning-tree bpduguard enable [timeout <0-65535>]
+    desc: BPDU Guard. Shut down an edge port that receives a BPDU.
+    kind: config
+    mode: Interface Config
+    tags: [stp, bpdu, guard, loop, edge]
+    notes: The timeout (seconds) re-enables the port automatically; 0 means it stays down. Check it with `show spanning-tree bpduguard`.
+    cisco: spanning-tree bpduguard enable
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/spanning_tree_bpduguard.shtml
+
+  - cmd: spanning-tree mstp restricted-role enable
+    desc: MSTP Root Guard. The port never becomes a root port and ignores superior BPDUs.
+    kind: config
+    mode: Interface Config
+    tags: [stp, mstp, root guard, restricted]
+    since: "9.4"
+    rare: true
+    cisco: spanning-tree guard root
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/spanning-tree_mstp_restricted-role_enable.shtml
+
+  - cmd: spanning-tree mstp restricted-tcn enable
+    desc: Do not pass on topology change notifications (TCNs) received on this port.
+    kind: config
+    mode: Interface Config
+    tags: [stp, mstp, tcn, topology change, restricted]
+    since: "9.4"
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/spanning-tree_mstp_restricted-tcn_enable.shtml
+
+  - cmd: vlacp enable
+    desc: VLACP keepalive between two ports, end to end even across a provider link. Detects one-way and "link up but dead" paths.
+    kind: config
+    mode: Interface Config
+    tags: [vlacp, keepalive, link, failure detection, udld]
+    notes: VLACP must also be enabled globally (`vlacp enable` in Global Config). Check it with `show vlacp interface gigabitethernet <ports>`.
+    rare: true
+    cisco: udld (similar idea)
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/vlacp.shtml
+
+  - cmd: mac-security limit-learning max-addrs <1-64000>
+    desc: Limit the number of MAC addresses learned on a port (default 1024 once enabled).
+    kind: config
+    mode: Interface Config
+    tags: [mac, limit, port security, fdb]
+    example: |
+      mac-security limit-learning max-addrs 10
+      mac-security limit-learning enable
+    rare: true
+    cisco: switchport port-security maximum
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/mac_security_limit_learning.shtml

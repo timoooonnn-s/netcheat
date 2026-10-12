@@ -1,0 +1,528 @@
+# Fields: see README.md -> "Adding and editing commands". Keep `commands:` as the last key.
+title: System, CLI and Files
+description: Inventory, logs, saving and backing up the config, software upgrades and CLI productivity.
+
+commands:
+  - cmd: show sys-info
+    desc: Model, serial number, MAC, uptime, last boot reason and hardware health in one view.
+    kind: show
+    mode: User EXEC
+    tags: [inventory, serial, uptime, hardware, model]
+    example: |
+      show sys-info
+      show sys-info temperature
+      show sys-info fan
+    notes: Sub-options bmc, card, cpld, fan, led, power, ssd, temperature, uboot and usb depend on the platform.
+    cisco: show version / show inventory
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_sys_info.shtml
+
+  - cmd: show software [detail]
+    desc: Unpacked releases on flash and which one is primary, backup and committed.
+    kind: show
+    mode: User EXEC
+    tags: [version, firmware, upgrade, release]
+    notes: The first thing to check before and after an upgrade.
+    cisco: show version
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_software.shtml
+
+  - cmd: show sys software
+    desc: Running image and the config file the switch booted from.
+    kind: show
+    mode: User EXEC
+    tags: [version, firmware, config, boot]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_sys_software.shtml
+
+  - cmd: show running-config module <module>
+    desc: Show only one part of the config (isis, i-sid, mlt, vlan, eap, radius, macsec, dvr, spbm, ...).
+    kind: show
+    mode: Privileged EXEC
+    tags: [config, running, filter]
+    example: |
+      show running-config module isis
+      show running-config module i-sid
+      show running-config module mlt
+    notes: Much faster to read than grepping the full config. Use `show running-config verbose` to include default values.
+    rare: true
+    cisco: show running-config | section <x>
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_running_config.shtml
+
+  - cmd: show running-config verbose
+    desc: Full running config including all default values.
+    kind: show
+    mode: Privileged EXEC
+    tags: [config, running, defaults]
+    notes: Use it when a default value is the suspect, e.g. timers or MTU.
+    rare: true
+    cisco: show running-config all
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_running_config.shtml
+
+  - cmd: save config [file <name>] [backup <name>]
+    desc: Save the running config to the startup config, or to a named file as a backup.
+    kind: action
+    mode: Privileged EXEC
+    tags: [config, save, backup, write]
+    example: |
+      save config
+      save config file /intflash/pre-change_2026-10-12.cfg
+    notes: Before a risky change, save a named copy. You can then compare with `more` or roll back with `boot config <file>`.
+    cisco: copy running-config startup-config / write memory
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/save_config.shtml
+
+  - cmd: copy <source> <destination> [-y]
+    desc: Copy files on flash, USB or to and from a TFTP/FTP server, e.g. config backups.
+    kind: action
+    mode: Privileged EXEC
+    tags: [file, backup, tftp, ftp, usb, config]
+    example: |
+      copy /intflash/config.cfg /intflash/config_backup.cfg
+      copy /intflash/config.cfg 192.0.2.10:sw-core-01.cfg
+    cisco: copy
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/copy.shtml
+
+  - cmd: dir [-l] [-r] [<path>]
+    desc: List the files and free space on internal flash or USB.
+    kind: show
+    mode: Privileged EXEC
+    tags: [file, flash, usb, disk]
+    example: |
+      dir
+      dir /intflash/release/
+    cisco: "dir flash:"
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/dir.shtml
+
+  - cmd: more <file>
+    desc: Print a text file from flash or USB, e.g. a saved config or a log file.
+    kind: show
+    mode: Privileged EXEC
+    tags: [file, config, read]
+    example: more /intflash/config.cfg
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/more.shtml
+
+  - cmd: grep <pattern> <file>
+    desc: Search a file on flash for a string without opening it.
+    kind: show
+    mode: Privileged EXEC
+    tags: [file, search, config]
+    example: grep "i-sid" /intflash/config.cfg
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/grep.shtml
+
+  - cmd: show boot config flags
+    desc: Boot flags such as sshd, telnetd, macsec, dvr-leaf-mode, spbm-config-mode and enhancedsecure-mode.
+    kind: show
+    mode: Privileged EXEC
+    tags: [boot, flags, macsec, dvr, security]
+    notes: Many features (MACsec, DvR leaf, VRF scaling) only work with the right boot flag set. A changed flag only takes effect after save config and a reboot.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_boot_config_flags.shtml
+
+  - cmd: show boot config choice
+    desc: Which config file and image the switch loads at boot (primary and backup).
+    kind: show
+    mode: Privileged EXEC
+    tags: [boot, config, file]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_boot_config_choice.shtml
+
+  - cmd: boot config choice primary config-file <file>
+    desc: Set the config file the switch loads on the next boot.
+    kind: config
+    mode: Global Config
+    tags: [boot, config, file, rollback]
+    example: boot config choice primary config-file /intflash/pre-change_2026-10-12.cfg
+    notes: Together with a named backup file, this gives you a clean rollback path.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/boot_config_choice.shtml
+
+  - cmd: software add <file>.voss
+    desc: Step 1 of an upgrade. Unpack an uploaded image into /intflash/release/.
+    kind: action
+    mode: Privileged EXEC
+    tags: [upgrade, firmware, software, image]
+    example: |
+      software add 5520.9.4.2.0.voss
+      show software
+    notes: >
+      Upload the image first, by USB or by SFTP (needs boot flag sshd) / FTP (needs ftpd). The image file is
+      deleted after unpacking. The 4220, 5320 and 5420 Series keep at most two releases, so the non-primary
+      one is overwritten.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/software_add.shtml
+
+  - cmd: software activate <release>
+    desc: Step 2 of an upgrade. Make the unpacked release the boot release. Use the name exactly as `show software` lists it.
+    kind: action
+    mode: Privileged EXEC
+    tags: [upgrade, firmware, software]
+    example: |
+      show software
+      software activate 9.4.2.0.GA
+      save config
+      reset -y
+    caution: The switch needs a reboot afterwards. Plan a maintenance window.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/software_activate.shtml
+
+  - cmd: software commit
+    desc: Step 3 of an upgrade. Confirm the new release after the reboot (commit timer, default 10 min).
+    kind: action
+    mode: Privileged EXEC
+    tags: [upgrade, firmware, software, rollback]
+    notes: >
+      By default `sys software auto-commit` is enabled, so the switch commits on its own when the timer
+      (`sys software commit-time`, default 10 minutes) expires. Commit manually to end the timer early.
+      For a real safety net, disable auto-commit before the upgrade: if the new release breaks
+      management access and nobody commits, the switch reboots into the previous release.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/software_commit.shtml
+
+  - cmd: no sys software auto-commit enable
+    desc: Disable auto-commit, so an upgrade rolls back unless you run `software commit` in time.
+    kind: config
+    mode: Global Config
+    tags: [upgrade, rollback, safety, commit]
+    example: |
+      no sys software auto-commit enable
+      sys software commit-time 20
+    caution: With auto-commit off, a forgotten `software commit` reboots the switch into the old release.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/sys_software_auto_commit.shtml
+
+  - cmd: software remove <release>
+    desc: Delete an old unpacked release to free up flash space.
+    kind: action
+    mode: Privileged EXEC
+    tags: [upgrade, flash, cleanup, software]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/software_remove.shtml
+
+  - cmd: reset -in <[d:][hh:]mm>
+    desc: Schedule a reboot from the saved config. A safety net before a risky remote change.
+    kind: action
+    mode: Privileged EXEC
+    tags: [reboot, rollback, safety, remote]
+    example: |
+      reset -in 15
+      ! ... do the change, verify it works, then:
+      reset -cancel
+    notes: >
+      VOSS has no "commit confirmed". If you lock yourself out, the switch reboots after the timer and loads
+      the saved (unchanged) config. Do not save config until the change is verified, then cancel the reset.
+      Hours and minutes need two digits, e.g. 1:30 means 1 h 30 min. The maximum is 9:23:59.
+    caution: If you forget `reset -cancel`, the switch reboots. Unsaved changes are lost.
+    rare: true
+    cisco: reload in <minutes> / reload cancel
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/reset.shtml
+
+  - cmd: reset -y
+    desc: Reboot the switch now with the saved config (no confirmation prompt).
+    kind: action
+    mode: Privileged EXEC
+    tags: [reboot, reload, restart]
+    caution: Traffic impact. Unsaved changes are lost.
+    cisco: reload
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/reset.shtml
+
+  - cmd: show logging file [tail] [severity <sev>] [module <module>] [event-code <code>]
+    desc: The system log, filtered. tail shows the latest entries first.
+    kind: show
+    mode: User EXEC
+    tags: [log, syslog, events, errors, troubleshooting]
+    example: |
+      show logging file tail
+      show logging file severity ERROR
+      show logging file tail | include ISIS
+      show logging file tail | include 1/12
+    notes: Several values can be combined with a pipe, e.g. `severity ERROR|WARNING`.
+    cisco: show logging
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_logging_file.shtml
+
+  - cmd: show alarm database
+    desc: Active and past system alarms (fans, power, resource limits, licenses).
+    kind: show
+    mode: User EXEC
+    tags: [alarm, health, hardware, log]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_alarm_database.shtml
+
+  - cmd: show khi performance [cpu | memory | process sort <field> | pthread]
+    desc: Key health indicators. CPU and memory usage and the busiest processes.
+    kind: show
+    mode: User EXEC
+    tags: [cpu, memory, performance, health, khi]
+    example: |
+      show khi performance cpu
+      show khi performance memory
+      show khi performance pthread sort cpu
+    notes: Run this first when the CLI is slow or protocols flap and a high CPU is suspected.
+    rare: true
+    cisco: show processes cpu sorted
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_khi_performance.shtml
+
+  - cmd: show khi resource-scaling
+    desc: Used versus maximum hardware and fabric resources (I-SIDs, MACs, routes, multicast streams).
+    kind: show
+    mode: User EXEC
+    tags: [scaling, resources, limits, khi, capacity]
+    notes: Moved from Privileged EXEC to User EXEC in 9.4. Since 9.4 the switch logs a warning and raises an alarm at 80, 90 and 100 % usage.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_khi_resource_scaling.shtml
+
+  - cmd: show io resources <option>
+    desc: Low-level ASIC resource usage (filters, L3 entries, mirror, QoS, SPBM UNI).
+    kind: show
+    mode: User EXEC
+    tags: [asic, hardware, resources, filter, scaling]
+    example: show io resources filter
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_io_resources.shtml
+
+  - cmd: show fulltech [khi] [file <file>]
+    desc: The full technical dump (all show commands). Write it to a file for an Extreme GTAC case.
+    kind: show
+    mode: Privileged EXEC
+    tags: [tac, support, tech, case, dump]
+    example: show fulltech file /intflash/fulltech_2026-10-12.txt
+    notes: Since 9.2 it is only available in Privileged EXEC. Pipe filters such as include do not work with show fulltech. `show tech` is a shorter alias.
+    cisco: show tech-support
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_fulltech.shtml
+
+  - cmd: flight-recorder all 1
+    desc: Collect a flight-recorder snapshot, trace and archive for an Extreme GTAC case.
+    kind: action
+    mode: Privileged EXEC
+    tags: [tac, support, crash, debug]
+    notes: Run it right after a crash or a strange event, before you reboot. The files go to /intflash.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/flight_recorder.shtml
+
+  - cmd: show pluggable-optical-modules {basic | detail} [<port>]
+    desc: SFP and QSFP inventory plus DDM values (Rx/Tx power, temperature, voltage).
+    kind: show
+    mode: Privileged EXEC
+    tags: [sfp, optics, transceiver, ddm, ddi, light, power, fiber]
+    example: |
+      show pluggable-optical-modules basic
+      show pluggable-optical-modules detail 1/49
+    notes: The first check for CRC errors or flapping fiber links. Rx power close to the low alarm threshold points to dirty connectors or a bad patch.
+    rare: true
+    cisco: show interfaces transceiver detail
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_pluggable_optical_modules.shtml
+
+  - cmd: show sys power
+    desc: Power supply status and power budget.
+    kind: show
+    mode: User EXEC
+    tags: [power, psu, poe, hardware]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_sys_power.shtml
+
+  - cmd: show license
+    desc: Installed licenses (Base, Premier, subscription).
+    kind: show
+    mode: User EXEC
+    tags: [license, premier, subscription]
+    notes: Premier is required for some features, e.g. Segmented VRF with an L3 VSN or more VRFs. Since 9.3.1 the output also shows Premier features included in Extreme Platform ONE licenses.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_license.shtml
+
+  - cmd: show clock [detail | time-zone]
+    desc: The system time and time zone. Correct time matters for logs and certificates.
+    kind: show
+    mode: User EXEC
+    tags: [time, clock, timezone]
+    cisco: show clock detail
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_clock.shtml
+
+  - cmd: show ntp [server | statistics]
+    desc: NTP servers, sync status and statistics.
+    kind: show
+    mode: User EXEC
+    tags: [ntp, time, sync]
+    cisco: show ntp status / show ntp associations
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ntp.shtml
+
+  - cmd: show users
+    desc: Who is logged in right now (console, SSH, Telnet).
+    kind: show
+    mode: User EXEC
+    tags: [users, sessions, login, ssh]
+    cisco: show users
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_users.shtml
+
+  - cmd: show ssh session
+    desc: Active SSH sessions. Use `show ssh global` for the SSH server settings.
+    kind: show
+    mode: User EXEC
+    tags: [ssh, sessions, security]
+    since: "9.3"
+    notes: Up to 9.2 this was a single `show ssh` command.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ssh_session.shtml
+
+  - cmd: ssh <host | IS-IS hostname | system-id> -l <user>
+    desc: SSH from the switch to another device. IS-IS hostnames work too, so you need no IP address.
+    kind: action
+    mode: User EXEC
+    tags: [ssh, remote, jump, isis, hostname]
+    example: ssh SW-ACCESS-12 -l admin
+    notes: >
+      Handy for jumping across the fabric to a switch whose management IP you don't know.
+      Not possible to a boundary node from an IS-IS remote area.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/ssh_connection.shtml
+
+  - cmd: delete /intflash/.ssh/known_hosts
+    desc: Clear the switch's SSH known-hosts file after a remote switch was factory reset (host key changed).
+    kind: action
+    mode: Privileged EXEC
+    tags: [ssh, known_hosts, hostkey, factory reset]
+    since: "9.3.1"
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/delete.shtml
+
+  - cmd: ping <ip> [vrf <vrf>] [source <ip>] [count <n>] [datasize <bytes>] [-s]
+    desc: Ping from the GRT or a VRF, with optional source address, packet size or continuous mode.
+    kind: action
+    mode: User EXEC
+    tags: [ping, icmp, reachability, vrf, connectivity]
+    example: |
+      ping 10.10.20.1 vrf CORP
+      ping 10.10.20.1 vrf CORP source 10.10.10.1 count 100
+      ping 10.10.20.1 datasize 1472
+      ping 10.10.20.1 -s -I 1
+    notes: Without `vrf`, the ping uses the GRT. `-s` pings continuously at the `-I` interval (stop with Ctrl+C). `mgmt clip|oob|vlan` pings from the segmented management instance.
+    cisco: ping vrf <vrf> <ip> source <if>
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/ping.shtml
+
+  - cmd: traceroute <ip> [vrf <vrf>] [source <ip>]
+    desc: IP traceroute from the GRT or a VRF.
+    kind: action
+    mode: Privileged EXEC
+    tags: [traceroute, path, routing, vrf]
+    example: traceroute 10.10.20.1 vrf CORP
+    notes: Inside the fabric, `l2 traceroute` shows the SPB hops. IP traceroute only shows the routed hops.
+    cisco: traceroute vrf <vrf> <ip>
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/traceroute.shtml
+
+  - cmd: <show command> | include <pattern>
+    desc: Keep only matching lines. exclude removes them and begin starts output at the first match.
+    kind: show
+    mode: any
+    tags: [grep, filter, pipe, include, exclude, begin, output]
+    example: |
+      show running-config | include i-sid
+      show isis adjacencies | exclude UP
+      show running-config | begin "interface mlt"
+    notes: Supported pipe functions are include, exclude, begin, count, head, tail and no-more. They do not work with show fulltech.
+    cisco: "| include / | exclude / | begin"
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommongrepclishowcommands.shtml
+
+  - cmd: <show command> | count
+    desc: Count output lines, e.g. how many MACs, routes or adjacencies there are.
+    kind: show
+    mode: any
+    tags: [grep, filter, pipe, count, output]
+    example: |
+      show vlan mac-address-entry 100 | count
+      show isis adjacencies | include UP | count
+    rare: true
+    cisco: "| count"
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommongrepclishowcommands.shtml
+
+  - cmd: <show command> | no-more
+    desc: Print the whole output without "--More--" paging (one command only). Also | head <n> and | tail <n>.
+    kind: show
+    mode: any
+    tags: [pipe, paging, more, output, head, tail]
+    example: |
+      show running-config | no-more
+      show logging file | tail 20
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommongrepclishowcommands.shtml
+
+  - cmd: terminal more disable
+    desc: Turn off paging for the whole session, e.g. before capturing output to a file.
+    kind: config
+    mode: User EXEC
+    tags: [terminal, paging, more, length, output]
+    example: |
+      terminal more disable
+      terminal length 64
+    cisco: terminal length 0
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/terminal.shtml
+
+  - cmd: show history
+    desc: The last 32 commands of this session.
+    kind: show
+    mode: Privileged EXEC
+    tags: [history, cli]
+    cisco: show history
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_history.shtml
+
+  - cmd: sys name <hostname>
+    desc: Set the system name (also used as the CLI prompt and IS-IS hostname source).
+    kind: config
+    mode: Global Config
+    tags: [hostname, name, prompt]
+    example: sys name SW-CORE-01
+    notes: Set the IS-IS hostname separately with `sys-name` in IS-IS Router Config.
+    cisco: hostname
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/sys_name.shtml
+
+  - cmd: clilog enable
+    desc: Log every CLI command that users run (audit trail).
+    kind: config
+    mode: Global Config
+    tags: [audit, clilog, log, history, security]
+    since: "9.4"
+    notes: Up to 9.3 the command was just `clilog`. Use `copy clilog <file>` to export the log.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/clilog.shtml
+
+  - cmd: show syslog host [<1-10>]
+    desc: The configured syslog servers.
+    kind: show
+    mode: User EXEC
+    tags: [syslog, logging, monitoring]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_syslog_host.shtml
+
+  - cmd: show snmp-server host
+    desc: The configured SNMP trap and notification receivers.
+    kind: show
+    mode: User EXEC
+    tags: [snmp, traps, monitoring]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_snmp_server_host.shtml
+
+  - cmd: show mgmt interface [clip | oob | vlan]
+    desc: The segmented management instance (management IP on the OOB port, VLAN or CLIP).
+    kind: show
+    mode: User EXEC
+    tags: [management, mgmt, oob, clip, ip]
+    example: |
+      show mgmt interface
+      show mgmt ip route
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_mgmt_interface.shtml
+
+  - cmd: show sys mtu
+    desc: The system-wide MTU (jumbo frames).
+    kind: show
+    mode: User EXEC
+    tags: [mtu, jumbo, frame size]
+    notes: >
+      The default is 1950 bytes, which already covers the 22 bytes of SPB MAC-in-MAC overhead for standard
+      1500-byte frames. Set jumbo frames with `sys mtu <size>` (the range depends on the platform, see `sys mtu ?`)
+      and keep the value the same on every switch in the fabric.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_sys_mtu.shtml
+
+  - cmd: monitor ports statistics <ports> interface utilization
+    desc: Live-updating port utilization (refreshes until you stop it).
+    kind: show
+    mode: Privileged EXEC
+    tags: [utilization, bandwidth, traffic, live, monitor, load]
+    example: monitor ports statistics 1/1-1/4 interface utilization
+    notes: Set the refresh interval and duration with `monitor-statistics interval <sec>` and `monitor-statistics duration <sec>`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/monitor_ports_statistics_interface.shtml
+
+  - cmd: monitor ports error <ports> main
+    desc: Live-updating port error counters. Shows whether errors are still increasing right now.
+    kind: show
+    mode: Privileged EXEC
+    tags: [errors, crc, live, monitor, troubleshooting]
+    example: monitor ports error 1/12 main
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/monitor_ports_error.shtml

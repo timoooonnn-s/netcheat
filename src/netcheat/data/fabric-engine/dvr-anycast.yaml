@@ -1,0 +1,162 @@
+# Fields: see README.md -> "Adding and editing commands". Keep `commands:` as the last key.
+title: DvR and Anycast Gateway
+description: Distributed Virtual Routing (controllers and leaves, host routes in the fabric) and Anycast IP Gateway.
+
+commands:
+  - cmd: show dvr
+    desc: DvR summary. Domain ID, role (Controller/Leaf), operational state, gateway MAC, domain and backbone I-SID.
+    kind: show
+    mode: User EXEC
+    tags: [dvr, summary, controller, leaf, domain]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr.shtml
+
+  - cmd: show dvr members [controller | leaf]
+    desc: All controllers and leaves of the DvR domain.
+    kind: show
+    mode: User EXEC
+    tags: [dvr, members, controller, leaf, domain]
+    notes: A leaf that is missing has no fabric connectivity to the controllers, or has a different domain ID.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_members.shtml
+
+  - cmd: show dvr interfaces [vrf <vrf> | l3isid <isid>]
+    desc: The DvR-enabled subnets (gateway IP, L2/L3 I-SID, state). Leaves show what the controllers pushed to them.
+    kind: show
+    mode: User EXEC
+    tags: [dvr, interfaces, gateway, subnet, vlan]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_interfaces.shtml
+
+  - cmd: show dvr host-entries [ipv4 <ip> | l2isid <isid> | vrf <vrf>]
+    desc: The host routes (/32) DvR has learned. Where in the fabric is a client IP?
+    kind: show
+    mode: User EXEC
+    tags: [dvr, host, client, /32, where is client, arp]
+    example: |
+      show dvr host-entries ipv4 10.10.100.25
+      show dvr host-entries vrf CORP
+    notes: The type is 1 for local and 2 for dynamic (learned from another node). Shows the node behind which the host was learned.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_host_entries.shtml
+
+  - cmd: show dvr routes [vrf <vrf>]
+    desc: Routes that DvR distributes in the domain (e.g. redistributed direct/static and default routes).
+    kind: show
+    mode: User EXEC
+    tags: [dvr, routes, default route]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_routes.shtml
+
+  - cmd: show dvr database [vrf <vrf> | ipv4 <ip>]
+    desc: The complete DvR database (hosts and routes) as the controller sees it.
+    kind: show
+    mode: User EXEC
+    tags: [dvr, database, hosts, routes]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_database.shtml
+
+  - cmd: show dvr backbone-entries
+    desc: Host entries in the DvR backbone (shared between DvR domains and non-DvR BEBs).
+    kind: show
+    mode: User EXEC
+    tags: [dvr, backbone, entries]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_backbone_entries.shtml
+
+  - cmd: show dvr l3vsn [vrf <vrf>]
+    desc: VRFs and their L3 VSN I-SIDs known in the DvR domain.
+    kind: show
+    mode: User EXEC
+    tags: [dvr, l3vsn, vrf, i-sid]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_l3vsn.shtml
+
+  - cmd: dvr controller <domain-id>
+    desc: Make this switch a DvR controller of a domain (enables DvR globally).
+    kind: config
+    mode: Global Config
+    tags: [dvr, controller, domain, config]
+    notes: Prerequisites are IP shortcuts (`spbm 1 ip enable`) and the dvr-leaf-mode boot flag disabled. A controller belongs to exactly one domain.
+    caution: Removing DvR from a controller deletes the domain and everything learned dynamically.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/dvr_controller.shtml
+
+  - cmd: boot config flags dvr-leaf-mode / dvr leaf <domain-id>
+    desc: Make this switch a DvR leaf (an access node that gets its routing info from the controllers).
+    kind: config
+    mode: Global Config
+    tags: [dvr, leaf, boot flag, domain]
+    example: |
+      save config
+      boot config flags dvr-leaf-mode
+      dvr leaf 5
+      save config
+      reset -y
+    caution: Enabling the dvr-leaf-mode flag removes all non-DvR config such as platform VLAN IPs, CLIPs, routing protocols and VRFs. Save a backup first.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/boot_config_flags_dvr_leaf_mode.shtml
+
+  - cmd: dvr gw-ipv4 <gateway-ip> / dvr enable
+    desc: Enable DvR on a VLAN (L2 VSN) of a controller with the shared gateway IP.
+    kind: config
+    mode: VLAN Interface Config
+    tags: [dvr, gateway, vlan, subnet, enable]
+    example: |
+      vlan create 200 type port-mstprstp 0
+      vlan i-sid 200 20200
+      interface vlan 200
+        vrf CORP
+        dvr gw-ipv4 10.20.0.1
+        dvr enable
+        ip address 10.20.0.2 255.255.255.0
+    notes: >
+      The VLAN must have an I-SID. Use the same gateway IP on all controllers of the domain; each
+      controller gets its own VLAN IP. To save addresses, make the VLAN IP the same as the gateway
+      IP (`ip address <ip/len> dvr-one-ip`).
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommon_dvrcontroller_enablingdvronalayer2vsnvlansubnet.shtml
+
+  - cmd: dvr redistribute direct enable / dvr apply redistribute [vrf <vrf>]
+    desc: Distribute directly connected routes in the DvR domain (GRT in Global Config, VRF in VRF Router Config), then apply them.
+    kind: config
+    mode: Global Config / VRF Router Config
+    tags: [dvr, redistribute, direct, apply]
+    notes: Like IS-IS redistribution, nothing happens until you run `dvr apply redistribute`. Check it with `show dvr redistribute`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/dvr_redistribute_direct.shtml
+
+  - cmd: dvr inject-default-route-disable
+    desc: Stop a controller from pushing a default route to the leaves for this VRF (in Global Config, `dvr controller <id> inject-default-route-disable` for the GRT).
+    kind: config
+    mode: VRF Router Config
+    tags: [dvr, default route, inject, leaf]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VRF_Router_Configuration/dvr_inject_default_route_disable.shtml
+
+  - cmd: clear dvr host-entries [ipv4 <ip>] [l3isid <isid>]
+    desc: Delete DvR host entries, e.g. a stale entry after a client moved.
+    kind: clear
+    mode: Privileged EXEC
+    tags: [dvr, host, clear, stale]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/clear_dvr_host_entries.shtml
+
+  - cmd: ip anycast-gateway <gateway-ip> [vrid <1-255>] / ip anycast-gateway enable
+    desc: Anycast IP Gateway on a VLAN. The same gateway IP and MAC on many BEBs, without DvR controllers.
+    kind: config
+    mode: VLAN Interface Config
+    tags: [anycast, gateway, distributed, default gateway, vlan]
+    example: |
+      interface vlan 300
+        ip address 10.30.0.2/24
+        ip anycast-gateway 10.30.0.1
+        ip anycast-gateway enable
+    notes: >
+      The gateway IP (and the vrid, which defines the gateway MAC) must match on every router of
+      the same L2 VSN. `ip anycast-gateway one-ip <ip/len>` uses one address for VLAN IP and
+      gateway. Since 9.2 the switch logs when a client spoofs the gateway IP on an access port.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VLAN_Interface_Configuration/ip_anycast_gateway.shtml
+
+  - cmd: show ip anycast-gateway interfaces [vrf <vrf>] / show ip anycast-gateway i-sid [<isid>] [all-routers]
+    desc: The local Anycast Gateway interfaces, and the routers that advertise each Anycast Gateway I-SID.
+    kind: show
+    mode: User EXEC
+    tags: [anycast, gateway, i-sid, routers]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_anycast_gateway_interfaces.shtml

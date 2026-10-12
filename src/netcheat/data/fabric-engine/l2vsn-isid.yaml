@@ -1,0 +1,155 @@
+# Fields: see README.md -> "Adding and editing commands". Keep `commands:` as the last key.
+title: L2 VSN and I-SID Services
+description: Layer 2 services across the fabric. VLAN-to-I-SID mapping (C-VLAN), Switched UNI (ELAN), Transparent UNI and remote MAC learning.
+
+commands:
+  - cmd: show i-sid [<isid>]
+    desc: All I-SIDs on this switch with type (CVLAN, ELAN, T-UNI), VLAN, ports/MLTs, origin and name.
+    kind: show
+    mode: User EXEC
+    tags: [i-sid, isid, service, l2vsn, overview]
+    example: |
+      show i-sid
+      show i-sid 20100
+    notes: The ORIGIN column shows whether an I-SID was configured manually or created dynamically (Auto-sense, FA, EAP/RADIUS).
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_i_sid.shtml
+
+  - cmd: show vlan i-sid [<vid>]
+    desc: The VLAN-to-I-SID mapping (C-VLAN based L2 VSNs).
+    kind: show
+    mode: User EXEC
+    tags: [vlan, i-sid, mapping, l2vsn, cvlan]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_vlan_i_sid.shtml
+
+  - cmd: show isis spbm i-sid {all | config | discover} [id <isid>] [vlan <bvid>]
+    desc: Which fabric nodes (BEBs) announce an I-SID. Shows whether the service is actually present on both ends.
+    kind: show
+    mode: User EXEC
+    tags: [i-sid, discover, bebs, fabric, service, endpoints, tx, rx]
+    example: |
+      show isis spbm i-sid all id 20100
+      show isis spbm i-sid discover id 20100
+    notes: >
+      `config` lists the I-SIDs configured locally and `discover` the ones learned from remote BEBs.
+      If a remote site is missing for an I-SID, check its config there; typical causes are a typo
+      in the I-SID or a VLAN without a mapping.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_spbm_i_sid.shtml
+
+  - cmd: show vlan remote-mac-table <vid>
+    desc: MACs learned across the fabric for a VLAN, with the remote BEB (B-MAC) and the destination.
+    kind: show
+    mode: User EXEC
+    tags: [mac, remote, fabric, bmac, l2vsn, where is client]
+    notes: Tells you which remote switch a client MAC sits behind. Map the B-MAC to a name with `show isis spbm nick-name`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_vlan_remote_mac_table.shtml
+
+  - cmd: show i-sid mac-address-entry [<isid>] [mac <mac>] [port <ports>]
+    desc: The C-MACs learned on an ELAN/T-UNI I-SID (local and from the fabric).
+    kind: show
+    mode: User EXEC
+    tags: [mac, i-sid, elan, tuni, fdb]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_i_sid_mac_address_entry.shtml
+
+  - cmd: show isis spbm multicast-fib i-sid <isid>
+    desc: The multicast FIB of an I-SID. Where BUM traffic for the service is replicated.
+    kind: show
+    mode: User EXEC
+    tags: [multicast, fib, bum, flooding, i-sid]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_spbm_multicast_fib.shtml
+
+  - cmd: vlan i-sid <vid> <isid>
+    desc: Map a VLAN to an I-SID to create a C-VLAN based L2 VSN. Use the same I-SID on every switch that carries the VLAN.
+    kind: config
+    mode: Global Config
+    tags: [i-sid, vlan, l2vsn, mapping, create service]
+    example: |
+      vlan create 100 name "CLIENTS" type port-mstprstp 0
+      vlan i-sid 100 20100
+    notes: >
+      Only the I-SID has to match across the fabric; the local VLAN ID can be different on every
+      switch. Keep service I-SIDs within 1-15999999. I-SID 0xFFFFFF (16777215) is reserved for the
+      SMLT virtual B-MAC.
+    caution: On the 5520 and 5720 Series, adding or removing an I-SID on a VLAN with an IP interface briefly disables routing on that VLAN.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/vlan_i_sid.shtml
+
+  - cmd: i-sid name <isid> "<name>"
+    desc: Give an I-SID a readable name (default name is ISID-<number>).
+    kind: config
+    mode: Global Config
+    tags: [i-sid, name, documentation]
+    example: i-sid name 20100 "CLIENTS"
+    notes: Show the names with `show i-sid name`.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/i_sid.shtml
+
+  - cmd: i-sid <isid> elan
+    desc: Create a Switched UNI (ELAN) service, which maps port/VLAN pairs to an I-SID without a platform VLAN.
+    kind: config
+    mode: Global Config
+    tags: [elan, s-uni, switched uni, flex uni, i-sid, service]
+    example: |
+      i-sid 20200 elan
+        c-vid 200 port 1/10
+        c-vid 300 mlt 5
+        untagged-traffic port 1/11
+        exit
+      show i-sid elan
+    notes: >
+      With S-UNI, the same VLAN tag on different ports can belong to different services, and one
+      port can carry several services. Run `flex-uni enable` on the ports first. Spanning tree is
+      disabled on S-UNI ports, so protect them against loops with SLPP Guard or BPDU Guard.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/i_sid.shtml
+
+  - cmd: c-vid <vid> {port <ports> | mlt <mlt-id>}
+    desc: Add a tagged port or MLT endpoint to an ELAN I-SID.
+    kind: config
+    mode: ELAN I-SID Config
+    tags: [elan, s-uni, cvid, endpoint, tagged]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/ELAN_I-SID_Configuration/c_vid_for_a_port.shtml
+
+  - cmd: untagged-traffic port <ports> [bpdu enable]
+    desc: Add an untagged port endpoint to an ELAN I-SID.
+    kind: config
+    mode: ELAN I-SID Config
+    tags: [elan, s-uni, untagged, endpoint]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/ELAN_I-SID_Configuration/untagged_traffic_for_a_port.shtml
+
+  - cmd: flex-uni enable
+    desc: Turn a port into a Flex UNI, which is required before it can be an S-UNI (ELAN) endpoint.
+    kind: config
+    mode: Interface Config
+    tags: [flex uni, s-uni, elan, port]
+    since: "9.2"
+    notes: The port variant first appears in the 9.2 command reference (the MLT variant, `flex-uni` in MLT Interface Config, is older). Since 9.2 an EAP-enabled port can also be a Flex UNI with an untagged S-UNI.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/flex_uni_enable_port.shtml
+
+  - cmd: i-sid <isid> elan-transparent
+    desc: Create a Transparent UNI (T-UNI), which carries everything on a port (all tags) into one I-SID.
+    kind: config
+    mode: Global Config
+    tags: [tuni, transparent, elan-transparent, port, all vlans, service]
+    example: |
+      i-sid 20300 elan-transparent
+        port 1/20
+        exit
+    notes: Typical uses are a customer handoff or a link that has to be carried transparently. Check it with `show i-sid elan-transparent`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/i_sid.shtml
+
+  - cmd: show interfaces gigabitEthernet i-sid <ports>
+    desc: The I-SIDs configured on specific ports (S-UNI and T-UNI endpoints).
+    kind: show
+    mode: Privileged EXEC
+    tags: [i-sid, port, elan, endpoint]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_interfaces_gigabitethernet_i_sid.shtml
+
+  - cmd: show mlt i-sid <mlt-id>
+    desc: The I-SIDs configured on an MLT.
+    kind: show
+    mode: User EXEC
+    tags: [i-sid, mlt, elan, endpoint]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_mlt_i_sid.shtml

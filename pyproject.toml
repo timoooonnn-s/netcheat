@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "netcheat"
+version = "1.0.0"
+description = "Searchable command cheatsheet for Extreme Fabric Engine (VOSS) and Juniper SRX"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["rich>=13", "PyYAML>=6"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+ncs = "netcheat.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+netcheat = ["data/*.yaml", "data/*/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

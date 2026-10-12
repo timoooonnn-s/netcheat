@@ -1,0 +1,149 @@
+# Fields: see README.md -> "Adding and editing commands". Keep `commands:` as the last key.
+title: MACsec
+description: Link encryption (802.1AE) with a static CAK or with MKA, MKA profiles and keychains (9.3+), status and counters.
+
+commands:
+  - cmd: show macsec status [<ports>]
+    desc: MACsec and encryption state per port. Is the link really encrypted?
+    kind: show
+    mode: User EXEC
+    tags: [macsec, status, encryption, port]
+    notes: Both ends must show MACsec and encryption enabled. If only one side is configured, the link usually carries no traffic.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_macsec_status.shtml
+
+  - cmd: show macsec mka participant [<ports>] [verbose]
+    desc: MKA sessions per port (key server, live/potential peers, CKN). Shows whether the key agreement works.
+    kind: show
+    mode: User EXEC
+    tags: [mka, participant, key agreement, peer, macsec]
+    notes: No live peer means a CKN/CAK mismatch, MKA disabled on the other side, or different profile settings.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_macsec_mka_participant.shtml
+
+  - cmd: show macsec statistics [<ports>] [secure channel {inbound | outbound}]
+    desc: MACsec counters (protected/encrypted frames, invalid, late, not-valid).
+    kind: show
+    mode: User EXEC
+    tags: [macsec, statistics, counters, errors, replay]
+    notes: Rising invalid or late counters point to replay-window or key problems. Reset them with `macsec clear-stats [port <ports>]`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_macsec_statistics.shtml
+
+  - cmd: show macsec mka statistics <ports>
+    desc: MKA PDU counters per port.
+    kind: show
+    mode: User EXEC
+    tags: [mka, statistics, pdu]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_macsec_mka_statistics.shtml
+
+  - cmd: show macsec connectivity-association [<name>]
+    desc: The configured connectivity associations (CAs). The key itself is not shown.
+    kind: show
+    mode: User EXEC
+    tags: [macsec, ca, connectivity association, ckn]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_macsec_connectivity_association.shtml
+
+  - cmd: show macsec mka keychain [<name>]
+    desc: MKA keychains with their keys, expiry time (UTC) and status (Valid, In-use, Expired).
+    kind: show
+    mode: User EXEC
+    tags: [mka, keychain, key, expiry, rollover]
+    since: "9.3"
+    notes: When the in-use key expires, the switch rolls over to the next key without traffic loss and logs "Participant switched to the next keychain key".
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_macsec_mka_keychain.shtml
+
+  - cmd: boot config flags macsec
+    desc: The MACsec boot flag. Per the 9.4 docs, only needed on the 5320 and 5420 Series.
+    kind: config
+    mode: Global Config
+    tags: [macsec, boot flag, 5320, 5420]
+    notes: Mutually exclusive with `boot config flags ipv6-egress-filter`. It only takes effect after save config and a reboot.
+    caution: Needs a reboot.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/boot_config_flags_macsec.shtml
+
+  - cmd: macsec connectivity-association <name> connectivity-association-key <cak>
+    desc: Create a connectivity association with a CAK (pre-shared key). The CAK must be the same on both ends.
+    kind: config
+    mode: Global Config
+    tags: [macsec, ca, cak, psk, key, static]
+    example: |
+      macsec connectivity-association CA-CORE connectivity-association-key 0123456789abcdef0123456789abcdef
+      interface gigabitEthernet 1/49
+        macsec connectivity-association CA-CORE
+        macsec encryption
+        macsec enable
+    notes: This example is static CAK mode (no MKA). The CA name is 5-32 characters, the key 10-64. Do not save real keys in this cheatsheet.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/macsec_connectivity_association_globally.shtml
+
+  - cmd: macsec mka profile <name>
+    desc: Create an MKA profile (confidentiality offset, include-sci, replay protection).
+    kind: config
+    mode: Global Config
+    tags: [mka, profile, macsec]
+    example: |
+      macsec mka profile MKACORE
+        confidentiality-offset 30
+        include-sci enable
+        replay-protect enable window-size 64
+        exit
+    notes: Profile names may only use letters and digits and are case sensitive.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/macsec_mka_profile_globally.shtml
+
+  - cmd: macsec mka profile <name> / macsec mka enable (interface)
+    desc: Bind an MKA profile to a port and enable MKA on it.
+    kind: config
+    mode: Interface Config
+    tags: [mka, port, enable, macsec]
+    example: |
+      interface gigabitEthernet 1/49
+        macsec mka profile MKACORE
+        macsec connectivity-association CA-CORE
+        macsec mka enable
+    notes: >
+      Order matters. Apply the MKA profile first, then the CA or keychain, then enable MKA. The 9.4 docs
+      say that a port associated with a CA before it has an MKA profile cannot use MKA.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/macsec_mka_profile_for_a_port.shtml
+
+  - cmd: macsec mka keychain <name> / key <ckn> cak <cak> endtime <MMddyyyyhhmmss | unlimited>
+    desc: An MKA keychain with several keys for planned key rollover without downtime.
+    kind: config
+    mode: Global Config / MKA Keychain Config
+    tags: [mka, keychain, rollover, key, ckn, cak]
+    since: "9.3"
+    example: |
+      macsec mka keychain KC-CORE
+        key KEY2026 cak <cak-2026> endtime 12312026235959
+        key KEY2027 cak <cak-2027> endtime unlimited
+        exit
+      interface gigabitEthernet 1/49
+        macsec mka profile MKACORE
+        macsec mka keychain KC-CORE
+        macsec mka enable
+    notes: >
+      The endtime is UTC, whatever the switch time zone is. The CKN/CAK pairs must match on both ends.
+      You can change end times or add and delete keys while the keychain is in use. On the 5320 and
+      5420 Series, keychains are supported from 9.4.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/macsec_mka_keychain_.shtml
+
+  - cmd: macsec cipher-suite {gcm-aes-128 | gcm-aes-256 | gcm-aes-xpn-128 | gcm-aes-xpn-256}
+    desc: Choose the MACsec cipher (optional, platform dependent).
+    kind: config
+    mode: Interface Config
+    tags: [macsec, cipher, aes, xpn, encryption]
+    notes: The XPN suites (9.3+, on 7830, 7520-48YE-8CE and 5720-VIM-2CE) avoid frequent SAK rekeying on fast links and need MKA. Both ends must use the same suite.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/macsec_cipher_suite.shtml
+
+  - cmd: macsec confidentiality-offset <30 | 50>
+    desc: Leave the first 30 (IPv4) or 50 (IPv6) bytes after the Ethernet header unencrypted, so devices in between can still classify the traffic.
+    kind: config
+    mode: Interface Config
+    tags: [macsec, offset, confidentiality, qos]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/macsec_confidentiality_offset.shtml

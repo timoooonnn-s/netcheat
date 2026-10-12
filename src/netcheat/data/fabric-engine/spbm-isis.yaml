@@ -1,0 +1,367 @@
+# Fields: see README.md -> "Adding and editing commands". Keep `commands:` as the last key.
+title: SPBM, IS-IS and Fabric OAM
+description: The Fabric Connect core. IS-IS adjacencies, nicknames, B-VLANs, unicast and multicast FIBs, CFM, l2 ping and l2 traceroute.
+
+commands:
+  - cmd: show isis adjacencies [verbose]
+    desc: IS-IS neighbors on all NNIs. Every fabric link should show state UP.
+    kind: show
+    mode: User EXEC
+    tags: [isis, adjacency, neighbor, nni, fabric, spbm]
+    example: |
+      show isis adjacencies
+      show isis adjacencies | exclude UP
+    notes: >
+      A neighbor stuck in INIT, or missing, usually means one of these: a different manual area,
+      B-VLANs or primary B-VLAN that differ between the switches, a hello-auth mismatch, an MTU problem,
+      the NNI VLAN membership, or a duplicate system-id or nickname. Multi-area boundary nodes accept `home|remote`.
+    cisco: show isis neighbors
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_adjacencies.shtml
+
+  - cmd: show isis interface [verbose]
+    desc: Which ports and MLTs run IS-IS, their state, level and metric.
+    kind: show
+    mode: User EXEC
+    tags: [isis, interface, nni, metric]
+    cisco: show isis interface brief
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_interface.shtml
+
+  - cmd: show isis
+    desc: Global IS-IS settings. Admin state, system-id, router name, overload bit, timers.
+    kind: show
+    mode: User EXEC
+    tags: [isis, global, system-id, overload]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis.shtml
+
+  - cmd: show isis spbm
+    desc: The SPBM instance. B-VIDs, primary B-VLAN, nickname, IP shortcuts, multicast and the SMLT/vIST info (peer system-id, virtual B-MAC).
+    kind: show
+    mode: User EXEC
+    tags: [spbm, bvlan, bvid, nickname, smlt, vist, virtual bmac]
+    notes: On a vIST pair, check that the peer system-id and virtual B-MAC match on both peers.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_spbm.shtml
+
+  - cmd: show isis spbm nick-name [home | remote]
+    desc: Every fabric node (BEB/BCB) with nickname, system-id and hostname. An inventory of the fabric.
+    kind: show
+    mode: User EXEC
+    tags: [nickname, fabric, inventory, nodes, sysid, hostname, virtual bmac]
+    example: |
+      show isis spbm nick-name
+      show isis spbm nick-name | include SW-ACCESS
+    notes: Look up a nickname from another output (for example a remote MAC entry) and get the switch name. The output also lists the virtual B-MACs, so it shows the vIST pairs.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_spbm_nick_name.shtml
+
+  - cmd: show isis spbm unicast-fib [b-mac <bmac>] [vlan <bvid>] [summary]
+    desc: The unicast FIB. Which outgoing port/MLT leads to each B-MAC (fabric node), per B-VLAN.
+    kind: show
+    mode: User EXEC
+    tags: [fib, unicast, bmac, path, forwarding, spbm]
+    notes: Each node should appear in both B-VLANs. Different outgoing interfaces per B-VLAN are normal (ECT load sharing).
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_spbm_unicast_fib.shtml
+
+  - cmd: show isis spbm unicast-tree <bvid> [destination <bmac>]
+    desc: The shortest-path tree for a B-VLAN, i.e. the hops to a destination node.
+    kind: show
+    mode: User EXEC
+    tags: [spf, tree, path, bvlan, topology]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_spbm_unicast_tree.shtml
+
+  - cmd: show isis lsdb [sysid <xxxx.xxxx.xxxx>] [detail] [tlv <n>]
+    desc: The IS-IS link state database. All LSPs with sequence numbers and age.
+    kind: show
+    mode: User EXEC
+    tags: [lsdb, lsp, isis, database, tlv]
+    example: |
+      show isis lsdb
+      show isis lsdb sysid 0200.0000.0101 detail
+    notes: >
+      A sequence number that keeps increasing fast on one node means that node is flapping. With
+      `tlv 185` or `tlv 186` you can inspect the advertised IP routes. Since 9.4, `detail` also shows
+      the L2 VSN mapping bit for TLVs 185/186.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_lsdb.shtml
+
+  - cmd: show debug spbm isis spf-log
+    desc: History of SPF runs. Shows whether the fabric is recalculating all the time.
+    kind: show
+    mode: User EXEC
+    tags: [spf, flap, stability, debug, isis]
+    notes: Many SPF runs in a short time point to a flapping link or node. Compare the times with `show logging file`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_debug_spbm_isis_spf_log.shtml
+
+  - cmd: show isis int-counters
+    desc: IS-IS packet and error counters per interface (auth failures, rejected adjacencies, LSP drops).
+    kind: show
+    mode: User EXEC
+    tags: [isis, counters, errors, auth, adjacency]
+    notes: Increasing authentication failures point to a hello-auth key or type mismatch. Reset the counters with `clear isis stats`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_int_counters.shtml
+
+  - cmd: show isis system-id
+    desc: This switch's IS-IS system-id (its fabric identity, often derived from the B-MAC).
+    kind: show
+    mode: User EXEC
+    tags: [isis, system-id, identity, bmac]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_system_id.shtml
+
+  - cmd: show isis manual-area
+    desc: The configured IS-IS area. Must be the same on every switch of an area.
+    kind: show
+    mode: User EXEC
+    tags: [isis, area, manual-area]
+    notes: Multi-area boundary nodes use `show isis area` (home and remote area).
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_manual_area.shtml
+
+  - cmd: show spbm nick-name
+    desc: Where this switch's nickname came from (static, or from the dynamic nickname server).
+    kind: show
+    mode: User EXEC
+    tags: [nickname, dynamic, server, ztf]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_spbm_nick_name.shtml
+
+  - cmd: isis dup-detection-temp-disable
+    desc: Temporarily turn off duplicate system-id/nickname detection while you correct a duplicate.
+    kind: action
+    mode: User EXEC
+    tags: [duplicate, nickname, system-id, recovery]
+    notes: A duplicate nickname or system-id makes the switch drop IS-IS. Fix the duplicate value; this command only gives you time to do it. Check the remaining time with `show isis dup-detection-temp-disable remaining-time`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/isis_dup_detection_temp_disable.shtml
+
+  - cmd: router isis
+    desc: Enter IS-IS Router Config. System-id, area, nickname and B-VLANs are set here.
+    kind: config
+    mode: Global Config
+    tags: [isis, config, spbm]
+    example: |
+      vlan create 4051 name "BVLAN-1" type spbm-bvlan
+      vlan create 4052 name "BVLAN-2" type spbm-bvlan
+      spbm
+      router isis
+        spbm 1
+        spbm 1 nick-name 1.01.01
+        spbm 1 b-vid 4051-4052 primary 4051
+        system-id 0200.0001.0101
+        manual-area 49.0001
+        sys-name SW-CORE-01
+        exit
+      router isis enable
+    notes: >
+      The official order for bringing up a fabric node by hand: create the B-VLANs, enable spbm,
+      set up the SPBM instance, area and system-id, then router isis enable. Always use two B-VLANs.
+      The nickname, system-id and IS-IS hostname must be unique in the fabric. Change the default
+      system-id (the B-MAC) to something you can recognize. Most sites assign nicknames through
+      Zero Touch Fabric or a nickname server instead.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/router_isis.shtml
+
+  - cmd: spbm 1 nick-name <x.xx.xx>
+    desc: Set the SPBM nickname (2.5 bytes, unique in the fabric).
+    kind: config
+    mode: IS-IS Router Config
+    tags: [nickname, spbm, identity]
+    caution: Changing it on a live switch briefly disrupts the fabric services of that node.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/IS-IS_Router_Configuration/spbm_1_100_nick_name_for_is_is.shtml
+
+  - cmd: spbm 1 b-vid <bvid1>-<bvid2> primary <bvid1>
+    desc: The two backbone VLANs (B-VLANs) of the SPBM instance.
+    kind: config
+    mode: IS-IS Router Config
+    tags: [bvlan, bvid, spbm, backbone]
+    notes: The B-VLAN IDs and the primary B-VLAN must be the same on every node, otherwise no adjacency forms. Create the B-VLANs with `vlan create <id> type spbm-bvlan`.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/IS-IS_Router_Configuration/spbm_1_100_b_vid.shtml
+
+  - cmd: system-id <xxxx.xxxx.xxxx>
+    desc: The IS-IS system-id (6 bytes). Must be unique. You can only change it while IS-IS is disabled.
+    kind: config
+    mode: IS-IS Router Config
+    tags: [system-id, isis, identity]
+    caution: Needs `no router isis enable` first, so the switch drops out of the fabric.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/IS-IS_Router_Configuration/system_id_for_is_is.shtml
+
+  - cmd: manual-area <area>
+    desc: The IS-IS area, e.g. 49.0001 (only one area per switch).
+    kind: config
+    mode: IS-IS Router Config
+    tags: [area, isis, manual-area]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/IS-IS_Router_Configuration/manual_area_for_is_is.shtml
+
+  - cmd: sys-name <name>
+    desc: The IS-IS hostname shown on other switches (show isis adjacencies, nick-name).
+    kind: config
+    mode: IS-IS Router Config
+    tags: [hostname, isis, name]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/IS-IS_Router_Configuration/sys_name.shtml
+
+  - cmd: isis spbm 1 l1-metric <1-16777215 | auto>
+    desc: The IS-IS cost of an NNI port or MLT. Lets you steer traffic away from a link.
+    kind: config
+    mode: Interface Config
+    tags: [metric, cost, path, traffic engineering, isis]
+    example: |
+      interface gigabitEthernet 1/49
+      isis spbm 1 l1-metric 5000
+    notes: The default `auto` derives the cost from the port speed. Raise the metric on a link before maintenance to move traffic away from it gracefully.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/isis_spbm_on_a_port.shtml
+
+  - cmd: isis / isis spbm 1 / isis enable
+    desc: Make a port or MLT a manual NNI (fabric link). Not needed on Auto-sense ports.
+    kind: config
+    mode: Interface Config
+    tags: [nni, isis, fabric link, uplink]
+    example: |
+      interface gigabitEthernet 1/49
+      no shutdown
+      isis
+      isis spbm 1
+      isis enable
+    notes: The same three commands work on an MLT (`interface mlt <id>`). A manual NNI is normally not a member of any VLAN.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/isis_on_a_port.shtml
+
+  - cmd: isis hello-auth type hmac-sha-256 key <key>
+    desc: Authenticate IS-IS hellos on an NNI. The type and key must match on both ends.
+    kind: config
+    mode: Interface Config
+    tags: [isis, authentication, hello, security, hmac]
+    notes: Auto-sense ports use the global `auto-sense isis hello-auth type ...` instead. Since 9.2 an Auto-sense port with a key mismatch goes to the NNI-AUTH-FAIL state.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/isis_hello_auth_on_a_port.shtml
+
+  - cmd: overload
+    desc: Set the IS-IS overload bit, so other nodes stop sending transit traffic through this switch.
+    kind: config
+    mode: IS-IS Router Config
+    tags: [overload, maintenance, drain, isis]
+    notes: Drain a core or BCB node before maintenance; remove it with `no overload`. Services that end on this switch (BEB) still work.
+    caution: All transit traffic moves to other paths. Check that they have enough capacity.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/IS-IS_Router_Configuration/overload.shtml
+
+  - cmd: spbm 1 ip enable
+    desc: Enable IP shortcuts. Routing in the GRT over the fabric, without a transit VLAN.
+    kind: config
+    mode: IS-IS Router Config
+    tags: [ip shortcuts, grt, routing, spbm]
+    notes: Pair it with `ip-source-address <clip>` and `redistribute direct` in IS-IS Router Config to advertise GRT routes.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/IS-IS_Router_Configuration/spbm_1_100_ip.shtml
+
+  - cmd: redistribute direct [route-map <map>] / isis apply redistribute direct
+    desc: Advertise directly connected GRT subnets into IS-IS, then apply the change.
+    kind: config
+    mode: IS-IS Router Config
+    tags: [redistribute, direct, isis, routing, grt, ip shortcuts]
+    example: |
+      router isis
+        redistribute direct
+        redistribute direct enable
+        exit
+      isis apply redistribute direct
+    notes: >
+      The redistribution only takes effect after `isis apply redistribute <protocol> [vrf <name>]`
+      (User EXEC). This step is easy to forget. Check the result with `show ip isis redistribute`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/IS-IS_Router_Configuration/redistribute_direct_for_is_is.shtml
+
+  - cmd: cfm spbm enable
+    desc: Enable CFM on the B-VLANs. This is required for l2 ping, l2 traceroute and l2 tracetree.
+    kind: config
+    mode: Global Config
+    tags: [cfm, oam, l2 ping, l2 traceroute, mep]
+    example: |
+      cfm spbm mepid 101
+      cfm spbm enable
+    notes: Only switches with CFM enabled answer. A hop without CFM is missing from the trace. Use a unique MEP ID per switch (802.1ag requires unique MEP IDs within an MA).
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/cfm_spbm_enable.shtml
+
+  - cmd: show cfm spbm
+    desc: The CFM state for SPBM (enabled, MEP ID, level).
+    kind: show
+    mode: User EXEC
+    tags: [cfm, oam, mep]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_cfm_spbm.shtml
+
+  - cmd: l2 ping vlan <bvid> routernodename <isis-hostname>
+    desc: Layer 2 ping across the fabric to another node, by IS-IS hostname (or mac <bmac>).
+    kind: action
+    mode: User EXEC
+    tags: [l2 ping, cfm, oam, fabric, reachability, bvlan]
+    example: |
+      l2 ping vlan 4051 routernodename SW-ACCESS-12
+      l2 ping vlan 4052 routernodename SW-ACCESS-12 burst-count 10
+    notes: Test both B-VLANs, because they can take different paths.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/l2_ping_vlan.shtml
+
+  - cmd: l2 traceroute vlan <bvid> routernodename <isis-hostname>
+    desc: Layer 2 traceroute. The hop-by-hop SPB path to another node.
+    kind: action
+    mode: User EXEC
+    tags: [l2 traceroute, cfm, oam, path, fabric, hops]
+    example: l2 traceroute vlan 4051 routernodename SW-ACCESS-12
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/l2_traceroute_vlan.shtml
+
+  - cmd: l2 traceroute ip-address <ip> [vrf <vrf>]
+    desc: Show the fabric path to an IP address. Resolves the IP to the BEB that owns it.
+    kind: action
+    mode: User EXEC
+    tags: [l2 traceroute, ip, vrf, path, cfm, oam]
+    example: l2 traceroute ip-address 10.20.30.40 vrf CORP
+    notes: >
+      This only works when the next hop to the IP is an IS-IS route to a remote BEB. If you get
+      "MEP does not exist" in a VRF, the route is probably not learned through IS-IS. On a DvR leaf
+      the output may only show the DvR controllers.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/l2_traceroute_ip_address.shtml
+
+  - cmd: l2 ping ip-address <ip> [vrf <vrf>]
+    desc: Layer 2 ping to the BEB behind an IP address. Also helps to check ARP and next hop.
+    kind: action
+    mode: User EXEC
+    tags: [l2 ping, ip, vrf, arp, cfm]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/l2_ping_ip_address.shtml
+
+  - cmd: l2 tracetree <bvid> <isid> [routernodename <name>]
+    desc: Show the multicast (flooding) tree of an I-SID, i.e. which nodes receive BUM traffic for the service.
+    kind: action
+    mode: User EXEC
+    tags: [tracetree, multicast, i-sid, flooding, bum, cfm]
+    example: l2 tracetree 4051 20100
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/l2_tracetree.shtml
+
+  - cmd: l2 tracemroute source <src-ip> group <group-ip> [vlan <vid> | vrf <vrf>]
+    desc: Trace an IP multicast stream (source, group) across the fabric.
+    kind: action
+    mode: User EXEC
+    tags: [multicast, tracemroute, igmp, stream, cfm]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/l2_tracemroute.shtml
+
+  - cmd: l2 ping anycast-gw <isid> [vrf <vrf>]
+    desc: Layer 2 ping to an Anycast IP Gateway I-SID.
+    kind: action
+    mode: User EXEC
+    tags: [anycast, gateway, l2 ping, cfm]
+    since: "9.2"
+    notes: "`l2 traceroute anycast-gw <isid>` does the trace."
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/l2_ping_anycast-gw.shtml
+
+  - cmd: spbm nick-name server
+    desc: Make this switch a dynamic nickname server for Zero Touch Fabric.
+    kind: config
+    mode: Global Config
+    tags: [nickname, server, ztf, zero touch, dynamic]
+    notes: Set the range with `spbm nick-name server prefix <x.x0.00>`. Clients without a static nickname get one automatically. Configure at least two servers for redundancy.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/spbm_nick_name_server.shtml

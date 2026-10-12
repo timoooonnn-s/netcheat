@@ -1,0 +1,337 @@
+# Short explanations of the building blocks. `see` lists commands from the topic files (exact `cmd` text).
+concepts:
+  - term: SPB / SPBM
+    aka: [shortest path bridging, fabric connect, 802.1aq, mac-in-mac, 802.1ah]
+    platform: fabric-engine
+    text: >
+      Shortest Path Bridging MAC (IEEE 802.1aq) is the technology behind Extreme Fabric Connect. Client frames
+      are wrapped at the edge into a new Ethernet header (MAC-in-MAC, 802.1ah) with backbone MACs and an
+      I-SID. IS-IS calculates loop-free shortest paths between all nodes, so there is no spanning tree in
+      the core. Services (L2 VSN, L3 VSN, multicast) are configured only on the edge switches, not hop by hop.
+    see:
+      - "show isis spbm"
+      - "show isis adjacencies [verbose]"
+      - "show isis spbm nick-name [home | remote]"
+
+  - term: BEB / BCB
+    aka: [backbone edge bridge, backbone core bridge]
+    platform: fabric-engine
+    text: >
+      A BEB is a fabric node where services start or end, because it has I-SIDs, UNIs or VRFs. A BCB only
+      forwards fabric traffic (MAC-in-MAC) and knows nothing about the services. One switch can be both.
+      Nodes with the IS-IS overload bit set are not used as transit (BCB) paths.
+    see:
+      - "show isis spbm nick-name [home | remote]"
+      - "overload"
+
+  - term: B-VLAN / B-VID
+    aka: [backbone vlan, bvlan, primary b-vlan, ect]
+    platform: fabric-engine
+    text: >
+      The backbone VLANs that carry fabric traffic between nodes, usually two (e.g. 4051 and 4052). Each
+      B-VLAN uses its own equal-cost tree algorithm, so traffic is spread over different paths. The
+      B-VLAN IDs and the primary B-VLAN must be the same on every node, otherwise no adjacency forms.
+      B-VLANs have no ports as members; they run over the NNIs.
+    see:
+      - "spbm 1 b-vid <bvid1>-<bvid2> primary <bvid1>"
+      - "show isis spbm unicast-fib [b-mac <bmac>] [vlan <bvid>] [summary]"
+
+  - term: Nickname
+    aka: [spbm nickname, nick-name]
+    platform: fabric-engine
+    text: >
+      A 2.5-byte short ID of a fabric node (format x.xx.xx, e.g. 1.01.01). It is used to build the
+      multicast MACs for I-SID flooding and must be unique in the fabric. It is set statically or handed
+      out by a dynamic nickname server (Zero Touch Fabric).
+    see:
+      - "spbm 1 nick-name <x.xx.xx>"
+      - "show spbm nick-name"
+      - "spbm nick-name server"
+
+  - term: System ID
+    aka: [isis system-id, sysid, b-mac, nodal mac]
+    platform: fabric-engine
+    text: >
+      The 6-byte IS-IS identity of a switch (xxxx.xxxx.xxxx). It is also used as the node's B-MAC in the
+      fabric. Must be unique. You can only change it while IS-IS is disabled. vIST peers reference each
+      other by system ID (smlt-peer-system-id).
+    see:
+      - "show isis system-id"
+      - "system-id <xxxx.xxxx.xxxx>"
+
+  - term: I-SID
+    aka: [service instance identifier, isid, service id]
+    platform: fabric-engine
+    text: >
+      The 24-bit service ID in the fabric, comparable to a VLAN ID or VNI in the backbone. An L2 VSN, an
+      L3 VSN (VRF), the vIST and DvR domains each use their own I-SID. Only the I-SID has to match
+      across the fabric; the local VLAN ID mapped to it can differ per switch. Values above 15999999 are
+      reserved by the system (onboarding uses 15999999 by default).
+    see:
+      - "show i-sid [<isid>]"
+      - "vlan i-sid <vid> <isid>"
+      - "show isis spbm i-sid {all | config | discover} [id <isid>] [vlan <bvid>]"
+
+  - term: UNI / NNI
+    aka: [user network interface, network network interface, access port, fabric port]
+    platform: fabric-engine
+    text: >
+      An NNI is a fabric link between two SPB switches (IS-IS adjacency, MAC-in-MAC). A UNI is where
+      clients or legacy devices connect. UNI types are C-VLAN UNI (VLAN mapped to an I-SID), Switched UNI
+      or Flex UNI (port + VLAN tag mapped to an I-SID, no platform VLAN) and Transparent UNI (the whole
+      port, all tags, into one I-SID).
+    see:
+      - "isis / isis spbm 1 / isis enable"
+      - "i-sid <isid> elan"
+      - "i-sid <isid> elan-transparent"
+
+  - term: L2 VSN
+    aka: [layer 2 virtual service network, l2vsn, stretched vlan]
+    platform: fabric-engine
+    text: >
+      A Layer 2 service across the fabric: all BEBs that map a VLAN (or S-UNI/T-UNI endpoints) to the same
+      I-SID form one broadcast domain. BUM traffic only goes to the BEBs that have the I-SID. MACs are
+      learned as "client MAC behind remote B-MAC".
+    see:
+      - "vlan i-sid <vid> <isid>"
+      - "show vlan remote-mac-table <vid>"
+      - "l2 tracetree <bvid> <isid> [routernodename <name>]"
+
+  - term: L3 VSN
+    aka: [layer 3 virtual service network, ip vpn, ipvpn, vrf over spb]
+    platform: fabric-engine
+    text: >
+      A VRF stretched over the fabric. Each BEB binds the VRF to the same L3 VSN I-SID (ipvpn), and IS-IS
+      carries the VRF's routes between them, so no BGP/MPLS is needed. Routes are only advertised after you
+      redistribute them (`isis redistribute direct`) and apply the change (`isis apply redistribute`).
+      Inter-VRF leaking uses IS-IS accept policies.
+    see:
+      - "router vrf <vrf>"
+      - "show ip ipvpn [vrf <vrf>]"
+      - "isis accept i-sid <isid> enable"
+      - "isis apply redistribute <protocol> vrf <vrf>"
+
+  - term: IP Shortcuts
+    aka: [grt shortcuts, global routing table over spb]
+    platform: fabric-engine
+    text: >
+      Routing in the Global Routing Table (GRT) over the fabric. IS-IS advertises the GRT prefixes and
+      forwards them directly from BEB to BEB, without transit VLANs or a separate IGP. The source address
+      for locally generated traffic is a CLIP (`ip-source-address`).
+    see:
+      - "spbm 1 ip enable"
+      - "redistribute direct [route-map <map>] / isis apply redistribute direct"
+
+  - term: CLIP
+    aka: [circuitless ip, loopback]
+    platform: fabric-engine
+    text: >
+      A circuitless IP is a loopback interface that is always up. It is used as a stable management
+      address, as the router ID and as the IP shortcut source address.
+    see:
+      - "show ip interface [vrf <vrf>]"
+
+  - term: vIST / SMLT
+    aka: [virtual ist, split multilink trunking, split-beb, virtual bmac, cluster]
+    platform: fabric-engine
+    text: >
+      Two switches form a cluster for dual-homing. A downstream device connects one LAG to both
+      (SMLT) and sees them as one partner. The vIST is the peer link, carried virtually through the
+      fabric over a VLAN with its own unique I-SID. Toward the fabric, the pair advertises a shared
+      virtual B-MAC; the switch with the lower system ID is the primary split-BEB. Requirements are
+      smlt-peer-system-id, virtual-ist peer-ip, the same MLT IDs, and the same VLAN/I-SID set on both peers.
+    see:
+      - "show virtual-ist"
+      - "show smlt mlt"
+      - "virtual-ist peer-ip <peer-ip> vlan <vist-vlan>"
+      - "spbm 1 smlt-peer-system-id <peer-system-id>"
+
+  - term: RSMLT
+    aka: [routed smlt]
+    platform: fabric-engine
+    text: >
+      Layer 3 redundancy for a vIST pair. Each peer also forwards packets sent to the other peer's IP or
+      MAC, so the default gateway keeps working if one peer fails, without VRRP timers.
+    see:
+      - "show ip rsmlt [local | peer] [vrf <vrf>]"
+      - "ip rsmlt [holdup-timer <0-9999>]"
+
+  - term: DvR
+    aka: [distributed virtual routing, dvr controller, dvr leaf, dvr domain]
+    platform: fabric-engine
+    text: >
+      Distributed Virtual Routing puts the same gateway IP on every switch in a DvR domain, so traffic is
+      routed at the first hop. Controllers own the config (subnets, gateway IP) and push it to the leaves.
+      Host routes (/32) of clients are shared in the fabric, which avoids hairpinning through a central
+      router. A leaf needs the dvr-leaf-mode boot flag, which wipes non-DvR L3 config.
+    see:
+      - "show dvr"
+      - "show dvr members [controller | leaf]"
+      - "show dvr host-entries [ipv4 <ip> | l2isid <isid> | vrf <vrf>]"
+      - "dvr gw-ipv4 <gateway-ip> / dvr enable"
+
+  - term: Anycast Gateway
+    aka: [anycast ip gateway, distributed gateway]
+    platform: fabric-engine
+    text: >
+      A lighter alternative to DvR. Several BEBs of the same L2 VSN share one gateway IP and MAC
+      (configured the same on each), without controllers or leaves. Each BEB answers ARP for the gateway
+      and routes locally.
+    see:
+      - "ip anycast-gateway <gateway-ip> [vrid <1-255>] / ip anycast-gateway enable"
+      - "l2 ping anycast-gw <isid> [vrf <vrf>]"
+
+  - term: Auto-sense
+    aka: [autosense, zero touch port, port states, uni state, nni state]
+    platform: fabric-engine
+    text: >
+      Auto-sense ports configure themselves based on what is connected. They start in WAIT and listen for
+      LLDP. A fabric switch makes the port an NNI, an FA AP/proxy makes it FA, an IP phone makes it VOICE,
+      and without LLDP the port becomes a UNI with NAC (EAP/NEAP) and onboarding/data I-SIDs. The dynamic
+      config does not show in the running-config; check the state with `show interfaces gigabitEthernet auto-sense`.
+    see:
+      - "show interfaces gigabitEthernet auto-sense [<ports>]"
+      - "auto-sense enable"
+      - "auto-sense onboarding i-sid <isid>"
+      - "auto-sense no-nni"
+
+  - term: Fabric Attach
+    aka: [fa, fa proxy, fa client, fa server]
+    platform: fabric-engine
+    text: >
+      An LLDP extension that lets non-fabric devices (APs, EXOS/ERS switches as FA proxies, cameras) ask the
+      fabric switch (the FA server) for I-SID-to-VLAN assignments. The edge device then only tags the VLAN,
+      and the fabric switch maps it to the I-SID. With authentication, assignments can be secured with a key.
+    see:
+      - "show fa elements [<ports>]"
+      - "show fa assignment [<ports>]"
+      - "auto-sense fa wap-type1 i-sid <isid>"
+
+  - term: Zero Touch Fabric
+    aka: [ztf, zero touch deployment, ztd, onboarding, onboarding i-sid]
+    platform: fabric-engine
+    text: >
+      A new switch out of the box comes up in Zero Touch mode with all ports in Auto-sense. It forms NNIs
+      on its own, gets a nickname from the nickname server and reaches management (ExtremeCloud IQ /
+      Site Engine) through the onboarding I-SID (default 15999999), where it gets its final config.
+    see:
+      - "spbm nick-name server"
+      - "show spbm nick-name"
+      - "auto-sense onboarding i-sid <isid>"
+
+  - term: EAP / NEAP
+    aka: [802.1x, eapol, mac authentication, mab, nac, mhmv, mhsa]
+    platform: fabric-engine
+    text: >
+      EAP (802.1X) authenticates clients that have a supplicant. NEAP authenticates clients without one by
+      their MAC address via RADIUS (like MAB on Cisco). With MHMV (multiple hosts, multiple VLANs), every
+      client on a port authenticates on its own and ExtremeControl can assign it a VLAN/I-SID. Since 9.3,
+      NEAP fallback tries NEAP when EAP fails. Global `eapol enable` is required.
+    see:
+      - "show eapol sessions {eap | neap} [verbose] [<ports>]"
+      - "eapol status auto"
+      - "eapol multihost eap-oper-mode {mhmv | mhsa}"
+
+  - term: Guest and fail-open I-SID
+    aka: [guest isid, fail-open isid, critical vlan, radius down]
+    platform: fabric-engine
+    text: >
+      A guest I-SID is for clients that fail or skip authentication. A fail-open I-SID is used for new
+      clients when all RADIUS servers are unreachable, so the network keeps working in a degraded mode.
+      Fail-open needs RADIUS reachability checks to detect the outage.
+    see:
+      - "eapol port <ports> guest-isid <isid>"
+      - "eapol port <ports> fail-open-isid <isid>"
+      - "radius reachability mode {status-server | use-radius}"
+
+  - term: CoA
+    aka: [change of authorization, dynamic authorization, radius disconnect, rfc 5176]
+    platform: fabric-engine
+    text: >
+      Change of Authorization lets the RADIUS server (ExtremeControl) act on an existing session, e.g.
+      re-authenticate a client or disconnect it after a policy change. On the switch you configure the NAC
+      as a dynamic-server client and enable it on the ports.
+    see:
+      - "radius dynamic-server client <nac-ip> secret <secret> enable"
+
+  - term: MACsec
+    aka: [802.1ae, mka, cak, ckn, sak, connectivity association]
+    platform: fabric-engine
+    text: >
+      Hop-by-hop encryption on Ethernet links. A connectivity association (CA) holds a pre-shared key
+      (CAK) and its name (CKN). From that, the switches derive the session keys (SAK) that encrypt the
+      frames. With MKA (802.1X-2010), the switches negotiate and rotate the SAKs. Since 9.3, MKA keychains
+      hold several CAKs with end times for hitless key rollover.
+    see:
+      - "show macsec status [<ports>]"
+      - "macsec connectivity-association <name> connectivity-association-key <cak>"
+      - "macsec mka keychain <name> / key <ckn> cak <cak> endtime <MMddyyyyhhmmss | unlimited>"
+
+  - term: SLPP
+    aka: [simple loop prevention protocol, loop protection, slpp guard]
+    platform: fabric-engine
+    text: >
+      Extreme's loop detection. The switch sends SLPP packets per VLAN; a port that receives its own
+      packets back (above the threshold) is shut down. SLPP Guard on edge ports shuts the port when SLPP
+      packets from another switch arrive. Because the fabric core has no spanning tree, SLPP and
+      BPDU Guard are the main protection against loops built at the access layer.
+    see:
+      - "slpp enable"
+      - "show slpp interface gigabitEthernet [<ports>]"
+      - "slpp-guard enable [timeout <0 | 10-65535>]"
+
+  - term: CFM
+    aka: [connectivity fault management, 802.1ag, mep, mip, l2 ping, l2 traceroute]
+    platform: fabric-engine
+    text: >
+      Ethernet OAM (802.1ag), the basis for l2 ping, l2 traceroute and l2 tracetree in the fabric. Each
+      switch has a MEP on the B-VLANs. Nodes without CFM do not answer, so they are missing from traces.
+    see:
+      - "cfm spbm enable"
+      - "l2 ping vlan <bvid> routernodename <isis-hostname>"
+      - "l2 traceroute vlan <bvid> routernodename <isis-hostname>"
+
+  - term: Segmented VRF
+    aka: [vrf segmentation, trusted, unrestricted, untrusted]
+    platform: fabric-engine
+    text: >
+      New in 9.4. One VRF is split into three trust segments. Untrusted VLANs (e.g. IoT) can only reach
+      the unrestricted segment (typically the firewall). Trusted VLANs reach trusted and unrestricted.
+      Each segment gets its own L3 VSN I-SID. It needs a Premier or subscription license with an L3 VSN.
+    see:
+      - "segmented"
+      - "vrf <vrf> [trusted | unrestricted | untrusted]"
+
+  - term: SRX flow mode
+    aka: [flow-based, packet-based, stateful, sessions, security zones]
+    platform: junos-srx
+    text: >
+      By default an SRX processes traffic flow-based (stateful). Even when it "only routes", every
+      packet between interfaces needs a session, and that needs a security policy between the zones of
+      the interfaces. If routing looks correct but traffic is dropped, check the zones, policies and
+      sessions before you suspect the routing.
+    see:
+      - "show security flow status"
+      - "show security flow session destination-prefix <ip> [summary]"
+      - "show security policies hit-count"
+
+  - term: Junos commit model
+    aka: [candidate config, commit, rollback, commit confirmed]
+    platform: junos-srx
+    text: >
+      Changes go into a candidate config and only take effect with `commit`. `show | compare` shows the
+      diff, `commit confirmed <min>` rolls back on its own unless you confirm, and `rollback <n>` loads one
+      of the last 50 committed configs. The VOSS equivalent of the safety net is `reset -in` before the change.
+    see:
+      - "show | compare / commit check / commit confirmed <minutes>"
+      - "reset -in <[d:][hh:]mm>"
+
+  - term: Routing instance
+    aka: [vrf, virtual router, routing-instances, inet.0]
+    platform: junos-srx
+    text: >
+      The Junos VRF. Each instance has its own table (<name>.inet.0); the default table is inet.0. Most
+      show and ping commands take `table <name>.inet.0` or `routing-instance <name>`.
+    see:
+      - "show route <prefix> [exact] [table <instance>.inet.0]"
+      - "ping <ip> source <ip> [routing-instance <ri>] [rapid count <n>] [size <bytes> do-not-fragment]"

@@ -1,0 +1,404 @@
+# Troubleshooting flows: ordered steps from the most likely / cheapest check to the deeper ones.
+# Replace the example values (port 1/5, VLAN 100, I-SID 20100, VRF CORP ...) with your own.
+flows:
+  - id: client-no-connectivity
+    title: Client has no network connectivity
+    platform: fabric-engine
+    tags: [client, access, no network, port, vlan, dhcp, wired]
+    summary: >
+      Work from the bottom up: link, authentication, VLAN/I-SID, MAC learning, gateway and DHCP. Most cases
+      end in the first three steps.
+    steps:
+      - title: Is the port up, error-free, and does it have the expected name?
+        cmds:
+          - show interfaces gigabitEthernet name 1/5
+          - show interfaces gigabitEthernet error 1/5
+          - show pluggable-optical-modules detail 1/5
+        look_for: Oper status up, speed/duplex as expected, no rising CRC errors (clear-stats and check again).
+      - title: Was the port disabled by loop protection?
+        cmds:
+          - show slpp interface gigabitEthernet 1/5
+          - show spanning-tree bpduguard 1/5
+          - show logging file tail | include 1/5
+        look_for: A shutdown by SLPP, SLPP Guard or BPDU Guard. Remove the loop first, then re-enable the port.
+      - title: Is it an Auto-sense port, and in which state?
+        cmds:
+          - show interfaces gigabitEthernet auto-sense 1/5
+        look_for: UNI for a normal client. WAIT means the port is still waiting for LLDP. An unexpected NNI/FA state means something else is plugged in.
+      - title: Did NAC authenticate the client, and into which VLAN/I-SID?
+        cmds:
+          - show eapol sessions eap 1/5
+          - show eapol sessions neap 1/5 verbose
+        look_for: The client MAC with state authenticated and the expected VLAN/I-SID. If it is missing or not authenticated, follow the flow nac-auth-failure.
+      - title: Is the client MAC learned in the right VLAN?
+        cmds:
+          - show interfaces gigabitEthernet fdb-entry 1/5
+          - show vlan mac-address-entry mac 00:11:22:33:44:55
+        look_for: No MAC means the client sends nothing (cable, NIC, power). A MAC in the wrong VLAN means a port config or NAC policy problem.
+      - title: Does the VLAN map to the right I-SID, and is that I-SID present at the gateway?
+        cmds:
+          - show vlan i-sid 100
+          - show isis spbm i-sid all id 20100
+        look_for: The same I-SID on the access switch and on the BEB with the gateway (DvR, VRRP or firewall).
+      - title: Does the client get DHCP, and is the gateway reachable?
+        cmds:
+          - show ip dhcp-relay counters vrf CORP
+          - show ip arp 10.10.100.25
+          - show dvr host-entries ipv4 10.10.100.25
+          - ping 10.10.100.25 vrf CORP
+        look_for: Relay requests with replies, an ARP or DvR host entry for the client IP, and the ping answering from the gateway VRF.
+
+  - id: nac-auth-failure
+    title: Client is not authenticated or lands in the wrong VLAN/I-SID
+    platform: fabric-engine
+    tags: [nac, eap, neap, radius, extremecontrol, 802.1x, mac auth, guest]
+    summary: >
+      Check the switch side first (EAP enabled, client seen, RADIUS reachable), then the decision in
+      ExtremeControl. A reject means RADIUS answered and the policy decided. A timeout is a network or
+      configuration problem between the switch and the NAC.
+    steps:
+      - title: Is EAP enabled globally and on the port?
+        cmds:
+          - show eapol system
+          - show eapol port interface gigabitEthernet 1/5
+        look_for: Global EAP enabled, port status auto, NEAP enabled for non-802.1X devices, mac-max large enough.
+      - title: Does the switch see the client session?
+        cmds:
+          - show eapol sessions eap 1/5
+          - show eapol sessions neap 1/5 verbose
+          - show eapol auth-stats interface gigabitethernet 1/5
+        look_for: The session state. Many EAP timeouts mean the client has no supplicant, so NEAP or NEAP fallback (9.3+) must handle it.
+      - title: Are the RADIUS servers reachable, and do they answer?
+        cmds:
+          - show radius-server statistics
+          - show radius reachability
+          - ping 10.0.0.50
+        look_for: Rising timeouts mean a routing, firewall or shared-secret problem. Rejects mean the policy decided, so look at the ExtremeControl event log for this MAC.
+      - title: Did ExtremeControl assign a VLAN/I-SID that exists on this switch?
+        cmds:
+          - show i-sid
+          - show vlan i-sid
+        look_for: The assigned I-SID or VLAN exists (or dynamic creation through the VSA is allowed). Otherwise the client ends in guest/fail-open or gets no access.
+      - title: Force a fresh authentication after fixing the policy
+        cmds:
+          - clear eapol non-eap 1/5 00:11:22:33:44:55
+          - clear eapol eap 1/5
+        look_for: The client authenticates again and shows the new VLAN/I-SID. With CoA configured, ExtremeControl can do the same remotely.
+
+  - id: isis-adjacency-down
+    title: IS-IS adjacency on an NNI does not come up
+    platform: fabric-engine
+    tags: [isis, adjacency, nni, fabric, spbm, init, auth]
+    summary: >
+      An adjacency needs a working link, IS-IS on both ends, the same area, the same B-VLANs and primary
+      B-VLAN, matching hello authentication and unique system-ids and nicknames.
+    steps:
+      - title: Is the link up and the port configured as NNI (manually or by Auto-sense)?
+        cmds:
+          - show interfaces gigabitEthernet name 1/49
+          - show interfaces gigabitEthernet auto-sense 1/49
+          - show isis interface
+        look_for: Link up and IS-IS active on the port or MLT. Auto-sense ports should be NNI-ISIS-UP; NNI-AUTH-FAIL means a hello-auth mismatch.
+      - title: What state does the neighbor have?
+        cmds:
+          - show isis adjacencies
+        look_for: INIT means hellos are seen in one direction only, or parameters differ. A missing neighbor means no hellos at all (link, VLAN membership, IS-IS disabled at the far end).
+      - title: Compare the fabric parameters on both ends
+        cmds:
+          - show isis spbm
+          - show isis manual-area
+          - show isis
+        look_for: The same B-VIDs and primary B-VLAN, the same manual area, and IS-IS admin state up.
+      - title: Check authentication and the error counters
+        cmds:
+          - show isis int-counters
+          - show auto-sense isis
+        look_for: Rising authentication failures mean the hello-auth type or key is different on the two ends.
+      - title: Rule out a duplicate system-id or nickname
+        cmds:
+          - show isis spbm nick-name
+          - show logging file tail | include ISIS
+        look_for: Duplicate messages in the log. Fix the duplicate (`isis dup-detection-temp-disable` gives you time to do it).
+      - title: Verify the path end to end once the adjacency is up
+        cmds:
+          - l2 ping vlan 4051 routernodename SW-CORE-02
+          - l2 traceroute vlan 4052 routernodename SW-CORE-02
+        look_for: Replies in both B-VLANs.
+
+  - id: l2vsn-not-working
+    title: Same VLAN at two sites cannot talk (L2 VSN)
+    platform: fabric-engine
+    tags: [l2vsn, i-sid, vlan, stretched, remote, mac]
+    summary: >
+      For an L2 VSN every BEB must map the VLAN to the same I-SID, and the fabric must carry it between
+      them. Check the mapping on both sides, then the I-SID discovery, then MAC learning.
+    steps:
+      - title: Is the VLAN mapped to the right I-SID on both switches?
+        cmds:
+          - show vlan i-sid 100
+          - show i-sid 20100
+        look_for: The same I-SID on both ends. The local VLAN IDs may differ; a typo in the I-SID is the most common error.
+      - title: Does the fabric know both endpoints of the I-SID?
+        cmds:
+          - show isis spbm i-sid all id 20100
+          - show isis spbm multicast-fib i-sid 20100
+        look_for: Both BEBs (by nickname) in the list. If one is missing, the I-SID is not configured there or the node has no fabric connectivity.
+      - title: Are the remote MACs learned across the fabric?
+        cmds:
+          - show vlan remote-mac-table 100
+          - show vlan mac-address-entry 100
+        look_for: The remote client MACs behind the remote B-MAC. If none are there, check the flooding tree with l2 tracetree.
+      - title: Trace the service path
+        cmds:
+          - l2 tracetree 4051 20100
+          - l2 traceroute vlan 4051 routernodename SW-SITE-B
+        look_for: All expected BEBs in the tree, and the path between the sites.
+
+  - id: l3vsn-route-missing
+    title: Route of a VRF is missing on another BEB (L3 VSN)
+    platform: fabric-engine
+    tags: [l3vsn, vrf, route, ipvpn, redistribute, isis, missing route]
+    summary: >
+      A prefix is only distributed if the source BEB has the VRF as an L3 VSN with the same I-SID,
+      redistributes the route into IS-IS and has applied the redistribution.
+    steps:
+      - title: Is the route in the VRF on the source BEB?
+        cmds:
+          - show ip route -s 10.20.0.0/16 vrf CORP
+          - show ip interface vrf CORP
+        look_for: The prefix as LOC (connected) or STAT (static) on the source switch.
+      - title: Is the VRF an L3 VSN with the same I-SID on both BEBs?
+        cmds:
+          - show ip ipvpn vrf CORP
+        look_for: IP VPN enabled and the same I-SID on every BEB of the VRF.
+      - title: Is redistribution configured and applied?
+        cmds:
+          - show ip isis redistribute vrf CORP
+          - isis apply redistribute direct vrf CORP
+        look_for: Redistribution of direct/static enabled for the VRF. If it was changed recently, applying it again is harmless.
+      - title: Does the fabric carry the prefix?
+        cmds:
+          - show isis spbm ip-unicast-fib id 30010
+          - show isis lsdb tlv 185 detail
+        look_for: The prefix with the advertising BEB. If it is present there but not in the VRF, check IS-IS accept policies and route-maps.
+      - title: Check the route on the receiving BEB
+        cmds:
+          - show ip route 10.20.30.40 vrf CORP
+          - l2 traceroute ip-address 10.20.30.40 vrf CORP
+        look_for: The route via ISIS to the source BEB, and a working fabric path to it.
+
+  - id: vist-smlt-problem
+    title: vIST down or SMLT dual-homing not working
+    platform: fabric-engine
+    tags: [vist, smlt, dual-homing, peer, lacp, cluster]
+    summary: >
+      The vIST runs through the fabric, so it needs SPBM connectivity between the peers, a vIST VLAN with a
+      unique I-SID and IP subnet, and the peer system-id. SMLTs then need the same MLT IDs and VLAN/I-SID
+      sets on both peers.
+    steps:
+      - title: Is the vIST up?
+        cmds:
+          - show virtual-ist
+          - show virtual-ist stat
+        look_for: Peer up. Hellos received should increase.
+      - title: Check the SPBM side of the cluster
+        cmds:
+          - show isis spbm
+          - show isis adjacencies
+        look_for: The smlt-peer-system-id points to the other peer and the virtual B-MAC is the same on both. There is an IS-IS path between the peers.
+      - title: Check the vIST VLAN, I-SID and peer reachability
+        cmds:
+          - show vlan i-sid 4000
+          - show isis spbm i-sid discover id 15999000
+          - show ip arp vlan 4000
+          - ping 10.255.255.2
+        look_for: The same vIST I-SID on both peers (unique in the fabric), the peer MAC in ARP, and the ping answering.
+      - title: Check the SMLTs themselves
+        cmds:
+          - show smlt mlt
+          - show mlt
+          - show lacp interface mlt
+        look_for: The same MLT IDs on both peers, links active on both sides, LACP aggregated. For LACP, both peers need the same `lacp smlt-sys-id`.
+      - title: Are all SMLT VLANs mapped to I-SIDs on both peers?
+        cmds:
+          - show vlan i-sid
+        look_for: Every VLAN on an SMLT has an I-SID, and the same VLAN/I-SID exists on the peer.
+
+  - id: autosense-onboarding
+    title: New switch or AP on an Auto-sense port does not onboard
+    platform: fabric-engine
+    tags: [auto-sense, onboarding, zero touch, ztf, nni, fa, ap, new switch]
+    summary: >
+      Auto-sense decides by LLDP what the port becomes. The port state tells you where onboarding gets
+      stuck. New switches need an NNI (and matching IS-IS auth), APs need FA with the management I-SID.
+    steps:
+      - title: Which state is the port in?
+        cmds:
+          - show interfaces gigabitEthernet auto-sense 1/12
+          - show logging file tail | include Auto-sense
+        look_for: NNI-ISIS-UP for a switch, FA or FA-PROXY for an AP or proxy, VOICE for a phone. WAIT for a long time means no LLDP from the device.
+      - title: For a new switch, does the NNI form?
+        cmds:
+          - show isis adjacencies
+          - show auto-sense isis
+          - show spbm nick-name
+        look_for: NNI-AUTH-FAIL means a hello-auth key mismatch (the new switch has none). Is there a nickname server so the new node gets a nickname?
+      - title: For an AP or FA proxy, are the FA assignments accepted?
+        cmds:
+          - show fa elements 1/12
+          - show fa assignment 1/12
+          - show auto-sense fa
+        look_for: The element is discovered and its assignments are active, not rejected. The management I-SID matches what the AP expects.
+      - title: Can the device reach management through the onboarding I-SID?
+        cmds:
+          - show auto-sense onboarding
+          - show isis spbm i-sid all id 15999999
+        look_for: The onboarding I-SID exists in the fabric and reaches the network where DHCP and ExtremeCloud IQ / Site Engine live.
+      - title: Is the port blocked from becoming an NNI on purpose?
+        cmds:
+          - show running-config module port | include no-nni
+        look_for: '`auto-sense no-nni` on the port (9.3+) prevents NNI and SD-WAN states.'
+
+  - id: loop-broadcast-storm
+    title: Network slow, suspected loop or broadcast storm
+    platform: fabric-engine
+    tags: [loop, broadcast storm, slpp, flapping, mac move, cpu]
+    summary: >
+      A loop usually starts at the access layer (two ports patched together, an unmanaged switch). Find the
+      port where MACs flap or SLPP triggered, and cut it.
+    steps:
+      - title: Has loop protection already acted?
+        cmds:
+          - show slpp interface gigabitEthernet
+          - show logging file tail | include SLPP
+        look_for: A port shut down by SLPP or SLPP Guard is your culprit. Also check which VLAN.
+      - title: Is the CPU busy and are there signs of MAC flapping?
+        cmds:
+          - show khi performance cpu
+          - show logging file tail | include MAC
+        look_for: A high CPU and MAC move messages naming the ports involved.
+      - title: Find the ports with the broadcast traffic
+        cmds:
+          - monitor ports statistics 1/1-1/48 interface utilization
+          - show interfaces gigabitEthernet statistics verbose 1/5
+        look_for: Access ports with very high input rates (especially broadcast/multicast). Shut the suspicious port, then confirm the load drops.
+      - title: Prevent it next time
+        cmds:
+          - slpp enable
+          - spanning-tree bpduguard enable
+        look_for: SLPP on the client VLANs with packet-rx on the access ports, and BPDU Guard/SLPP Guard on edge ports.
+
+  - id: port-errors-flapping
+    title: Port flaps or counts errors (copper or fiber)
+    platform: fabric-engine
+    tags: [errors, crc, flapping, fiber, optics, cable, link]
+    summary: >
+      Most physical problems are cables, connectors or optics. Prove whether errors are still increasing,
+      then check the optics and the cable.
+    steps:
+      - title: Are errors still increasing?
+        cmds:
+          - clear-stats port 1/49
+          - monitor ports error 1/49 main
+        look_for: Rising CRC/FCS or alignment errors right now, not old counters.
+      - title: Check the optics (fiber)
+        cmds:
+          - show pluggable-optical-modules detail 1/49
+        look_for: Rx power near the low alarm threshold (dirty or bad patch, too long a link), or a high temperature. Compare with the far end.
+      - title: Check the cable (copper)
+        cmds:
+          - tdr-test port 1/5
+        look_for: Open or short pairs and the distance to the fault. The test interrupts the link briefly.
+      - title: Look at the flap history
+        cmds:
+          - show logging file tail | include 1/49
+          - show debug spbm isis spf-log
+        look_for: Link up/down messages and, on NNIs, SPF runs at the same times. `link-debounce` can hide very short flaps but does not fix the cause.
+
+  - id: macsec-link-down
+    title: Link with MACsec passes no traffic
+    platform: fabric-engine
+    tags: [macsec, mka, encryption, link, key]
+    summary: >
+      With MACsec both ends must agree on the CA (CKN/CAK), the mode (static or MKA) and the cipher. A
+      one-sided config usually blocks all traffic.
+    steps:
+      - title: Is MACsec enabled and encrypting on both ends?
+        cmds:
+          - show macsec status 1/49
+          - show macsec connectivity-association
+        look_for: The same CA name and mode on both switches.
+      - title: Does the MKA session come up?
+        cmds:
+          - show macsec mka participant 1/49 verbose
+          - show macsec mka keychain
+        look_for: A live peer. If there is none, the CKN/CAK or the profile settings differ, or a keychain key has expired.
+      - title: Check the counters
+        cmds:
+          - show macsec statistics 1/49
+        look_for: Rising invalid or not-valid frames point to a key or replay-window mismatch.
+      - title: Platform prerequisites
+        cmds:
+          - show boot config flags
+        look_for: On the 5320 and 5420 Series the macsec boot flag must be enabled (with a reboot).
+
+  - id: switch-slow-high-cpu
+    title: Switch is slow, CLI lags or protocols flap (high CPU)
+    platform: fabric-engine
+    tags: [cpu, memory, performance, slow, khi]
+    summary: >
+      Find out which process uses the CPU and why. Typical causes are loops or broadcast storms, routing
+      or IS-IS churn, ARP floods, or a resource limit.
+    steps:
+      - title: How busy are the CPU and memory?
+        cmds:
+          - show khi performance cpu
+          - show khi performance memory
+          - show khi performance pthread sort cpu
+        look_for: A high 5-minute average and which thread uses it.
+      - title: Is the fabric or routing churning?
+        cmds:
+          - show debug spbm isis spf-log
+          - show logging file tail
+        look_for: SPF runs every few seconds, flapping adjacencies or neighbors.
+      - title: Is a resource running full?
+        cmds:
+          - show khi resource-scaling
+          - show alarm database
+        look_for: Tables close to 100 % (since 9.4 the switch also raises an alarm at 80/90/100 %).
+      - title: Collect data before you reboot
+        cmds:
+          - show fulltech file /intflash/fulltech_case.txt
+          - flight-recorder all 1
+        look_for: Files for the Extreme GTAC case. A reboot erases the evidence.
+
+  - id: srx-routed-traffic-dropped
+    title: Juniper SRX routes, but traffic does not pass
+    platform: junos-srx
+    tags: [srx, routing, policy, session, zone, drop]
+    summary: >
+      On an SRX in flow mode, routing is only half the story. Every flow also needs a security policy
+      between the zones of the ingress and egress interfaces.
+    steps:
+      - title: Is the route correct, and active in the right table?
+        cmds:
+          - show route 10.20.30.40
+          - show route forwarding-table destination 10.20.30.40
+        look_for: The active route (*) with the expected next hop and egress interface. For a routing instance, add `table <ri>.inet.0`.
+      - title: Are the interfaces up and in the expected zones?
+        cmds:
+          - show interfaces terse
+          - show interfaces ge-0/0/1 extensive | match "zone|error"
+        look_for: Interfaces up/up and in the expected security zones.
+      - title: Does a session exist, and does a policy match?
+        cmds:
+          - show security flow session destination-prefix 10.20.30.40
+          - show security policies hit-count
+          - show security flow status
+        look_for: A session for the flow, and hits on the expected policy. No session usually means no policy between the zones.
+      - title: Check the routing protocols and the return path
+        cmds:
+          - show ospf neighbor
+          - show bgp summary
+          - ping 10.20.30.40 source 10.255.0.1 rapid count 20
+        look_for: Neighbors Full/Established, and a ping with the right source (the return route must also point back through the SRX).

@@ -1,0 +1,189 @@
+# Fields: see README.md -> "Adding and editing commands". Keep `commands:` as the last key.
+title: Juniper SRX as a Router (basics)
+description: The Junos operational commands you need when an SRX acts as a router. Routes, interfaces, OSPF/BGP, sessions, and safe changes with commit confirmed.
+
+commands:
+  - cmd: show route <prefix> [exact] [table <instance>.inet.0]
+    desc: The routing table entry for a prefix. Shows the active route (*), protocol, preference and next hop.
+    kind: show
+    mode: operational
+    tags: [route, routing table, rib, next hop, prefix]
+    example: |
+      show route 10.20.30.40
+      show route 10.20.0.0/16 exact
+      show route table CORP.inet.0
+    notes: Without `exact`, Junos shows the longest match. A `*` marks the active route; `+` is active and `-` was the last active one.
+    cisco: show ip route <prefix>
+
+  - cmd: show route summary
+    desc: The number of routes per table and protocol. A quick sanity check after a change.
+    kind: show
+    mode: operational
+    tags: [route, summary, count, tables]
+    cisco: show ip route summary
+
+  - cmd: show route protocol <static | ospf | bgp | direct> [table <table>]
+    desc: Only the routes of one protocol.
+    kind: show
+    mode: operational
+    tags: [route, protocol, static, ospf, bgp]
+
+  - cmd: show route <prefix> extensive
+    desc: Everything about a route, including all paths, why one was chosen and the BGP attributes.
+    kind: show
+    mode: operational
+    tags: [route, extensive, detail, bgp, best path]
+    rare: true
+
+  - cmd: show route forwarding-table destination <ip>
+    desc: What the forwarding engine (PFE) actually uses for a destination, not just the RIB.
+    kind: show
+    mode: operational
+    tags: [fib, forwarding, pfe, next hop]
+    rare: true
+    cisco: show ip cef <ip>
+
+  - cmd: show interfaces terse [<interface>]
+    desc: All interfaces with admin/link state and IP addresses. The quick overview.
+    kind: show
+    mode: operational
+    tags: [interface, status, ip, overview]
+    example: |
+      show interfaces terse
+      show interfaces terse | match "ge-|reth"
+    cisco: show ip interface brief
+
+  - cmd: show interfaces <interface> extensive
+    desc: Counters, errors, speed/duplex and the security zone of one interface.
+    kind: show
+    mode: operational
+    tags: [interface, errors, counters, detail]
+    example: show interfaces ge-0/0/1 extensive | match "error|drops|Speed|zone"
+    cisco: show interfaces <if>
+
+  - cmd: show arp no-resolve
+    desc: The ARP table without slow DNS lookups.
+    kind: show
+    mode: operational
+    tags: [arp, mac, neighbor]
+    cisco: show ip arp
+
+  - cmd: show ospf neighbor / show ospf interface
+    desc: OSPF neighbors (should be Full) and the OSPF interfaces with area and cost.
+    kind: show
+    mode: operational
+    tags: [ospf, neighbor, adjacency, routing]
+    notes: Append `instance <name>` for a routing instance.
+    cisco: show ip ospf neighbor
+
+  - cmd: show bgp summary
+    desc: BGP peers with their state and the number of active/received/accepted prefixes.
+    kind: show
+    mode: operational
+    tags: [bgp, peer, summary, state]
+    notes: A number in the State column means Established (prefix counts). Active or Connect means the session is not up.
+    cisco: show ip bgp summary
+
+  - cmd: show route receive-protocol bgp <peer-ip> / show route advertising-protocol bgp <peer-ip>
+    desc: Which prefixes a BGP peer sends to you, and which you send to it.
+    kind: show
+    mode: operational
+    tags: [bgp, received, advertised, prefixes, policy]
+    notes: The received view is before the import policy. Prefixes marked hidden were rejected; see them with `show route hidden`.
+    rare: true
+    cisco: show ip bgp neighbors <ip> received-routes / advertised-routes
+
+  - cmd: show security flow session destination-prefix <ip> [summary]
+    desc: Active sessions to a destination. Shows whether the SRX lets the traffic through at all.
+    kind: show
+    mode: operational
+    tags: [session, flow, firewall, policy, nat]
+    notes: In flow mode (the default) every routed packet needs a session and a matching security policy. An SRX "router" still drops traffic between zones without a policy.
+    rare: true
+
+  - cmd: show security flow status
+    desc: The SRX forwarding mode (flow-based or packet-based) per address family.
+    kind: show
+    mode: operational
+    tags: [flow, packet mode, forwarding mode]
+    rare: true
+
+  - cmd: show security policies hit-count
+    desc: Hit counters per security policy. Shows which policy matches (or nothing matches).
+    kind: show
+    mode: operational
+    tags: [policy, hit count, firewall, zones]
+    rare: true
+
+  - cmd: ping <ip> source <ip> [routing-instance <ri>] [rapid count <n>] [size <bytes> do-not-fragment]
+    desc: Ping with a source address, in a routing instance, fast or with DF bit for MTU tests.
+    kind: action
+    mode: operational
+    tags: [ping, reachability, mtu, routing-instance]
+    example: |
+      ping 10.20.30.40 source 10.255.0.1 rapid count 100
+      ping 10.20.30.40 size 1472 do-not-fragment
+    cisco: ping <ip> source <if> repeat <n>
+
+  - cmd: traceroute <ip> [source <ip>] [routing-instance <ri>] [no-resolve]
+    desc: Traceroute from the SRX.
+    kind: action
+    mode: operational
+    tags: [traceroute, path]
+
+  - cmd: monitor traffic interface <interface> no-resolve matching "host <ip>"
+    desc: Live packet capture of traffic to/from the Routing Engine on an interface (tcpdump-like).
+    kind: action
+    mode: operational
+    tags: [capture, tcpdump, sniff, debug]
+    notes: This only shows traffic to or from the SRX itself (control plane), not transit traffic. For transit traffic use `security flow traceoptions` or packet capture.
+    rare: true
+
+  - cmd: show log messages | last 50
+    desc: The latest system log entries.
+    kind: show
+    mode: operational
+    tags: [log, syslog, messages, events]
+    example: |
+      show log messages | last 50
+      show log messages | match "ospf|bgp" | last 20
+    cisco: show logging
+
+  - cmd: show configuration <section> | display set
+    desc: Show the config (or part of it) as set commands. The easiest format to copy and compare.
+    kind: show
+    mode: operational
+    tags: [config, display set, routing-options, show]
+    example: |
+      show configuration routing-options | display set
+      show configuration protocols bgp | display set
+    rare: true
+
+  - cmd: show | compare / commit check / commit confirmed <minutes>
+    desc: In configuration mode, review the diff, check the syntax, then commit with an automatic rollback if you don't confirm.
+    kind: config
+    mode: configuration
+    tags: [commit, rollback, safety, compare, diff, confirmed]
+    example: |
+      configure
+      set routing-options static route 10.50.0.0/16 next-hop 10.255.0.2
+      show | compare
+      commit check
+      commit confirmed 5
+      commit
+    notes: >
+      After `commit confirmed 5`, run a plain `commit` (or `commit check`) within 5 minutes, or the SRX rolls back
+      on its own (the default is 10 minutes). `rollback 1` + `commit` restores the previous config.
+      Show the history with `show system commit`.
+    caution: Always use commit confirmed for remote changes that could cut off your own access.
+    cisco: no direct equivalent (reload in / archive config)
+
+  - cmd: set routing-options static route <prefix> next-hop <ip>
+    desc: Add a static route (configuration mode). In a routing instance prefix it with `set routing-instances <ri>`.
+    kind: config
+    mode: configuration
+    tags: [static, route, config, routing-options]
+    example: |
+      set routing-options static route 0.0.0.0/0 next-hop 203.0.113.1
+      set routing-instances CORP routing-options static route 10.60.0.0/16 next-hop 10.255.10.2
+    cisco: ip route
