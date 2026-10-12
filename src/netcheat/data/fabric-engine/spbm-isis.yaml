@@ -318,7 +318,8 @@ commands:
     notes: >
       This only works when the next hop to the IP is an IS-IS route to a remote BEB. If you get
       "MEP does not exist" in a VRF, the route is probably not learned through IS-IS. On a DvR leaf
-      the output may only show the DvR controllers.
+      the output may only show the DvR controllers. (The VRF hint comes from the Extreme community forum;
+      the DvR note is from the official command reference.)
     rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/l2_traceroute_ip_address.shtml
 

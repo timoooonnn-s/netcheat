@@ -36,11 +36,12 @@ def load_library(root: Path = DATA_DIR) -> Library:
 
     flows_file, concepts_file = root / "flows.yaml", root / "concepts.yaml"
     flows = tuple(
-        _build_flow(raw, f"{flows_file.name} #{i}") for i, raw in enumerate(_read(flows_file).get("flows", []), 1)
+        _build_flow(raw, f"{flows_file.name} #{i}")
+        for i, raw in enumerate(_list(_read(flows_file).get("flows"), f"{flows_file.name}: flows"), 1)
     )
     concepts = tuple(
         _build(Concept, raw, f"{concepts_file.name} #{i}")
-        for i, raw in enumerate(_read(concepts_file).get("concepts", []), 1)
+        for i, raw in enumerate(_list(_read(concepts_file).get("concepts"), f"{concepts_file.name}: concepts"), 1)
     )
     _ensure_unique([flow.id for flow in flows], "flow id")
     return Library(topics, flows, concepts)
@@ -53,7 +54,7 @@ def load_topic(path: Path, platform: str) -> Topic:
             raise DataError(f"{path.name}: missing top-level key '{key}'")
     commands = tuple(
         _build(Command, raw, f"{path.name} #{i}", platform=platform, topic=path.stem)
-        for i, raw in enumerate(doc["commands"] or [], 1)
+        for i, raw in enumerate(_list(doc["commands"], f"{path.name}: commands"), 1)
     )
     return Topic(path.stem, doc["title"], platform, doc.get("description", ""), path, commands)
 
@@ -72,7 +73,9 @@ def _read(path: Path) -> dict[str, Any]:
 
 def _build_flow(raw: Any, where: str) -> Flow:
     raw = _mapping(raw, where)
-    steps = tuple(_build(Step, step, f"{where} step {i}") for i, step in enumerate(raw.get("steps", []), 1))
+    steps = tuple(
+        _build(Step, step, f"{where} step {i}") for i, step in enumerate(_list(raw.get("steps"), f"{where}: steps"), 1)
+    )
     return _build(Flow, {**raw, "steps": steps}, where)
 
 
@@ -96,6 +99,15 @@ def _build(cls: type[T], raw: Any, where: str, **context: str) -> T:
         raise DataError(f"{where} ({label}): {err}") from err
 
 
+def _list(value: Any, where: str) -> list[Any]:
+    """A YAML list; an empty key (None) counts as an empty list."""
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise DataError(f"{where}: expected a list, got {type(value).__name__}")
+    return value
+
+
 def _mapping(raw: Any, where: str) -> dict[str, Any]:
     if not isinstance(raw, dict):
         raise DataError(f"{where}: expected a mapping, got {type(raw).__name__}")
@@ -106,8 +118,14 @@ def _clean(value: Any) -> Any:
     if isinstance(value, str):
         return value.strip()
     if isinstance(value, list):
-        return tuple(_clean(item) for item in value)
+        return tuple(_list_item(item) for item in value)
     return value
+
+
+def _list_item(item: Any) -> Any:
+    """Whole numbers such as model numbers (tags: [5520]) are fine as text; other non-strings stay and fail validation."""
+    is_whole_number = isinstance(item, int) and not isinstance(item, bool)
+    return str(item) if is_whole_number else _clean(item)
 
 
 def _ensure_unique(values: list[str], what: str) -> None:

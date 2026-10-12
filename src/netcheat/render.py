@@ -15,7 +15,7 @@ from rich.table import Table
 from rich.text import Text
 from rich.theme import Theme
 
-from netcheat.models import PLATFORMS, Command, Concept, Flow, Library
+from netcheat.models import Command, Concept, Flow, Library
 
 KIND_ICONS = {"show": "»", "config": "✎", "action": "►", "clear": "↺"}
 RARE, CAUTION, CISCO, NEW, REMOVED, LINK, FLOW, CONCEPT = "◆", "▲", "≈", "↑", "✕", "↗", "☰", "◇"
@@ -160,10 +160,7 @@ def print_concept_list(console: Console, concepts: Sequence[Concept]) -> None:
 
 def print_topics(console: Console, library: Library) -> None:
     table = _table("Topic", "Title", "Commands", f"{RARE} Gems")
-    for platform, name in PLATFORMS.items():
-        topics = [topic for topic in library.topics if topic.platform == platform]
-        if not topics:
-            continue
+    for name, topics in library.topics_by_platform():
         table.add_section()
         table.add_row(Text(name, style="label"), "", "", "")
         for topic in topics:

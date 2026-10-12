@@ -201,7 +201,7 @@ commands:
     desc: Static route in the GRT (Global Config) or in a VRF (VRF Router Config). discard creates a null route.
     kind: config
     mode: Global Config / VRF Router Config
-    tags: [static, route, default route, discard, null]
+    tags: [static, route, default route, discard, "null route"]
     example: |
       ip route 0.0.0.0/0 10.255.0.1 weight 10
       router vrf CORP

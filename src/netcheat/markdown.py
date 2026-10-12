@@ -23,6 +23,10 @@ def build_markdown(library: Library, out_dir: Path) -> list[Path]:
     pages["concepts.md"] = concepts_page(library)
     pages["README.md"] = index_page(library)
 
+    for stale in out_dir.glob("*.md"):
+        if stale.name not in pages and stale.read_text(encoding="utf-8").startswith(HEADER):
+            stale.unlink()  # a generated page whose topic was renamed or removed
+
     written = []
     for name, content in pages.items():
         path = out_dir / name
@@ -33,12 +37,10 @@ def build_markdown(library: Library, out_dir: Path) -> list[Path]:
 
 def index_page(library: Library) -> str:
     lines = ["# Network Cheatsheet", "", f"{len(library.commands)} commands. Legend: {LEGEND}", ""]
-    for platform, name in PLATFORMS.items():
-        topics = [topic for topic in library.topics if topic.platform == platform]
-        if topics:
-            lines += [f"## {name}", "", "| Topic | Commands | Description |", "|---|---|---|"]
-            lines += [f"| [{t.title}]({t.slug}.md) | {len(t.commands)} | {_cell(t.description)} |" for t in topics]
-            lines.append("")
+    for name, topics in library.topics_by_platform():
+        lines += [f"## {name}", "", "| Topic | Commands | Description |", "|---|---|---|"]
+        lines += [f"| [{t.title}]({t.slug}.md) | {len(t.commands)} | {_cell(t.description)} |" for t in topics]
+        lines.append("")
     lines += ["## Troubleshooting and background", "", f"- [Troubleshooting flows](flows.md) ({len(library.flows)})"]
     lines += [f"- [Concepts](concepts.md) ({len(library.concepts)})", ""]
     return "\n".join(lines)
@@ -62,8 +64,6 @@ def topic_page(topic: Topic) -> str:
                 lines += [_prose(command.notes), ""]
             if command.caution:
                 lines += [f"> {CAUTION} **Caution:** {_prose(command.caution)}", ""]
-            if command.ref:
-                lines += [f"Reference: <{command.ref}>", ""]
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -96,7 +96,9 @@ def _table_row(command: Command) -> str:
     desc = _cell(command.desc)
     if command.cisco:
         desc += f"<br>{CISCO} Cisco: {_code(command.cisco)}"
-    cmd = _code(command.cmd) + (" " + " ".join(badges) if badges else "")
+    cmd = f"[{_code(command.cmd)}]({command.ref})" if command.ref else _code(command.cmd)
+    if badges:
+        cmd += " " + " ".join(badges)
     return f"| {KIND_ICONS[command.kind]} | {cmd} | {desc} | {_cell(command.mode)} |"
 
 

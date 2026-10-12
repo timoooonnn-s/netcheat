@@ -1,0 +1,5 @@
+# Normalize line endings so YAML diffs stay clean across macOS, Linux and Windows.
+* text=auto eol=lf
+*.yaml text
+*.md text
+*.py text

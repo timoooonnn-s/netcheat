@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 
 PLATFORMS = {
@@ -21,8 +22,12 @@ def version_key(version: str) -> tuple[int, ...]:
     return tuple(int(part) for part in version.split("."))
 
 
+def is_version(value: object) -> bool:
+    return isinstance(value, str) and bool(_VERSION.match(value))
+
+
 def _check_version(name: str, value: str) -> None:
-    if value and not (isinstance(value, str) and _VERSION.match(value)):
+    if value and not is_version(value):
         raise ValueError(f"{name} must be a quoted version string like \"9.4\", got {value!r}")
 
 
@@ -34,6 +39,8 @@ def _check_platform(value: str) -> None:
 def _check_list(name: str, value: tuple[str, ...]) -> None:
     if not isinstance(value, tuple):
         raise ValueError(f"{name} must be a list, e.g. [{value}]")
+    if not all(isinstance(item, str) for item in value):
+        raise ValueError(f"every {name} entry must be text; quote words YAML treats specially (null, yes, no, on, off)")
 
 
 @dataclass(frozen=True)
@@ -117,9 +124,11 @@ class Library:
     flows: tuple[Flow, ...]
     concepts: tuple[Concept, ...]
 
-    @property
-    def commands(self) -> list[Command]:
-        return [command for topic in self.topics for command in topic.commands]
+    @cached_property
+    def commands(self) -> tuple[Command, ...]:
+        return tuple(command for topic in self.topics for command in topic.commands)
 
-    def topic(self, slug: str) -> Topic:
-        return next(topic for topic in self.topics if topic.slug == slug)
+    def topics_by_platform(self) -> list[tuple[str, list[Topic]]]:
+        """(platform display name, topics) in PLATFORMS order, skipping platforms without topics."""
+        grouped = [(name, [topic for topic in self.topics if topic.platform == key]) for key, name in PLATFORMS.items()]
+        return [(name, topics) for name, topics in grouped if topics]
