@@ -48,6 +48,11 @@ groups:
   - [log, logs, logging, syslog, alarm]
   - [ssh, telnet, management, mgmt, cli access, locked out]
 
+  # Multicast, edge security and HA
+  - [multicast, mcast, igmp, iptv, video stream, stream, receiver, receivers, sender, querier]
+  - [dhcp snooping, rogue dhcp, arp inspection, dai, source guard, ipsg, spoofing, spoof]
+  - [cluster, chassis cluster, failover, failed over, ha, primary, secondary, redundancy group, reth, split brain]
+
   # Juniper SRX
   - [srx, juniper, junos, firewall]
   - [policy, policies, zone, zones, session, sessions, flow mode, dropped by firewall]

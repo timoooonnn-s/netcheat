@@ -1,5 +1,5 @@
 # Fields: see README.md -> "Adding and editing commands". Keep `commands:` as the last key.
-title: Juniper SRX as a Router (basics)
+title: Juniper SRX Routing, Interfaces and Traffic
 description: The Junos operational commands you need when an SRX acts as a router. Routes, interfaces, OSPF/BGP, sessions, and safe changes with commit confirmed.
 
 commands:
@@ -187,3 +187,56 @@ commands:
       set routing-options static route 0.0.0.0/0 next-hop 203.0.113.1
       set routing-instances CORP routing-options static route 10.60.0.0/16 next-hop 10.255.10.2
     cisco: ip route
+
+  - cmd: show route hidden [detail]
+    desc: Routes the SRX received but cannot use (hidden), e.g. an unresolvable next hop or rejected by a policy.
+    kind: show
+    mode: operational
+    tags: [route, hidden, next hop, bgp, policy, troubleshooting]
+    notes: A prefix that a peer sends but that is missing from the routing table is usually here; `detail` shows why.
+    rare: true
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-route-hidden.html
+
+  - cmd: show bfd session [detail]
+    desc: BFD sessions to routing neighbors with state, interval and detection time.
+    kind: show
+    mode: operational
+    tags: [bfd, neighbor, failover, ospf, bgp, static]
+    rare: true
+    cisco: show bfd neighbors
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-bfd-session.html
+
+  - cmd: show interfaces diagnostics optics <interface>
+    desc: Optics DOM values of a transceiver (Rx/Tx power, laser bias, temperature) with alarm thresholds.
+    kind: show
+    mode: operational
+    tags: [optics, sfp, transceiver, dom, light, fiber, errors]
+    notes: High or low warnings or alarms point to a dirty or bad fiber or a failing optic. Compare with the far end.
+    rare: true
+    cisco: show interfaces transceiver detail
+
+  - cmd: monitor interface <interface>
+    desc: Live, refreshing traffic and error counters of an interface (`monitor interface traffic` for all interfaces).
+    kind: show
+    mode: operational
+    tags: [monitor, live, traffic, errors, utilization]
+    notes: Leave with q. The counters update in place, so you see whether errors are increasing right now.
+    rare: true
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/monitor-interface.html
+
+  - cmd: clear interfaces statistics <interface>
+    desc: Reset the counters of an interface, so you can see what increases from now on.
+    kind: clear
+    mode: operational
+    tags: [counters, statistics, errors, clear]
+    cisco: clear counters
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/clear-interfaces-statistics.html
+
+  - cmd: show lldp neighbors [interface <interface>]
+    desc: LLDP neighbors per interface. Shows what the SRX is actually connected to.
+    kind: show
+    mode: operational
+    tags: [lldp, neighbor, topology, cabling]
+    notes: If nothing shows, check that LLDP is enabled for the interface under `protocols lldp`.
+    cisco: show lldp neighbors
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-lldp-neighbors.html

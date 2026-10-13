@@ -371,7 +371,12 @@ commands:
       interface gigabitEthernet 1/1-1/24
       slpp packet-rx
       slpp packet-rx-threshold 5
-    notes: SLPP sends test packets per VLAN. An access port that receives its own SLPP packets is shut down (packet-rx). Typical design is to enable packet-rx on access ports only, not on NNIs or vIST/SMLT links.
+    notes: >
+      SLPP sends test packets per VLAN, and a port that receives them back is shut down (packet-rx). The receive
+      threshold defaults to 1 and counts all VLANs of a tagged port together. The official values for access-facing
+      SMLT ports of a vIST pair are threshold 5 on the primary and 50 on the secondary peer (so only one side shuts
+      down); do not use packet-rx on core SMLT links. SLPP must be enabled on both vIST peers. Thresholds above 50 risk
+      a high CPU during a loop on busy switches. Also rate-limit broadcast and multicast on access ports.
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/slpp_globally.shtml
 
   - cmd: show slpp interface gigabitEthernet [<ports>]
@@ -387,7 +392,11 @@ commands:
     kind: config
     mode: Interface Config
     tags: [loop, slpp-guard, edge, protection]
-    notes: Protects against loops built through downstream switches (for example ERS or EXOS stacks). Check it with `show slpp-guard`.
+    notes: >
+      Protects against loops built through downstream switches (for example ERS or EXOS stacks). Use it on access
+      switches' access ports, never on NNI uplinks (community guidance). On DvR and Anycast Gateway VLANs, SLPP Guard
+      also recognizes the gateway keep-alive packets, so it detects loops there without SLPP-TX on the VLAN.
+      Check it with `show slpp-guard`.
     rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/slpp_guard_for_a_port.shtml
 
@@ -440,3 +449,42 @@ commands:
     rare: true
     cisco: switchport port-security maximum
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/mac_security_limit_learning.shtml
+
+  - cmd: auto-recover-port port <ports> enable
+    desc: Bring a port back automatically after SLPP or spoof detection shut it down.
+    kind: config
+    mode: Interface Config
+    tags: [slpp, auto recovery, shutdown, spoof, port]
+    notes: Without it, a port that SLPP shut down stays down until someone runs `no shutdown`. Only use it when the loop source is under control, otherwise the port flaps in and out.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/auto_recover_port.shtml
+
+  - cmd: link-flap-detect auto-port-down / link-flap-detect frequency <n> interval <sec>
+    desc: Shut down a port automatically when its link flaps too often (default 20 changes in 60 s).
+    kind: config
+    mode: Global Config
+    tags: [flap, link flap, auto shutdown, port, stability]
+    example: |
+      link-flap-detect frequency 10
+      link-flap-detect interval 60
+      link-flap-detect auto-port-down
+    notes: auto-port-down is off by default (only a trap is sent). Check the settings with `show link-flap-detect`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/link_flap_detect.shtml
+
+  - cmd: show spanning-tree mstp status / show spanning-tree mstp port role <ports>
+    desc: MSTP bridge status (root bridge, topology changes) and port roles at the edge of the fabric.
+    kind: show
+    mode: User EXEC
+    tags: [stp, mstp, root, port role, topology change, edge]
+    notes: The fabric core needs no spanning tree, but access switches and SMLT edges still run MSTP. Frequent topology changes flush MAC tables and look like short outages.
+    cisco: show spanning-tree
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_spanning_tree_mstp_status.shtml
+
+  - cmd: show tdr-test [port <ports>]
+    desc: The results of the last cable test (tdr-test) per pair, with status and distance.
+    kind: show
+    mode: User EXEC
+    tags: [cable, tdr, copper, test, results]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_tdr_test.shtml

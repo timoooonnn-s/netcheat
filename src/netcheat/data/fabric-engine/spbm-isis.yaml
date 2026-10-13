@@ -366,3 +366,37 @@ commands:
     notes: Set the range with `spbm nick-name server prefix <x.x0.00>`. Clients without a static nickname get one automatically. Configure at least two servers for redundancy.
     rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/spbm_nick_name_server.shtml
+
+  - cmd: show isis int-auth
+    desc: IS-IS hello authentication per interface (type and key ID, not the key).
+    kind: show
+    mode: User EXEC
+    tags: [isis, authentication, hello, nni, mismatch]
+    notes: Compare both ends of a link that does not come up. For Auto-sense NNIs, the global `show auto-sense isis` applies.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_int_auth.shtml
+
+  - cmd: show isis statistics
+    desc: Global IS-IS counters (LSP and SPF activity, errors, dropped PDUs).
+    kind: show
+    mode: User EXEC
+    tags: [isis, statistics, lsp, spf, errors]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_statistics.shtml
+
+  - cmd: show isis logical-interface [name]
+    desc: Logical IS-IS interfaces (Fabric Extend tunnels over an IP or L2 network) and their state.
+    kind: show
+    mode: User EXEC
+    tags: [fabric extend, logical interface, tunnel, ip, wan, isis]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_logical_interface.shtml
+
+  - cmd: show spbm nick-name server leases
+    desc: The nicknames the dynamic nickname server has handed out, per system-id.
+    kind: show
+    mode: User EXEC
+    tags: [nickname, server, leases, ztf, dynamic]
+    notes: Run it on the nickname server switch. A switch without a static nickname that is missing here never got one.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_spbm_nick_name_server_leases.shtml

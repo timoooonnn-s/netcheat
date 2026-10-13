@@ -1,0 +1,67 @@
+# Fields: see README.md -> "Adding and editing content". Keep `commands:` as the last key.
+title: QoS, Filters and Traffic Monitoring
+description: Queue drops per port and toward the CPU, ACL filter counters, and flow monitoring with sFlow and IPFIX.
+
+commands:
+  - cmd: show qos cosq-stats interface [<ports>]
+    desc: Egress queue counters per port. Forwarded and dropped packets per queue, which shows congestion and microbursts.
+    kind: show
+    mode: User EXEC
+    tags: [qos, queue, drops, congestion, discards, egress]
+    notes: Drops in one queue mean that traffic class runs out of buffer. Reset with `clear qos cosq-stats interface <ports>` and watch whether they still increase.
+    rare: true
+    cisco: show interfaces <if> counters / show policy-map interface
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_qos_cosq_stats.shtml
+
+  - cmd: show qos cosq-stats cpu-port
+    desc: Queue counters toward the CPU. Dropped control-plane packets explain flapping protocols under load.
+    kind: show
+    mode: User EXEC
+    tags: [qos, cpu, control plane, drops, khi, protocols]
+    notes: Pair it with `show khi cpp port-statistics` to see which port and packet type sends the load.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_qos_cosq_stats_cpu_port.shtml
+
+  - cmd: clear qos cosq-stats [interface <ports> | cpu-port]
+    desc: Reset the queue counters.
+    kind: clear
+    mode: Privileged EXEC
+    tags: [qos, counters, clear]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/clear_qos_cosq_stats.shtml
+
+  - cmd: show filter acl statistics [<acl-id>] [all]
+    desc: Hit counters of ACL filters. Shows whether a filter actually matches traffic.
+    kind: show
+    mode: Privileged EXEC
+    tags: [acl, filter, counters, hits, security]
+    notes: If a counter stays at 0, check the ACL is attached to the port or VLAN and the ACE is enabled. Counting can be switched off per ACE (an EDM option since 9.2). Show the filter itself with `show filter acl config [<acl-id>]`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_filter_acl_statistics.shtml
+
+  - cmd: show io filters {all | statistics}
+    desc: The filters installed in the hardware (ASIC). Use it when a configured filter does not seem to work.
+    kind: show
+    mode: User EXEC
+    tags: [filter, acl, hardware, asic, debug]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_io_filters.shtml
+
+  - cmd: show sflow / show sflow statistics
+    desc: sFlow settings (agent, collectors, sampling per port) and the counters of samples sent.
+    kind: show
+    mode: User EXEC
+    tags: [sflow, monitoring, sampling, collector, traffic analysis]
+    notes: Per-port sampling is set with `sflow sampling-rate` in Interface Config.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_sflow.shtml
+
+  - cmd: show ip ipfix flows
+    desc: The IPFIX flow cache. Flows with source, destination, ports and VLAN as the switch sees them.
+    kind: show
+    mode: User EXEC
+    tags: [ipfix, netflow, flows, monitoring, traffic analysis]
+    notes: Since 9.4 IPFIX can be enabled per UNI port or on all NNIs (`ip ipfix port <ports> enable`, `ip ipfix nni enable`).
+    rare: true
+    cisco: show flow monitor cache
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_ipfix_flows.shtml

@@ -335,3 +335,42 @@ concepts:
     see:
       - "show route <prefix> [exact] [table <instance>.inet.0]"
       - "ping <ip> source <ip> [routing-instance <ri>] [rapid count <n>] [size <bytes> do-not-fragment]"
+
+  - term: IGMP querier
+    aka: [igmp snooping, snoop-spb, querier, l2 querier]
+    platform: fabric-engine
+    text: >
+      IGMP snooping only learns receivers if a querier asks for them periodically. On an L2 VSN, the BEBs are the
+      queriers (source address 0.0.0.0 unless you set one), and they must be the only queriers in the VLAN. A VLAN
+      with an I-SID and IGMP snooping runs in mode snoop-spb, which is IP multicast over Fabric Connect for that L2 VSN.
+      Each stream that enters the fabric gets its own data I-SID.
+    see:
+      - "show ip igmp interface [vlan <vid>] [vrf <vrf>]"
+      - "ip igmp snoop-querier / ip igmp snoop-querier-addr <ip>"
+      - "show isis spbm ip-multicast-route [all | detail]"
+
+  - term: DHCP snooping, DAI and IP Source Guard
+    aka: [dhcp snooping, dai, dynamic arp inspection, ipsg, ip source guard, first hop security]
+    platform: fabric-engine
+    text: >
+      Three layers of first-hop protection built on each other. DHCP snooping blocks rogue DHCP servers on untrusted
+      ports and records which client got which IP on which port. Dynamic ARP Inspection drops ARPs that contradict
+      those bindings (ARP spoofing). IP Source Guard only lets the bound source IPs out of a port. Uplinks must be
+      trusted, and clients with static IPs need static bindings.
+    see:
+      - "ip dhcp-snooping enable"
+      - "show ip dhcp-snooping binding [vlan <vid>] [summary]"
+      - "ip arp-inspection enable"
+      - "ip source verify enable"
+
+  - term: SRX chassis cluster
+    aka: [chassis cluster, srx ha, redundancy group, reth, rg0, rg1]
+    platform: junos-srx
+    text: >
+      Two SRX nodes form one logical firewall. Redundancy group 0 holds the Routing Engine (control plane), groups 1
+      and higher hold reth interfaces (data plane), each with its own primary node and priorities. A control link and a
+      fabric link connect the nodes; interface or IP monitoring lowers a node's priority (to 0) and triggers a failover.
+    see:
+      - "show chassis cluster status [redundancy-group <n>]"
+      - "show chassis cluster interfaces"
+      - "show chassis cluster information"

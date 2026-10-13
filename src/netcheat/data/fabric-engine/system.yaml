@@ -526,3 +526,38 @@ commands:
     example: monitor ports error 1/12 main
     rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/monitor_ports_error.shtml
+
+  - cmd: show application iqagent status
+    desc: The ExtremeCloud IQ agent status. Shows whether the switch is connected to ExtremeCloud IQ.
+    kind: show
+    mode: User EXEC
+    tags: [xiq, extremecloud iq, iqagent, cloud, management, onboarding]
+    notes: '`show application iqagent` shows the agent settings (server, proxy).'
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_application_iqagent_status.shtml
+
+  - cmd: show khi cpp port-statistics [<ports>]
+    desc: Which packet types and protocols each port sends to the CPU. The main tool to find the cause of a high CPU.
+    kind: show
+    mode: User EXEC
+    tags: [cpu, control plane, khi, protocols, high cpu, arp, broadcast]
+    example: show khi cpp port-statistics 1/1-1/48
+    notes: A port with a huge ARP, broadcast or IGMP count is usually the source (loop, scanner, misbehaving host). On an MLT the counters increase equally on all members.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_khi_cpp.shtml
+
+  - cmd: trace level <module-id> <0-4> / trace screen enable / trace shutdown
+    desc: Debug tracing of a software module (0 off to 4 verbose), shown on screen; trace shutdown stops all tracing.
+    kind: action
+    mode: User EXEC
+    tags: [trace, debug, module, troubleshooting, tac]
+    example: |
+      trace level 14 3
+      trace screen enable
+      trace shutdown
+    notes: >
+      The module IDs differ per platform; use the CLI help (`trace level ?`). The official vIST troubleshooting
+      procedure uses module 14 to watch ARP requests and replies, as in the example. Usually requested by Extreme GTAC.
+    caution: Verbose tracing can load the CPU. Always end with `trace shutdown`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/trace_level.shtml

@@ -322,3 +322,39 @@ commands:
       that support only one VRF.
     rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VRF_Router_Configuration/segmented.shtml
+
+  - cmd: show ip bfd neighbors [vrf <vrf>]
+    desc: BFD sessions to routing neighbors, with state and timers.
+    kind: show
+    mode: User EXEC
+    tags: [bfd, neighbor, failover, routing, ospf, bgp, static]
+    rare: true
+    cisco: show bfd neighbors
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_bfd_neighbors.shtml
+
+  - cmd: show ip route preference [vrf <vrf>]
+    desc: The route preference (administrative distance) per protocol.
+    kind: show
+    mode: User EXEC
+    tags: [preference, administrative distance, routing, isis, static, ospf]
+    notes: Explains which of two routes to the same prefix wins, e.g. a static route versus one learned from IS-IS.
+    rare: true
+    cisco: administrative distance
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_route_preference.shtml
+
+  - cmd: show ip vrrp interface vlan [<vid>] [verbose]
+    desc: VRRP details per VLAN (priority, preempt, timers, backup-master).
+    kind: show
+    mode: User EXEC
+    tags: [vrrp, vlan, priority, preempt, gateway]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_vrrp_interface_vlan.shtml
+
+  - cmd: show ipv6 route [vrf <vrf>] / show ipv6 neighbor
+    desc: The IPv6 routing table and neighbor cache (the IPv6 counterparts of show ip route and show ip arp).
+    kind: show
+    mode: User EXEC
+    tags: [ipv6, route, neighbor, ndp, routing]
+    notes: '`show ipv6 interface vlan <vid>` shows the IPv6 addresses of an interface.'
+    cisco: show ipv6 route / show ipv6 neighbors
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ipv6_route.shtml

@@ -2,7 +2,7 @@
 
 # Ports, VLANs and Loop Protection
 
-_Extreme Fabric Engine · 44 commands_
+_Extreme Fabric Engine · 48 commands_
 
 Port status, counters and settings, platform VLANs, MAC tables, LLDP, PoE, mirroring and loop protection (SLPP, BPDU Guard).
 
@@ -54,6 +54,10 @@ Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem 
 | ✎ | [`spanning-tree mstp restricted-tcn enable`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/spanning-tree_mstp_restricted-tcn_enable.shtml) ◆ ↑ 9.4 | Do not pass on topology change notifications (TCNs) received on this port. | Interface Config |
 | ✎ | [`vlacp enable`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/vlacp.shtml) ◆ | VLACP keepalive between two ports, end to end even across a provider link. Detects one-way and "link up but dead" paths.<br>≈ Cisco: `udld (similar idea)` | Interface Config |
 | ✎ | [`mac-security limit-learning max-addrs <1-64000>`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/mac_security_limit_learning.shtml) ◆ | Limit the number of MAC addresses learned on a port (default 1024 once enabled).<br>≈ Cisco: `switchport port-security maximum` | Interface Config |
+| ✎ | [`auto-recover-port port <ports> enable`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/auto_recover_port.shtml) ◆ | Bring a port back automatically after SLPP or spoof detection shut it down. | Interface Config |
+| ✎ | [`link-flap-detect auto-port-down / link-flap-detect frequency <n> interval <sec>`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/link_flap_detect.shtml) ◆ | Shut down a port automatically when its link flaps too often (default 20 changes in 60 s). | Global Config |
+| » | [`show spanning-tree mstp status / show spanning-tree mstp port role <ports>`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_spanning_tree_mstp_status.shtml) | MSTP bridge status (root bridge, topology changes) and port roles at the edge of the fabric.<br>≈ Cisco: `show spanning-tree` | User EXEC |
+| » | [`show tdr-test [port <ports>]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_tdr_test.shtml) ◆ | The results of the last cable test (tdr-test) per pair, with status and distance. | User EXEC |
 
 ## Details
 
@@ -267,7 +271,7 @@ slpp packet-rx
 slpp packet-rx-threshold 5
 ```
 
-SLPP sends test packets per VLAN. An access port that receives its own SLPP packets is shut down (packet-rx). Typical design is to enable packet-rx on access ports only, not on NNIs or vIST/SMLT links.
+SLPP sends test packets per VLAN, and a port that receives them back is shut down (packet-rx). The receive threshold defaults to 1 and counts all VLANs of a tagged port together. The official values for access-facing SMLT ports of a vIST pair are threshold 5 on the primary and 50 on the secondary peer (so only one side shuts down); do not use packet-rx on core SMLT links. SLPP must be enabled on both vIST peers. Thresholds above 50 risk a high CPU during a loop on busy switches. Also rate-limit broadcast and multicast on access ports.
 
 
 ### `show slpp interface gigabitEthernet [<ports>]`
@@ -277,7 +281,7 @@ SLPP sends test packets per VLAN. An access port that receives its own SLPP pack
 
 ### `slpp-guard enable [timeout <0 | 10-65535>]`
 
-Protects against loops built through downstream switches (for example ERS or EXOS stacks). Check it with `show slpp-guard`.
+Protects against loops built through downstream switches (for example ERS or EXOS stacks). Use it on access switches' access ports, never on NNI uplinks (community guidance). On DvR and Anycast Gateway VLANs, SLPP Guard also recognizes the gateway keep-alive packets, so it detects loops there without SLPP-TX on the VLAN. Check it with `show slpp-guard`.
 
 
 ### `spanning-tree bpduguard enable [timeout <0-65535>]`
@@ -296,3 +300,24 @@ VLACP must also be enabled globally (`vlacp enable` in Global Config). Check it 
 mac-security limit-learning max-addrs 10
 mac-security limit-learning enable
 ```
+
+
+### `auto-recover-port port <ports> enable`
+
+Without it, a port that SLPP shut down stays down until someone runs `no shutdown`. Only use it when the loop source is under control, otherwise the port flaps in and out.
+
+
+### `link-flap-detect auto-port-down / link-flap-detect frequency <n> interval <sec>`
+
+```
+link-flap-detect frequency 10
+link-flap-detect interval 60
+link-flap-detect auto-port-down
+```
+
+auto-port-down is off by default (only a trap is sent). Check the settings with `show link-flap-detect`.
+
+
+### `show spanning-tree mstp status / show spanning-tree mstp port role <ports>`
+
+The fabric core needs no spanning tree, but access switches and SMLT edges still run MSTP. Frequent topology changes flush MAC tables and look like short outages.

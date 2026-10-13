@@ -10,7 +10,7 @@ _Extreme Fabric Engine · id: `client-no-connectivity`_
 
 Work from the bottom up: link, authentication, VLAN/I-SID, MAC learning, gateway and DHCP. Most cases end in the first three steps.
 
-Typical symptoms: client has no network; pc gets no ip address; laptop cannot reach anything; user says the network is down; device on access port not working.
+Typical symptoms: client has no network; pc gets no ip address; laptop cannot reach anything; user says the network is down; device on access port not working; clients blocked after enabling dhcp snooping or arp inspection.
 
 1. **Is the port up, error-free, and does it have the expected name?**
    - `show interfaces gigabitEthernet name 1/5`
@@ -37,7 +37,12 @@ Typical symptoms: client has no network; pc gets no ip address; laptop cannot re
    - `show vlan i-sid 100`
    - `show isis spbm i-sid all id 20100`
    - Look for: The same I-SID on the access switch and on the BEB with the gateway (DvR, VRRP or firewall).
-7. **Does the client get DHCP, and is the gateway reachable?**
+7. **Is first-hop security dropping the client (DHCP snooping, DAI, IP Source Guard)?**
+   - `show ip dhcp-snooping binding vlan 100`
+   - `show ip arp-inspection vlan 100`
+   - `show ip source binding interface gigabitEthernet 1/5`
+   - Look for: A binding for the client's MAC and IP. Without one, DAI drops its ARPs and IP Source Guard its traffic; check that the uplink is trusted for DHCP snooping and DAI, and add static bindings for static-IP devices.
+8. **Does the client get DHCP, and is the gateway reachable?**
    - `show ip dhcp-relay counters vrf CORP`
    - `show ip arp 10.10.100.25`
    - `show dvr host-entries ipv4 10.10.100.25`
@@ -346,3 +351,66 @@ Typical symptoms: srx routes but traffic dropped; firewall drops routed traffic;
    - `show bgp summary`
    - `ping 10.20.30.40 source 10.255.0.1 rapid count 20`
    - Look for: Neighbors Full/Established, and a ping with the right source (the return route must also point back through the SRX).
+
+## Multicast stream does not reach the receivers
+
+_Extreme Fabric Engine · id: `multicast-not-working`_
+
+Multicast over the fabric needs SPBM multicast on every BEB, IGMP snooping on the VLAN (with the same I-SID everywhere), exactly one querier, and matching IGMP versions. Check sender, receivers, then the fabric between them.
+
+Typical symptoms: multicast not working; receivers get no stream; iptv or video stream missing at one site; multicast works locally but not across the fabric; multicast stream down or broken.
+
+1. **Is fabric multicast enabled on the BEBs?**
+   - `show isis spbm multicast`
+   - Look for: Multicast enabled on the sender's and every receiver's BEB (`spbm 1 multicast enable`).
+2. **Is IGMP snooping on, with the right mode and version?**
+   - `show ip igmp interface vlan 100`
+   - `show ip igmp snooping`
+   - Look for: Mode snoop-spb on the VLAN, the same IGMP version as the hosts, and a querier (snoop-querier) if there is no IP interface.
+3. **Does the switch see the sender and the receivers?**
+   - `show ip igmp sender group 239.1.1.10`
+   - `show ip igmp group group 239.1.1.10`
+   - Look for: The source on the sender's BEB, the joins on the receivers' BEBs. A missing join usually means an access switch without snooping or a version mismatch.
+4. **Is the stream carried through the fabric?**
+   - `show isis spbm ip-multicast-route detail`
+   - `l2 tracemroute source 10.10.100.50 group 239.1.1.10 vlan 100`
+   - Look for: The stream with its data I-SID and the receiving BEBs listed. If a receiving BEB is missing, check the I-SID and snooping there.
+5. **Is there a second querier?**
+   - `show ip igmp snooping`
+   - `show logging file tail | include IGMP`
+   - Look for: Only the BEBs may query on an L2 VSN. A multicast router or another switch querying in the same VLAN causes traffic loss.
+
+## Juniper SRX failed over, is slow or shows alarms
+
+_Juniper SRX · id: `srx-unhealthy-or-failover`_
+
+Work from the box's own view: alarms and hardware, then the control plane and the flow load, then the cluster state and why it changed. Collect data before you reboot anything.
+
+Typical symptoms: srx cluster failed over; firewall failover happened; srx slow or high cpu; srx shows alarms; srx rebooted unexpectedly.
+
+1. **Any alarms, and did it reboot?**
+   - `show chassis alarms`
+   - `show system alarms`
+   - `show system uptime`
+   - `show system core-dumps`
+   - Look for: No active alarms, an expected boot time, and no fresh core files. A recent unexpected boot with a core file is a crash case for JTAC.
+2. **Is the hardware healthy?**
+   - `show chassis environment`
+   - `show chassis hardware`
+   - Look for: All temperatures, fans and power supplies OK.
+3. **Control plane or data plane load?**
+   - `show chassis routing-engine`
+   - `show system processes extensive | no-more`
+   - `show security monitoring`
+   - `show security flow session summary`
+   - Look for: Routing Engine CPU and memory, the busiest processes, and flow (SPU) CPU and sessions against the maximum.
+4. **What is the cluster state, and why did it change?**
+   - `show chassis cluster status`
+   - `show chassis cluster interfaces`
+   - `show chassis cluster information`
+   - `show chassis cluster statistics`
+   - Look for: The expected primary per redundancy group, priority 0 for a failed monitored interface, control and fabric links up, and the event that triggered the failover.
+5. **Collect data for JTAC**
+   - `request support information | save /var/tmp/rsi.txt`
+   - `show log messages | last 200`
+   - Look for: Save the RSI and the logs before a reboot; a reboot erases the evidence.

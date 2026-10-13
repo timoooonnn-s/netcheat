@@ -2,7 +2,7 @@
 
 # DvR and Anycast Gateway
 
-_Extreme Fabric Engine · 16 commands_
+_Extreme Fabric Engine · 18 commands_
 
 Distributed Virtual Routing (controllers and leaves, host routes in the fabric) and Anycast IP Gateway.
 
@@ -26,6 +26,8 @@ Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem 
 | ↺ | [`clear dvr host-entries [ipv4 <ip>] [l3isid <isid>]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/clear_dvr_host_entries.shtml) ◆ | Delete DvR host entries, e.g. a stale entry after a client moved. | Privileged EXEC |
 | ✎ | [`ip anycast-gateway <gateway-ip> [vrid <1-255>] / ip anycast-gateway enable`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VLAN_Interface_Configuration/ip_anycast_gateway.shtml) ◆ | Anycast IP Gateway on a VLAN. The same gateway IP and MAC on many BEBs, without DvR controllers. | VLAN Interface Config |
 | » | [`show ip anycast-gateway interfaces [vrf <vrf>] / show ip anycast-gateway i-sid [<isid>] [all-routers]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_anycast_gateway_interfaces.shtml) ◆ | The local Anycast Gateway interfaces, and the routers that advertise each Anycast Gateway I-SID. | User EXEC |
+| » | [`show dvr backbone-members [controller \| non-dvr-beb]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_backbone_members.shtml) ◆ | The DvR backbone members (controllers and non-DvR BEBs that receive the host routes). | User EXEC |
+| » | [`show dvr redistribute [vrf <vrf>]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_redistribute.shtml) ◆ | What DvR redistributes in the domain (direct, static) per VRF. | User EXEC |
 
 ## Details
 

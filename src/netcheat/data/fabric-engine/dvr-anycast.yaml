@@ -160,3 +160,19 @@ commands:
     tags: [anycast, gateway, i-sid, routers]
     rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_anycast_gateway_interfaces.shtml
+
+  - cmd: show dvr backbone-members [controller | non-dvr-beb]
+    desc: The DvR backbone members (controllers and non-DvR BEBs that receive the host routes).
+    kind: show
+    mode: User EXEC
+    tags: [dvr, backbone, members, beb]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_backbone_members.shtml
+
+  - cmd: show dvr redistribute [vrf <vrf>]
+    desc: What DvR redistributes in the domain (direct, static) per VRF.
+    kind: show
+    mode: User EXEC
+    tags: [dvr, redistribute, routes]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_redistribute.shtml

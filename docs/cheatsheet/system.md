@@ -2,7 +2,7 @@
 
 # System, CLI and Files
 
-_Extreme Fabric Engine · 51 commands_
+_Extreme Fabric Engine · 54 commands_
 
 Inventory, logs, saving and backing up the config, software upgrades and CLI productivity.
 
@@ -61,6 +61,9 @@ Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem 
 | » | [`show sys mtu`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_sys_mtu.shtml) | The system-wide MTU (jumbo frames). | User EXEC |
 | » | [`monitor ports statistics <ports> interface utilization`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/monitor_ports_statistics_interface.shtml) ◆ | Live-updating port utilization (refreshes until you stop it). | Privileged EXEC |
 | » | [`monitor ports error <ports> main`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/monitor_ports_error.shtml) ◆ | Live-updating port error counters. Shows whether errors are still increasing right now. | Privileged EXEC |
+| » | [`show application iqagent status`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_application_iqagent_status.shtml) ◆ | The ExtremeCloud IQ agent status. Shows whether the switch is connected to ExtremeCloud IQ. | User EXEC |
+| » | [`show khi cpp port-statistics [<ports>]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_khi_cpp.shtml) ◆ | Which packet types and protocols each port sends to the CPU. The main tool to find the cause of a high CPU. | User EXEC |
+| ► | [`trace level <module-id> <0-4> / trace screen enable / trace shutdown`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/trace_level.shtml) ◆ ▲ | Debug tracing of a software module (0 off to 4 verbose), shown on screen; trace shutdown stops all tracing. | User EXEC |
 
 ## Details
 
@@ -380,3 +383,30 @@ Set the refresh interval and duration with `monitor-statistics interval <sec>` a
 ```
 monitor ports error 1/12 main
 ```
+
+
+### `show application iqagent status`
+
+`show application iqagent` shows the agent settings (server, proxy).
+
+
+### `show khi cpp port-statistics [<ports>]`
+
+```
+show khi cpp port-statistics 1/1-1/48
+```
+
+A port with a huge ARP, broadcast or IGMP count is usually the source (loop, scanner, misbehaving host). On an MLT the counters increase equally on all members.
+
+
+### `trace level <module-id> <0-4> / trace screen enable / trace shutdown`
+
+```
+trace level 14 3
+trace screen enable
+trace shutdown
+```
+
+The module IDs differ per platform; use the CLI help (`trace level ?`). The official vIST troubleshooting procedure uses module 14 to watch ARP requests and replies, as in the example. Usually requested by Extreme GTAC.
+
+> ▲ **Caution:** Verbose tracing can load the CPU. Always end with `trace shutdown`.

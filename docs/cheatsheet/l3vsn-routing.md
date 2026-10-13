@@ -2,7 +2,7 @@
 
 # L3 VSN, VRF and Routing
 
-_Extreme Fabric Engine · 29 commands_
+_Extreme Fabric Engine · 33 commands_
 
 VRFs and L3 VSNs (IP VPN over SPB), IP interfaces, routes, ARP, inter-VRF leaking, VRRP/RSMLT, DHCP relay, OSPF/BGP basics and Segmented VRF.
 
@@ -39,6 +39,10 @@ Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem 
 | » | [`show ip ospf neighbor [vrf <vrf>]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_ospf_neighbor.shtml) | OSPF neighbors and their state (should be Full).<br>≈ Cisco: `show ip ospf neighbor` | User EXEC |
 | » | [`show ip bgp summary [vrf <vrf>]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_bgp_summary.shtml) | BGP peers with state and number of prefixes received.<br>≈ Cisco: `show ip bgp summary` | User EXEC |
 | ✎ | [`segmented`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VRF_Router_Configuration/segmented.shtml) ◆ ↑ 9.4 | Split a VRF into trusted, unrestricted and untrusted segments (Segmented VRF). | VRF Router Config |
+| » | [`show ip bfd neighbors [vrf <vrf>]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_bfd_neighbors.shtml) ◆ | BFD sessions to routing neighbors, with state and timers.<br>≈ Cisco: `show bfd neighbors` | User EXEC |
+| » | [`show ip route preference [vrf <vrf>]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_route_preference.shtml) ◆ | The route preference (administrative distance) per protocol.<br>≈ Cisco: `administrative distance` | User EXEC |
+| » | [`show ip vrrp interface vlan [<vid>] [verbose]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_vrrp_interface_vlan.shtml) ◆ | VRRP details per VLAN (priority, preempt, timers, backup-master). | User EXEC |
+| » | [`show ipv6 route [vrf <vrf>] / show ipv6 neighbor`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ipv6_route.shtml) | The IPv6 routing table and neighbor cache (the IPv6 counterparts of show ip route and show ip arp).<br>≈ Cisco: `show ipv6 route / show ipv6 neighbors` | User EXEC |
 
 ## Details
 
@@ -238,3 +242,13 @@ The holddown timer defaults to 60 s; set it longer than your routing convergence
 ### `segmented`
 
 Clients in an untrusted VLAN only reach the unrestricted segment (for example the firewall), trusted clients reach trusted and unrestricted. IP VPN must be disabled when you enable it; re-enable IP VPN afterwards. The new segments get the suffixes -unr and -unt. Existing interfaces become trusted. With an L3 VSN it requires a Premier or subscription license. Not supported on the 7830 or on models that support only one VRF.
+
+
+### `show ip route preference [vrf <vrf>]`
+
+Explains which of two routes to the same prefix wins, e.g. a static route versus one learned from IS-IS.
+
+
+### `show ipv6 route [vrf <vrf>] / show ipv6 neighbor`
+
+`show ipv6 interface vlan <vid>` shows the IPv6 addresses of an interface.

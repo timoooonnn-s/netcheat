@@ -44,6 +44,12 @@ Change of Authorization lets the RADIUS server (ExtremeControl) act on an existi
 
 See: `radius dynamic-server client <nac-ip> secret <secret> enable`
 
+## DHCP snooping, DAI and IP Source Guard (dhcp snooping, dai, dynamic arp inspection, ipsg, ip source guard, first hop security)
+
+Three layers of first-hop protection built on each other. DHCP snooping blocks rogue DHCP servers on untrusted ports and records which client got which IP on which port. Dynamic ARP Inspection drops ARPs that contradict those bindings (ARP spoofing). IP Source Guard only lets the bound source IPs out of a port. Uplinks must be trusted, and clients with static IPs need static bindings.
+
+See: `ip dhcp-snooping enable`, `show ip dhcp-snooping binding [vlan <vid>] [summary]`, `ip arp-inspection enable`, `ip source verify enable`
+
 ## DvR (distributed virtual routing, dvr controller, dvr leaf, dvr domain)
 
 Distributed Virtual Routing puts the same gateway IP on every switch in a DvR domain, so traffic is routed at the first hop. Controllers own the config (subnets, gateway IP) and push it to the leaves. Host routes (/32) of clients are shared in the fabric, which avoids hairpinning through a central router. A leaf needs the dvr-leaf-mode boot flag, which wipes non-DvR L3 config.
@@ -73,6 +79,12 @@ See: `eapol port <ports> guest-isid <isid>`, `eapol port <ports> fail-open-isid 
 The 24-bit service ID in the fabric, comparable to a VLAN ID or VNI in the backbone. An L2 VSN, an L3 VSN (VRF), the vIST and DvR domains each use their own I-SID. Only the I-SID has to match across the fabric; the local VLAN ID mapped to it can differ per switch. Values above 15999999 are reserved by the system (onboarding uses 15999999 by default).
 
 See: `show i-sid [<isid>]`, `vlan i-sid <vid> <isid>`, `show isis spbm i-sid {all | config | discover} [id <isid>] [vlan <bvid>]`
+
+## IGMP querier (igmp snooping, snoop-spb, querier, l2 querier)
+
+IGMP snooping only learns receivers if a querier asks for them periodically. On an L2 VSN, the BEBs are the queriers (source address 0.0.0.0 unless you set one), and they must be the only queriers in the VLAN. A VLAN with an I-SID and IGMP snooping runs in mode snoop-spb, which is IP multicast over Fabric Connect for that L2 VSN. Each stream that enters the fabric gets its own data I-SID.
+
+See: `show ip igmp interface [vlan <vid>] [vrf <vrf>]`, `ip igmp snoop-querier / ip igmp snoop-querier-addr <ip>`, `show isis spbm ip-multicast-route [all | detail]`
 
 ## IP Shortcuts (grt shortcuts, global routing table over spb)
 
@@ -139,6 +151,12 @@ See: `slpp enable`, `show slpp interface gigabitEthernet [<ports>]`, `slpp-guard
 Shortest Path Bridging MAC (IEEE 802.1aq) is the technology behind Extreme Fabric Connect. Client frames are wrapped at the edge into a new Ethernet header (MAC-in-MAC, 802.1ah) with backbone MACs and an I-SID. IS-IS calculates loop-free shortest paths between all nodes, so there is no spanning tree in the core. Services (L2 VSN, L3 VSN, multicast) are configured only on the edge switches, not hop by hop.
 
 See: `show isis spbm`, `show isis adjacencies [verbose]`, `show isis spbm nick-name [home | remote]`
+
+## SRX chassis cluster (chassis cluster, srx ha, redundancy group, reth, rg0, rg1)
+
+Two SRX nodes form one logical firewall. Redundancy group 0 holds the Routing Engine (control plane), groups 1 and higher hold reth interfaces (data plane), each with its own primary node and priorities. A control link and a fabric link connect the nodes; interface or IP monitoring lowers a node's priority (to 0) and triggers a failover.
+
+See: `show chassis cluster status [redundancy-group <n>]`, `show chassis cluster interfaces`, `show chassis cluster information`
 
 ## SRX flow mode (flow-based, packet-based, stateful, sessions, security zones)
 

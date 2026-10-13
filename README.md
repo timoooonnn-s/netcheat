@@ -1,10 +1,10 @@
 # netcheat
 
 `ncs` is a command cheatsheet for the terminal. It covers **Extreme Fabric Engine (VOSS)** in depth and the
-**Juniper SRX** basics: 285 commands with descriptions, examples, notes, Cisco equivalents and links to the official
-Extreme documentation, plus 12 step-by-step troubleshooting flows and 28 short concept notes. Everything works offline.
+**Juniper SRX** troubleshooting basics: 361 commands with descriptions, examples, notes, Cisco equivalents and links to
+the official documentation, plus 14 step-by-step troubleshooting flows and 31 short concept notes. Everything works offline.
 
-It is an inventory of the commands you don't use every day: 135 of them are marked ◆ ("gem"), so you can look at
+It is an inventory of the commands you don't use every day: 187 of them are marked ◆ ("gem"), so you can look at
 them on purpose before you forget them.
 
 **[Quick start](#quick-start)**: install and the everyday how-tos.
@@ -260,15 +260,17 @@ The example values (port 1/5, VLAN 100, I-SID 20100, VRF CORP) are placeholders 
 | `port-errors-flapping` | a port flaps or counts errors |
 | `macsec-link-down` | a MACsec link passes no traffic |
 | `switch-slow-high-cpu` | the switch is slow or has a high CPU |
+| `multicast-not-working` | a multicast stream does not reach the receivers |
 | `srx-routed-traffic-dropped` | the SRX routes, but traffic does not pass |
+| `srx-unhealthy-or-failover` | the SRX failed over, is slow or shows alarms |
 
 ### Concepts
 
 `ncs concept` lists all concepts; `ncs concept <words>` shows the matching ones with a short explanation and the
 related commands. They cover the building blocks: SPBM, BEB/BCB, B-VLAN, nickname, system ID, I-SID, UNI/NNI,
 L2/L3 VSN, IP shortcuts, CLIP, vIST/SMLT, RSMLT, DvR, Anycast Gateway, Auto-sense, Fabric Attach, Zero Touch Fabric,
-EAP/NEAP, guest and fail-open I-SIDs, CoA, MACsec, SLPP, CFM, Segmented VRF, and for the SRX flow mode, the commit
-model and routing instances.
+EAP/NEAP, guest and fail-open I-SIDs, CoA, MACsec, SLPP, CFM, Segmented VRF, IGMP querier, DHCP snooping/DAI/IP Source
+Guard, and for the SRX flow mode, the commit model, routing instances and chassis cluster.
 
 ### Topics
 
@@ -276,17 +278,21 @@ Use the id with `-t`. `ncs topics` shows the current counts.
 
 | Topic id | Platform | Title | Commands |
 |---|---|---|---|
-| `auto-sense-fa` | Extreme Fabric Engine | Auto-sense, Fabric Attach and Zero Touch | 20 |
-| `dvr-anycast` | Extreme Fabric Engine | DvR and Anycast Gateway | 16 |
+| `auto-sense-fa` | Extreme Fabric Engine | Auto-sense, Fabric Attach and Zero Touch | 22 |
+| `dvr-anycast` | Extreme Fabric Engine | DvR and Anycast Gateway | 18 |
+| `edge-security` | Extreme Fabric Engine | Edge Security and Storm Control | 11 |
 | `l2vsn-isid` | Extreme Fabric Engine | L2 VSN and I-SID Services | 15 |
-| `l3vsn-routing` | Extreme Fabric Engine | L3 VSN, VRF and Routing | 29 |
+| `l3vsn-routing` | Extreme Fabric Engine | L3 VSN, VRF and Routing | 33 |
 | `macsec` | Extreme Fabric Engine | MACsec | 13 |
 | `mlt-smlt-vist` | Extreme Fabric Engine | MLT, SMLT, vIST and LACP | 18 |
-| `nac-eap-radius` | Extreme Fabric Engine | NAC, EAP/NEAP and RADIUS | 22 |
-| `ports` | Extreme Fabric Engine | Ports, VLANs and Loop Protection | 44 |
-| `spbm-isis` | Extreme Fabric Engine | SPBM, IS-IS and Fabric OAM | 36 |
-| `system` | Extreme Fabric Engine | System, CLI and Files | 51 |
-| `srx-routing` | Juniper SRX | Juniper SRX as a Router (basics) | 21 |
+| `multicast` | Extreme Fabric Engine | IP Multicast and IGMP | 14 |
+| `nac-eap-radius` | Extreme Fabric Engine | NAC, EAP/NEAP and RADIUS | 25 |
+| `ports` | Extreme Fabric Engine | Ports, VLANs and Loop Protection | 48 |
+| `qos-monitoring` | Extreme Fabric Engine | QoS, Filters and Traffic Monitoring | 7 |
+| `spbm-isis` | Extreme Fabric Engine | SPBM, IS-IS and Fabric OAM | 40 |
+| `system` | Extreme Fabric Engine | System, CLI and Files | 54 |
+| `srx-routing` | Juniper SRX | Juniper SRX Routing, Interfaces and Traffic | 27 |
+| `srx-system` | Juniper SRX | Juniper SRX System Health and Chassis Cluster | 16 |
 
 ### Tab completion
 

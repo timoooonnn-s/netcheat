@@ -2,7 +2,7 @@
 
 # Auto-sense, Fabric Attach and Zero Touch
 
-_Extreme Fabric Engine · 20 commands_
+_Extreme Fabric Engine · 22 commands_
 
 Auto-sense ports (UNI/NNI/FA/voice states), onboarding, data and voice I-SIDs, Fabric Attach for APs and switches, and Zero Touch Fabric.
 
@@ -30,6 +30,8 @@ Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem 
 | ✎ | [`fa enable`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/fa_enable_for_a_port.shtml) ◆ | Enable Fabric Attach (globally and on non-Auto-sense ports). | Global Config / Interface Config |
 | » | [`show endpoint-tracking bindings [summary]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_endpoint_tracking_bindings.shtml) ◆ | Endpoint Tracking bindings (VM/VLAN to I-SID), used for ExtremeCloud IQ Site Engine and EFA integrations. | User EXEC |
 | ✎ | [`service-probe enable`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/service-probe_enable.shtml) ◆ ↑ 9.2 | Network Service Probe. A test client interface on a VLAN to check DHCP, DNS and reachability from the client's point of view. | Global Config |
+| ✎ | [`auto-sense fa wap-type1 eapol status {authorized \| auto}`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/auto_sense_fa_wap_type1_eapol_status_authorized_auto.shtml) ◆ | Whether access points detected through Fabric Attach must authenticate (auto, default) or are authorized directly. | Global Config |
+| » | [`show fa zero-touch-client`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_fa_zero_touch_client.shtml) ◆ | The Fabric Attach zero-touch client settings (which device types get which management I-SID automatically). | User EXEC |
 
 ## Details
 
@@ -119,3 +121,8 @@ ping 10.0.0.10 service-probe
 ```
 
 Since 9.4 you can also test name resolution with `service-probe query dns` (primary, secondary or tertiary server).
+
+
+### `auto-sense fa wap-type1 eapol status {authorized | auto}`
+
+Known pitfall (community): with NAC on, the Auto-sense AP port runs MHMV, so the switch sends every wireless client MAC behind the AP to RADIUS as NEAP. Either let ExtremeControl return Extreme-Dynamic-MHSA=1 for APs (the port then authenticates only the AP), or set the status to authorized so APs skip EAP.

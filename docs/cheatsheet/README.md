@@ -2,33 +2,37 @@
 
 # Network Cheatsheet
 
-285 commands. Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem · ▲ caution · ↑ version added · ✕ removed
+361 commands. Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem · ▲ caution · ↑ version added · ✕ removed
 
 ## Extreme Fabric Engine
 
 | Topic | Commands | Description |
 |---|---|---|
-| [Auto-sense, Fabric Attach and Zero Touch](auto-sense-fa.md) | 20 | Auto-sense ports (UNI/NNI/FA/voice states), onboarding, data and voice I-SIDs, Fabric Attach for APs and switches, and Zero Touch Fabric. |
-| [DvR and Anycast Gateway](dvr-anycast.md) | 16 | Distributed Virtual Routing (controllers and leaves, host routes in the fabric) and Anycast IP Gateway. |
+| [Auto-sense, Fabric Attach and Zero Touch](auto-sense-fa.md) | 22 | Auto-sense ports (UNI/NNI/FA/voice states), onboarding, data and voice I-SIDs, Fabric Attach for APs and switches, and Zero Touch Fabric. |
+| [DvR and Anycast Gateway](dvr-anycast.md) | 18 | Distributed Virtual Routing (controllers and leaves, host routes in the fabric) and Anycast IP Gateway. |
+| [Edge Security and Storm Control](edge-security.md) | 11 | First-hop protection on access ports. DHCP snooping, Dynamic ARP Inspection, IP Source Guard, gateway spoof detection, and broadcast/multicast storm control. |
 | [L2 VSN and I-SID Services](l2vsn-isid.md) | 15 | Layer 2 services across the fabric. VLAN-to-I-SID mapping (C-VLAN), Switched UNI (ELAN), Transparent UNI and remote MAC learning. |
-| [L3 VSN, VRF and Routing](l3vsn-routing.md) | 29 | VRFs and L3 VSNs (IP VPN over SPB), IP interfaces, routes, ARP, inter-VRF leaking, VRRP/RSMLT, DHCP relay, OSPF/BGP basics and Segmented VRF. |
+| [L3 VSN, VRF and Routing](l3vsn-routing.md) | 33 | VRFs and L3 VSNs (IP VPN over SPB), IP interfaces, routes, ARP, inter-VRF leaking, VRRP/RSMLT, DHCP relay, OSPF/BGP basics and Segmented VRF. |
 | [MACsec](macsec.md) | 13 | Link encryption (802.1AE) with a static CAK or with MKA, MKA profiles and keychains (9.3+), status and counters. |
 | [MLT, SMLT, vIST and LACP](mlt-smlt-vist.md) | 18 | Link aggregation (static MLT and LACP) and dual-homing with SMLT over a virtual IST (vIST) through the fabric. |
-| [NAC, EAP/NEAP and RADIUS](nac-eap-radius.md) | 22 | Port-based access control with ExtremeControl (XIQ-SE NAC). 802.1X (EAP), MAC authentication (NEAP), RADIUS, CoA, guest and fail-open I-SIDs. |
-| [Ports, VLANs and Loop Protection](ports.md) | 44 | Port status, counters and settings, platform VLANs, MAC tables, LLDP, PoE, mirroring and loop protection (SLPP, BPDU Guard). |
-| [SPBM, IS-IS and Fabric OAM](spbm-isis.md) | 36 | The Fabric Connect core. IS-IS adjacencies, nicknames, B-VLANs, unicast and multicast FIBs, CFM, l2 ping and l2 traceroute. |
-| [System, CLI and Files](system.md) | 51 | Inventory, logs, saving and backing up the config, software upgrades and CLI productivity. |
+| [IP Multicast and IGMP](multicast.md) | 14 | IGMP snooping and queriers, IP multicast over Fabric Connect for L2 VSNs and routed (GRT / L3 VSN) multicast, and how to find receivers and senders. |
+| [NAC, EAP/NEAP and RADIUS](nac-eap-radius.md) | 25 | Port-based access control with ExtremeControl (XIQ-SE NAC). 802.1X (EAP), MAC authentication (NEAP), RADIUS, CoA, guest and fail-open I-SIDs. |
+| [Ports, VLANs and Loop Protection](ports.md) | 48 | Port status, counters and settings, platform VLANs, MAC tables, LLDP, PoE, mirroring and loop protection (SLPP, BPDU Guard). |
+| [QoS, Filters and Traffic Monitoring](qos-monitoring.md) | 7 | Queue drops per port and toward the CPU, ACL filter counters, and flow monitoring with sFlow and IPFIX. |
+| [SPBM, IS-IS and Fabric OAM](spbm-isis.md) | 40 | The Fabric Connect core. IS-IS adjacencies, nicknames, B-VLANs, unicast and multicast FIBs, CFM, l2 ping and l2 traceroute. |
+| [System, CLI and Files](system.md) | 54 | Inventory, logs, saving and backing up the config, software upgrades and CLI productivity. |
 
 ## Juniper SRX
 
 | Topic | Commands | Description |
 |---|---|---|
-| [Juniper SRX as a Router (basics)](srx-routing.md) | 21 | The Junos operational commands you need when an SRX acts as a router. Routes, interfaces, OSPF/BGP, sessions, and safe changes with commit confirmed. |
+| [Juniper SRX Routing, Interfaces and Traffic](srx-routing.md) | 27 | The Junos operational commands you need when an SRX acts as a router. Routes, interfaces, OSPF/BGP, sessions, and safe changes with commit confirmed. |
+| [Juniper SRX System Health and Chassis Cluster](srx-system.md) | 16 | Operational health checks for standalone and clustered SRX. Version and uptime, hardware and alarms, CPU and memory, storage and core dumps, cluster state, and data for a JTAC case. |
 
 ## Troubleshooting and background
 
-- [Troubleshooting flows](flows.md) (12)
-- [Concepts](concepts.md) (28)
+- [Troubleshooting flows](flows.md) (14)
+- [Concepts](concepts.md) (31)
 
 ---
 

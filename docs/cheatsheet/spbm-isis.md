@@ -2,7 +2,7 @@
 
 # SPBM, IS-IS and Fabric OAM
 
-_Extreme Fabric Engine · 36 commands_
+_Extreme Fabric Engine · 40 commands_
 
 The Fabric Connect core. IS-IS adjacencies, nicknames, B-VLANs, unicast and multicast FIBs, CFM, l2 ping and l2 traceroute.
 
@@ -46,6 +46,10 @@ Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem 
 | ► | [`l2 tracemroute source <src-ip> group <group-ip> [vlan <vid> \| vrf <vrf>]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/l2_tracemroute.shtml) ◆ | Trace an IP multicast stream (source, group) across the fabric. | User EXEC |
 | ► | [`l2 ping anycast-gw <isid> [vrf <vrf>]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/l2_ping_anycast-gw.shtml) ◆ ↑ 9.2 | Layer 2 ping to an Anycast IP Gateway I-SID. | User EXEC |
 | ✎ | [`spbm nick-name server`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/spbm_nick_name_server.shtml) ◆ | Make this switch a dynamic nickname server for Zero Touch Fabric. | Global Config |
+| » | [`show isis int-auth`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_int_auth.shtml) ◆ | IS-IS hello authentication per interface (type and key ID, not the key). | User EXEC |
+| » | [`show isis statistics`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_statistics.shtml) ◆ | Global IS-IS counters (LSP and SPF activity, errors, dropped PDUs). | User EXEC |
+| » | [`show isis logical-interface [name]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_logical_interface.shtml) ◆ | Logical IS-IS interfaces (Fabric Extend tunnels over an IP or L2 network) and their state. | User EXEC |
+| » | [`show spbm nick-name server leases`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_spbm_nick_name_server_leases.shtml) ◆ | The nicknames the dynamic nickname server has handed out, per system-id. | User EXEC |
 
 ## Details
 
@@ -248,3 +252,13 @@ l2 tracetree 4051 20100
 ### `spbm nick-name server`
 
 Set the range with `spbm nick-name server prefix <x.x0.00>`. Clients without a static nickname get one automatically. Configure at least two servers for redundancy.
+
+
+### `show isis int-auth`
+
+Compare both ends of a link that does not come up. For Auto-sense NNIs, the global `show auto-sense isis` applies.
+
+
+### `show spbm nick-name server leases`
+
+Run it on the nickname server switch. A switch without a static nickname that is missing here never got one.

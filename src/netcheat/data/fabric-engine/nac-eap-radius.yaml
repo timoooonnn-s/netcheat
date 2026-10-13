@@ -80,8 +80,10 @@ commands:
       radius server host 10.0.0.51 key <secret> used-by eapol acct-enable priority 2
     notes: >
       Add both NAC engines with different priorities. `used-by cli` is a separate entry for admin
-      logins. Since 9.3.1 the switch understands extra parameters in the Extreme-Dynamic-Client-Assignments
-      VSA (create=none, igmpqaddr=...), which ExtremeControl uses for dynamic VLAN/I-SID assignment.
+      logins. ExtremeControl assigns VLANs and I-SIDs dynamically with the Extreme-Dynamic-Client-Assignments
+      VSA. Dynamic VLANs and I-SIDs only exist while clients use them and are not saved in the config. The VSA is
+      not supported on MLT/SMLT ports, and it cannot create VLANs on a DvR leaf. Since 9.3.1 it also understands
+      create=none and igmpqaddr=....
     cisco: radius server <name> / aaa group server radius
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/radius_server_host.shtml
 
@@ -220,3 +222,26 @@ commands:
     tags: [nodealias, client, ip, hostname, find client]
     rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_nodealias_client_info.shtml
+
+  - cmd: show eapol session-stats interface [gigabitethernet <ports>]
+    desc: EAP authenticator session statistics per port (sessions, authentication method, terminations).
+    kind: show
+    mode: User EXEC
+    tags: [eap, sessions, statistics, termination]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_eapol_session_stats_interface.shtml
+
+  - cmd: show nodealias dhcp-fingerprint [mac <mac> | port <ports>]
+    desc: The DHCP fingerprint of a client, i.e. what kind of device it is (needs Node Alias).
+    kind: show
+    mode: User EXEC
+    tags: [nodealias, dhcp, fingerprint, device type, profiling]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_nodealias_dhcp_fingerprint.shtml
+
+  - cmd: clear radius statistics
+    desc: Reset the RADIUS server counters, to see whether timeouts or rejects are still increasing.
+    kind: clear
+    mode: Privileged EXEC
+    tags: [radius, statistics, clear, counters]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/clear_radius_statistics.shtml

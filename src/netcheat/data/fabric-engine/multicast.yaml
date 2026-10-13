@@ -1,0 +1,135 @@
+# Fields: see README.md -> "Adding and editing content". Keep `commands:` as the last key.
+title: IP Multicast and IGMP
+description: IGMP snooping and queriers, IP multicast over Fabric Connect for L2 VSNs and routed (GRT / L3 VSN) multicast, and how to find receivers and senders.
+
+commands:
+  - cmd: show ip igmp interface [vlan <vid>] [vrf <vrf>]
+    desc: IGMP per VLAN. Mode (snoop, snoop-spb, routed), version, querier and timers.
+    kind: show
+    mode: Privileged EXEC
+    tags: [igmp, snooping, querier, version, multicast, snoop-spb]
+    example: show ip igmp interface vlan 100
+    notes: >
+      A VLAN with an I-SID and IGMP snooping shows mode snoop-spb, which means IP multicast over Fabric Connect for an
+      L2 VSN. The IGMP version must match what the hosts and the access switches outside the fabric use.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_ip_igmp_interface.shtml
+
+  - cmd: show ip igmp snooping [vrf <vrf>]
+    desc: Snooping state per VLAN, including the configured L2 querier address.
+    kind: show
+    mode: Privileged EXEC
+    tags: [igmp, snooping, querier, multicast]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_ip_igmp_snooping.shtml
+
+  - cmd: show ip igmp group [group <group-ip>] [vrf <vrf>]
+    desc: The receivers. Which ports or UNIs joined which multicast group.
+    kind: show
+    mode: Privileged EXEC
+    tags: [igmp, group, receiver, join, multicast]
+    example: show ip igmp group group 239.1.1.10
+    notes: Shows dynamically learned and static groups. If a receiver is missing, the join never reached the switch (check the access switch and the IGMP version).
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_ip_igmp_group.shtml
+
+  - cmd: show ip igmp sender [group <group-ip>] [vrf <vrf>]
+    desc: The senders. Which sources the switch sees sending to a group.
+    kind: show
+    mode: Privileged EXEC
+    tags: [igmp, sender, source, stream, multicast]
+    notes: A stream only enters the fabric if it reaches a BEB. If the source is missing here, look at the sending side first.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_ip_igmp_sender.shtml
+
+  - cmd: show ip igmp snoop-trace [group <group-ip>] [source <src-ip>]
+    desc: The forwarding of snooped multicast streams. Incoming and outgoing ports per (source, group).
+    kind: show
+    mode: Privileged EXEC
+    tags: [igmp, snooping, trace, stream, ports, multicast]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_ip_igmp_snoop_trace.shtml
+
+  - cmd: show isis spbm multicast
+    desc: Whether IP multicast over Fabric Connect is enabled globally (spbm 1 multicast).
+    kind: show
+    mode: User EXEC
+    tags: [spbm, multicast, global, fabric]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_spbm_multicast.shtml
+
+  - cmd: show isis spbm ip-multicast-route [all | detail]
+    desc: The multicast streams in the fabric. Source, group, data I-SID and the BEBs that send and receive.
+    kind: show
+    mode: User EXEC
+    tags: [spbm, multicast, stream, data isid, fabric, route]
+    notes: Every stream that enters the fabric gets its own data I-SID. If a stream exists at the sender's BEB but the receiver's BEB is not listed, check that IGMP snooping and the I-SID are configured there too.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_spbm_ip_multicast_route.shtml
+
+  - cmd: show isis spb-mcast-summary [count]
+    desc: Summary of the multicast streams in the fabric per BEB (from the LSPs).
+    kind: show
+    mode: User EXEC
+    tags: [spbm, multicast, summary, streams, lsp]
+    notes: The reference lists the page as "show isis spb-mcast summary", but the syntax is the hyphenated `spb-mcast-summary`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_spb_mcast_summary.shtml
+
+  - cmd: show ip mroute route [vrf <vrf>]
+    desc: The multicast routing table for routed multicast (GRT or L3 VSN over SPB, or PIM).
+    kind: show
+    mode: User EXEC
+    tags: [mroute, multicast routing, pim, routed, l3vsn]
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_mroute_route.shtml
+
+  - cmd: spbm 1 multicast enable
+    desc: Enable IP multicast over Fabric Connect globally (needed for L2 VSN and routed multicast in the fabric).
+    kind: config
+    mode: IS-IS Router Config
+    tags: [spbm, multicast, enable, global]
+    notes: Enable it on every BEB that has senders or receivers.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/IS-IS_Router_Configuration/spbm_1_100_multicast.shtml
+
+  - cmd: ip igmp snooping
+    desc: Enable IGMP snooping on a VLAN. On a VLAN with an I-SID, this turns on IP multicast over Fabric Connect for the L2 VSN.
+    kind: config
+    mode: VLAN Interface Config
+    tags: [igmp, snooping, l2vsn, multicast, enable]
+    example: |
+      interface vlan 100
+        ip igmp snooping
+        ip igmp snoop-querier
+        ip igmp snoop-querier-addr 10.10.100.2
+    notes: >
+      There is no separate L2 VSN multicast command; snooping on a VLAN with an I-SID is enough. Configure the same
+      I-SID and snooping on every BEB of the VLAN. Only IPv4 multicast is supported over the fabric.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VLAN_Interface_Configuration/ip_igmp_snooping_for_a_vlan.shtml
+
+  - cmd: ip igmp snoop-querier / ip igmp snoop-querier-addr <ip>
+    desc: Make the switch the IGMP querier of a VLAN without an IP interface, with a querier source address.
+    kind: config
+    mode: VLAN Interface Config
+    tags: [igmp, querier, snooping, query, multicast]
+    notes: >
+      Snooping does not work without a querier. On an L2 VSN, the BEBs act as queriers (default source address 0.0.0.0;
+      set an address if other vendors' devices reject that). The BEB must be the only querier in the VLAN: an
+      upstream multicast router acting as querier in the same VLAN causes traffic loss. Unlike ERS switches,
+      VOSS edge switches need a querier on the receiver VLANs (community tip).
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VLAN_Interface_Configuration/ip_igmp_snoop_querier.shtml
+
+  - cmd: ip igmp version <1-3>
+    desc: The IGMP version of a VLAN (default 2). It must match the hosts and the access switches.
+    kind: config
+    mode: VLAN Interface Config
+    tags: [igmp, version, v2, v3, ssm]
+    notes: IGMPv3 additionally needs SSM snooping enabled on the VLAN (see the User Guide).
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VLAN_Interface_Configuration/ip_igmp_version_for_a_vlan.shtml
+
+  - cmd: ip spb-multicast enable
+    desc: Enable routed IP multicast over the fabric on a VLAN interface (GRT with IP shortcuts, or an L3 VSN).
+    kind: config
+    mode: VLAN Interface Config
+    tags: [routed multicast, l3vsn, grt, spb-multicast, multicast]
+    notes: Needs `spbm 1 multicast enable` and, for the GRT, IP shortcuts. Use `l2 tracemroute source <src> group <grp>` to trace a stream across the fabric.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VLAN_Interface_Configuration/ip_spb_multicast_enable_for_a_vlan.shtml

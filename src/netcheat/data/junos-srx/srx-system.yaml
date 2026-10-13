@@ -1,0 +1,143 @@
+# Fields: see README.md -> "Adding and editing content". Keep `commands:` as the last key.
+title: Juniper SRX System Health and Chassis Cluster
+description: Operational health checks for standalone and clustered SRX. Version and uptime, hardware and alarms, CPU and memory, storage and core dumps, cluster state, and data for a JTAC case.
+
+commands:
+  - cmd: show version
+    desc: Hostname, model and the running Junos version. On a cluster, shown per node.
+    kind: show
+    mode: operational
+    tags: [version, junos, model, release, inventory]
+    cisco: show version
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-version.html
+
+  - cmd: show system uptime
+    desc: Current time, when the system booted and the last configuration change.
+    kind: show
+    mode: operational
+    tags: [uptime, reboot, time, boot, last commit]
+    notes: An unexpected recent boot time points to a crash or power loss; check `show system core-dumps` next.
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-system-uptime.html
+
+  - cmd: show chassis hardware [detail]
+    desc: The hardware inventory with serial numbers (chassis, PICs, transceivers, power supplies).
+    kind: show
+    mode: operational
+    tags: [hardware, inventory, serial, sfp, transceiver, rma]
+    cisco: show inventory
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-hardware.html
+
+  - cmd: show chassis alarms / show system alarms
+    desc: Active hardware alarms (fans, power, temperature) and system alarms (e.g. rescue config, license, storage).
+    kind: show
+    mode: operational
+    tags: [alarms, hardware, health, fan, power, license]
+    notes: Both lists should be empty on a healthy box. A missing rescue configuration also raises a system alarm.
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-alarms.html
+
+  - cmd: show chassis environment
+    desc: Temperatures, fans and power supplies with their status.
+    kind: show
+    mode: operational
+    tags: [environment, temperature, fan, power, psu, health]
+    cisco: show environment
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-environment.html
+
+  - cmd: show chassis routing-engine
+    desc: Routing Engine CPU and memory usage, load averages and uptime.
+    kind: show
+    mode: operational
+    tags: [cpu, memory, routing engine, load, health]
+    notes: This is the control plane. Forwarding load (SPU or flow CPU) is shown by `show security monitoring`.
+    cisco: show processes cpu
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-routing-engine.html
+
+  - cmd: show system processes extensive
+    desc: A top-like view of the processes with the highest CPU and memory use on the Routing Engine.
+    kind: show
+    mode: operational
+    tags: [processes, cpu, memory, top, daemon]
+    example: show system processes extensive | no-more
+    rare: true
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-system-processes.html
+
+  - cmd: show security monitoring
+    desc: Flow-processing load per SPU/FPC (CPU, memory, current sessions versus the maximum).
+    kind: show
+    mode: operational
+    tags: [spu, flow cpu, sessions, capacity, performance, data plane]
+    notes: High flow CPU or a session table near its maximum explains drops even when routing and policies are correct.
+    rare: true
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-security-monitoring.html
+
+  - cmd: show security flow session summary
+    desc: Session counts (valid, pending, invalidated, failed) and the maximum the box supports.
+    kind: show
+    mode: operational
+    tags: [sessions, summary, capacity, flow, failed sessions]
+    notes: Many failed sessions point to policy or resource problems; filters such as `destination-prefix <ip>` also work with summary.
+    rare: true
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-security-flow-session.html
+
+  - cmd: show system storage
+    desc: Free disk space per file system. A full /var stops logging and can break commits.
+    kind: show
+    mode: operational
+    tags: [storage, disk, space, var, logs]
+    notes: '`request system storage cleanup dry-run` lists what a cleanup would delete (old logs, core files, images) without deleting anything.'
+    rare: true
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-system-storage.html
+
+  - cmd: show system core-dumps
+    desc: Core files of crashed processes. Their presence (and the date) shows whether something crashed.
+    kind: show
+    mode: operational
+    tags: [core dump, crash, process, jtac]
+    rare: true
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-system-core-dumps.html
+
+  - cmd: request support information | save /var/tmp/rsi-<date>.txt
+    desc: Collect the full support information (RSI) into a file for a JTAC case.
+    kind: action
+    mode: operational
+    tags: [jtac, support, rsi, case, tech-support]
+    notes: Run it before a reboot, while the problem is still there, and attach the file together with /var/log to the case.
+    cisco: show tech-support
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/request-support-information.html
+
+  - cmd: show chassis cluster status [redundancy-group <n>]
+    desc: Which node is primary or secondary per redundancy group, priorities and failover state.
+    kind: show
+    mode: operational
+    tags: [chassis cluster, ha, redundancy group, failover, primary, secondary]
+    notes: >
+      RG0 is the Routing Engine (control plane), RG1 and higher carry the reth interfaces (data plane). A priority of 0
+      means a monitored interface or IP failed on that node. A node shown as lost or disabled points to a control or
+      fabric link problem.
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-cluster-status.html
+
+  - cmd: show chassis cluster interfaces
+    desc: The control and fabric links between the nodes, and the reth interfaces with their redundancy groups.
+    kind: show
+    mode: operational
+    tags: [chassis cluster, control link, fabric link, reth, ha]
+    notes: Control and fabric links must be up; if both fail, the nodes can end up split-brain.
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-cluster-interfaces.html
+
+  - cmd: show chassis cluster statistics
+    desc: Heartbeat and synchronization counters on the control and fabric links (RTOs, probes).
+    kind: show
+    mode: operational
+    tags: [chassis cluster, heartbeat, probes, sync, ha]
+    notes: Increasing errors or missed heartbeats on the control link precede failovers.
+    rare: true
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-cluster-statistics.html
+
+  - cmd: show chassis cluster information
+    desc: Cluster event messages per node (health, monitored-object failures, failover history).
+    kind: show
+    mode: operational
+    tags: [chassis cluster, events, failover history, health, ha]
+    notes: The first place to look when you want to know why a failover happened.
+    rare: true
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-cluster-information.html

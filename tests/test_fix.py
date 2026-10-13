@@ -35,6 +35,11 @@ def library():
         ("encrypted link between cores has no traffic after key change", "macsec-link-down"),
         ("cli lagging and ssh slow on switch", "switch-slow-high-cpu"),
         ("juniper firewall not forwarding traffic", "srx-routed-traffic-dropped"),
+        ("iptv not working", "multicast-not-working"),
+        ("multicast stream not arriving at receivers in other building", "multicast-not-working"),
+        ("clients blocked after enabling dhcp snooping", "client-no-connectivity"),
+        ("srx cluster failed over last night", "srx-unhealthy-or-failover"),
+        ("srx shows alarms and is slow", "srx-unhealthy-or-failover"),
     ],
 )
 def test_problem_descriptions_find_the_right_flow(library, problem, flow):

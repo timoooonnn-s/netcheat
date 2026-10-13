@@ -2,7 +2,7 @@
 
 # NAC, EAP/NEAP and RADIUS
 
-_Extreme Fabric Engine · 22 commands_
+_Extreme Fabric Engine · 25 commands_
 
 Port-based access control with ExtremeControl (XIQ-SE NAC). 802.1X (EAP), MAC authentication (NEAP), RADIUS, CoA, guest and fail-open I-SIDs.
 
@@ -32,6 +32,9 @@ Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem 
 | ✎ | [`eapol traffic-control {in \| in-out}`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/eapol_traffic_control.shtml) ◆ | Which direction is blocked for unauthenticated clients. `in` allows outbound traffic (Wake-on-LAN). | Interface Config |
 | ✎ | [`nodealias enable`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/nodealias_enable_for_a_port.shtml) ◆ | Node Alias collects client details (IP, hostname, DHCP fingerprint) per MAC. Enable it globally and per port. | Global Config / Interface Config |
 | » | [`show nodealias client-info [mac <mac> \| port <ports>] [detail]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_nodealias_client_info.shtml) ◆ | Client details per MAC (IP, hostname, VLAN/I-SID, port). | User EXEC |
+| » | [`show eapol session-stats interface [gigabitethernet <ports>]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_eapol_session_stats_interface.shtml) ◆ | EAP authenticator session statistics per port (sessions, authentication method, terminations). | User EXEC |
+| » | [`show nodealias dhcp-fingerprint [mac <mac> \| port <ports>]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_nodealias_dhcp_fingerprint.shtml) ◆ | The DHCP fingerprint of a client, i.e. what kind of device it is (needs Node Alias). | User EXEC |
+| ↺ | [`clear radius statistics`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/clear_radius_statistics.shtml) | Reset the RADIUS server counters, to see whether timeouts or rejects are still increasing. | Privileged EXEC |
 
 ## Details
 
@@ -74,7 +77,7 @@ radius server host 10.0.0.50 key <secret> used-by eapol acct-enable priority 1
 radius server host 10.0.0.51 key <secret> used-by eapol acct-enable priority 2
 ```
 
-Add both NAC engines with different priorities. `used-by cli` is a separate entry for admin logins. Since 9.3.1 the switch understands extra parameters in the Extreme-Dynamic-Client-Assignments VSA (create=none, igmpqaddr=...), which ExtremeControl uses for dynamic VLAN/I-SID assignment.
+Add both NAC engines with different priorities. `used-by cli` is a separate entry for admin logins. ExtremeControl assigns VLANs and I-SIDs dynamically with the Extreme-Dynamic-Client-Assignments VSA. Dynamic VLANs and I-SIDs only exist while clients use them and are not saved in the config. The VSA is not supported on MLT/SMLT ports, and it cannot create VLANs on a DvR leaf. Since 9.3.1 it also understands create=none and igmpqaddr=....
 
 
 ### `radius dynamic-server client <nac-ip> secret <secret> enable`
