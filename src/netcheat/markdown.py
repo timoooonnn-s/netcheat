@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from netcheat import CREDIT
 from netcheat.models import PLATFORMS, Command, Library, Topic
 from netcheat.render import CAUTION, CISCO, KIND_ICONS, NEW, RARE, REMOVED
 
@@ -42,7 +43,7 @@ def index_page(library: Library) -> str:
         lines += [f"| [{t.title}]({t.slug}.md) | {len(t.commands)} | {_cell(t.description)} |" for t in topics]
         lines.append("")
     lines += ["## Troubleshooting and background", "", f"- [Troubleshooting flows](flows.md) ({len(library.flows)})"]
-    lines += [f"- [Concepts](concepts.md) ({len(library.concepts)})", ""]
+    lines += [f"- [Concepts](concepts.md) ({len(library.concepts)})", "", "---", "", f"_{CREDIT}_", ""]
     return "\n".join(lines)
 
 
@@ -71,6 +72,8 @@ def flows_page(library: Library) -> str:
     lines = ["# Troubleshooting Flows", "", "Work through the steps in order; each step narrows down the fault.", ""]
     for flow in library.flows:
         lines += [f"## {flow.title}", "", f"_{PLATFORMS[flow.platform]} · id: `{flow.id}`_", "", _prose(flow.summary), ""]
+        if flow.symptoms:
+            lines += ["Typical symptoms: " + "; ".join(_prose(symptom) for symptom in flow.symptoms) + ".", ""]
         for number, step in enumerate(flow.steps, 1):
             lines.append(f"{number}. **{step.title}**")
             lines += [f"   - `{cmd}`" for cmd in step.cmds]

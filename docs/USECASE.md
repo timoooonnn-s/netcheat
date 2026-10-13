@@ -18,6 +18,9 @@ A personal and team **inventory of commands**, so useful commands are not forgot
 - Organize by task and topic (SPBM, L2/L3 VSN, DvR, SMLT/vIST, NAC, MACsec...), not by CLI mode.
 - Mark commands that are rarely used but valuable ("gems"), so you can browse them on purpose (`ncs -r`, `ncs tip`).
 - Give guided **troubleshooting flows** for the common problems, and short **concept** notes for the building blocks.
+- **Browse** when you only have a broad idea (`ncs browse`), and **describe a problem in your own words** to get the
+  matching flow and commands (`ncs fix`), offline, using symptom phrasings and an editable synonym list.
+- **Tab completion** in zsh and bash for options, topics, flow ids and search words.
 - Be precise: every Fabric Engine command is checked against the official documentation, links to it, and is tagged
   with the release that introduced it, when that release is newer than 9.1.
 
@@ -62,6 +65,9 @@ Out of scope (on purpose):
 | Strict validation of the data | Hand edits by several people stay consistent. Errors name the file and entry, and tests check references and links. |
 | Unicode icons instead of emoji | Consistent rendering in every terminal font, as requested. |
 | `ncs add` appends text instead of rewriting YAML | Comments and layout of the hand-maintained files are preserved. |
+| `ncs fix` is keyword and synonym matching, not AI | Works on jump hosts without internet, sends no problem descriptions anywhere, and is deterministic and testable. Wording is improved by editing `synonyms.yaml` and flow `symptoms`. |
+| Browser built with Textual | From the authors of rich (already used), pure Python, works over SSH; it reuses the same render blocks as the CLI. |
+| Completion via `ncs __complete` | One small shell function per shell; candidates come from the argparse definition and the data, so they never drift. |
 
 ## Sources
 

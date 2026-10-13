@@ -1,0 +1,54 @@
+# Words and phrases that mean the same thing, used by `ncs fix "<problem description>"`.
+# If any entry of a group appears in a problem description, every entry of the group is used to find
+# matching flows and commands. Multi-word phrases are matched as a whole ("no ip"); single words also
+# match as a prefix ("flap" finds "flapping"). Add the words your team actually uses.
+groups:
+  # Clients and connectivity
+  - [client, user, pc, laptop, workstation, host, endpoint, device]
+  - [no network, no connectivity, no connection, not working, cannot reach, cant reach, unreachable, offline, no access, down, dead, broken, outage]
+  - [dhcp, no ip, ip address, apipa, "169.254", lease, relay, helper]
+  - [gateway, default gateway, first hop, vrrp, dvr, anycast]
+  - [slow, latency, lag, sluggish, performance, delay]
+  - [ping, icmp, reachability, traceroute]
+  - [wrong vlan, vlan, isid, i-sid, segment]
+
+  # NAC and authentication
+  - [nac, authentication, auth, authenticate, login, 802.1x, dot1x, eap, eapol, neap, mab, mac auth, radius, extremecontrol]
+  - [guest, fail-open, unauthenticated, onboarding]
+  - [phone, ip phone, voip, voice, handset]
+  - [printer, camera, iot, sensor, badge reader]
+  - [reject, rejected, denied, refused, blocked]
+
+  # Fabric
+  - [fabric, spb, spbm, isis, is-is, nni, uplink, core, backbone]
+  - [neighbor, neighbour, adjacency, adjacent, peer, init]
+  - [new switch, onboard, onboarding, zero touch, ztf, ztp, ztd, auto-sense, autosense, provisioning]
+  - [ap, access point, wap, wifi, wireless, wlan, fabric attach, fa]
+  - [remote site, other site, other building, two sites, two buildings, remote, site, building, branch]
+  - [same vlan, stretched vlan, stretched, layer 2, l2vsn, l2 vsn, remote mac]
+  - [route, routing, routes, routing table, prefix, subnet, network missing, route missing, l3vsn, l3 vsn, vrf, ipvpn, redistribute]
+  - [nickname, system-id, sysid, duplicate]
+  - [vist, ist, smlt, cluster, dual-homing, dual homed, mlt, lag, lacp, port-channel, etherchannel, bundle, split]
+
+  # Physical layer and stability
+  - [loop, storm, broadcast storm, broadcast, flooding, mac move, slpp, spanning tree, stp, bpdu]
+  - [flap, flapping, bounce, bouncing, up down, unstable, link down, link loss]
+  - [crc, errors, error, fcs, drops, dropped, discards, corrupted]
+  - [fiber, fibre, optic, optics, sfp, transceiver, light, dbm, ddm]
+  - [cable, copper, patch, tdr]
+  - [poe, power, powered, no power]
+
+  # Security and encryption
+  - [macsec, encryption, encrypted, mka, cak, keychain]
+
+  # Switch health
+  - [cpu, high cpu, memory, khi, process, overloaded, busy]
+  - [crash, reboot, rebooted, reset, hang, hung, frozen]
+  - [upgrade, firmware, software, release, image, update]
+  - [log, logs, logging, syslog, alarm]
+  - [ssh, telnet, management, mgmt, cli access, locked out]
+
+  # Juniper SRX
+  - [srx, juniper, junos, firewall]
+  - [policy, policies, zone, zones, session, sessions, flow mode, dropped by firewall]
+  - [bgp, ospf, routing protocol, neighbor down]

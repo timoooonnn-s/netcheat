@@ -88,10 +88,12 @@ class Flow:
     summary: str
     steps: tuple[Step, ...]
     tags: tuple[str, ...] = ()
+    symptoms: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         _check_platform(self.platform)
         _check_list("tags", self.tags)
+        _check_list("symptoms", self.symptoms)
 
 
 @dataclass(frozen=True)
@@ -109,6 +111,16 @@ class Concept:
 
 
 @dataclass(frozen=True)
+class SynonymGroup:
+    """Words and phrases that mean the same thing in a problem description, e.g. ap / access point / wap."""
+
+    words: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        _check_list("words", self.words)
+
+
+@dataclass(frozen=True)
 class Topic:
     slug: str
     title: str
@@ -123,6 +135,7 @@ class Library:
     topics: tuple[Topic, ...]
     flows: tuple[Flow, ...]
     concepts: tuple[Concept, ...]
+    synonyms: tuple[SynonymGroup, ...] = ()
 
     @cached_property
     def commands(self) -> tuple[Command, ...]:

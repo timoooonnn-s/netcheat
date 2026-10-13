@@ -4,6 +4,7 @@ Layout of the data directory:
     <platform>/<topic>.yaml   one topic per file, e.g. fabric-engine/spbm-isis.yaml
     flows.yaml                troubleshooting flows
     concepts.yaml             short concept explanations
+    synonyms.yaml             words that mean the same thing, for `ncs fix`
 """
 
 from __future__ import annotations
@@ -15,7 +16,7 @@ from typing import Any, TypeVar
 
 import yaml
 
-from netcheat.models import PLATFORMS, Command, Concept, Flow, Library, Step, Topic
+from netcheat.models import PLATFORMS, Command, Concept, Flow, Library, Step, SynonymGroup, Topic
 
 DATA_DIR = Path(os.environ.get("NETCHEAT_DATA", Path(__file__).parent / "data"))
 
@@ -27,6 +28,8 @@ class DataError(Exception):
 
 
 def load_library(root: Path = DATA_DIR) -> Library:
+    if not root.is_dir():
+        raise DataError(f"data folder not found: {root} (check NETCHEAT_DATA)")
     topics = tuple(
         load_topic(path, platform)
         for platform in PLATFORMS
@@ -43,8 +46,13 @@ def load_library(root: Path = DATA_DIR) -> Library:
         _build(Concept, raw, f"{concepts_file.name} #{i}")
         for i, raw in enumerate(_list(_read(concepts_file).get("concepts"), f"{concepts_file.name}: concepts"), 1)
     )
+    synonyms_file = root / "synonyms.yaml"
+    synonyms = tuple(
+        _build(SynonymGroup, {"words": raw}, f"{synonyms_file.name} #{i}")
+        for i, raw in enumerate(_list(_read(synonyms_file).get("groups"), f"{synonyms_file.name}: groups"), 1)
+    )
     _ensure_unique([flow.id for flow in flows], "flow id")
-    return Library(topics, flows, concepts)
+    return Library(topics, flows, concepts, synonyms)
 
 
 def load_topic(path: Path, platform: str) -> Topic:

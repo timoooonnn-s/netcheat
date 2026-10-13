@@ -5,6 +5,12 @@ flows:
     title: Client has no network connectivity
     platform: fabric-engine
     tags: [client, access, no network, port, vlan, dhcp, wired]
+    symptoms:
+      - client has no network
+      - pc gets no ip address
+      - laptop cannot reach anything
+      - user says the network is down
+      - device on access port not working
     summary: >
       Work from the bottom up: link, authentication, VLAN/I-SID, MAC learning, gateway and DHCP. Most cases
       end in the first three steps.
@@ -52,6 +58,13 @@ flows:
     title: Client is not authenticated or lands in the wrong VLAN/I-SID
     platform: fabric-engine
     tags: [nac, eap, neap, radius, extremecontrol, 802.1x, mac auth, guest]
+    symptoms:
+      - client not authenticated
+      - 802.1x fails
+      - radius reject
+      - client lands in guest vlan
+      - phone works but pc behind it does not
+      - wrong vlan after login
     summary: >
       Check the switch side first (EAP enabled, client seen, RADIUS reachable), then the decision in
       ExtremeControl. A reject means RADIUS answered and the policy decided. A timeout is a network or
@@ -89,6 +102,12 @@ flows:
     title: IS-IS adjacency on an NNI does not come up
     platform: fabric-engine
     tags: [isis, adjacency, nni, fabric, spbm, init, auth]
+    symptoms:
+      - isis neighbor not coming up
+      - adjacency stuck in init
+      - nni link up but no fabric
+      - new uplink does not join the fabric
+      - hello authentication mismatch
     summary: >
       An adjacency needs a working link, IS-IS on both ends, the same area, the same B-VLANs and primary
       B-VLAN, matching hello authentication and unique system-ids and nicknames.
@@ -129,6 +148,11 @@ flows:
     title: Same VLAN at two sites cannot talk (L2 VSN)
     platform: fabric-engine
     tags: [l2vsn, i-sid, vlan, stretched, remote, mac]
+    symptoms:
+      - same vlan at two sites cannot talk
+      - stretched vlan not working
+      - clients in other building not reachable at layer 2
+      - remote mac not learned
     summary: >
       For an L2 VSN every BEB must map the VLAN to the same I-SID, and the fabric must carry it between
       them. Check the mapping on both sides, then the I-SID discovery, then MAC learning.
@@ -158,6 +182,11 @@ flows:
     title: Route of a VRF is missing on another BEB (L3 VSN)
     platform: fabric-engine
     tags: [l3vsn, vrf, route, ipvpn, redistribute, isis, missing route]
+    symptoms:
+      - route missing in vrf
+      - subnet not reachable from other site
+      - prefix not advertised into the fabric
+      - vrf route not on remote beb
     summary: >
       A prefix is only distributed if the source BEB has the VRF as an L3 VSN with the same I-SID,
       redistributes the route into IS-IS and has applied the redistribution.
@@ -191,6 +220,12 @@ flows:
     title: vIST down or SMLT dual-homing not working
     platform: fabric-engine
     tags: [vist, smlt, dual-homing, peer, lacp, cluster]
+    symptoms:
+      - vist down
+      - smlt peer down
+      - dual homed server loses connectivity
+      - lacp bundle only on one switch
+      - cluster peer not reachable
     summary: >
       The vIST runs through the fabric, so it needs SPBM connectivity between the peers, a vIST VLAN with a
       unique I-SID and IP subnet, and the peer system-id. SMLTs then need the same MLT IDs and VLAN/I-SID
@@ -228,6 +263,13 @@ flows:
     title: New switch or AP on an Auto-sense port does not onboard
     platform: fabric-engine
     tags: [auto-sense, onboarding, zero touch, ztf, nni, fa, ap, new switch]
+    symptoms:
+      - new switch does not onboard
+      - new switch does not join the fabric
+      - access point does not come up
+      - auto-sense port stuck in wait
+      - zero touch not working
+      - fa assignment rejected
     summary: >
       Auto-sense decides by LLDP what the port becomes. The port state tells you where onboarding gets
       stuck. New switches need an NNI (and matching IS-IS auth), APs need FA with the management I-SID.
@@ -263,6 +305,12 @@ flows:
     title: Network slow, suspected loop or broadcast storm
     platform: fabric-engine
     tags: [loop, broadcast storm, slpp, flapping, mac move, cpu]
+    symptoms:
+      - network very slow everywhere
+      - broadcast storm
+      - suspected loop
+      - mac addresses moving between ports
+      - port shut down by slpp
     summary: >
       A loop usually starts at the access layer (two ports patched together, an unmanaged switch). Find the
       port where MACs flap or SLPP triggered, and cut it.
@@ -292,6 +340,12 @@ flows:
     title: Port flaps or counts errors (copper or fiber)
     platform: fabric-engine
     tags: [errors, crc, flapping, fiber, optics, cable, link]
+    symptoms:
+      - port flapping
+      - crc errors on uplink
+      - link goes up and down
+      - fiber link unstable
+      - low rx light on sfp
     summary: >
       Most physical problems are cables, connectors or optics. Prove whether errors are still increasing,
       then check the optics and the cable.
@@ -319,6 +373,11 @@ flows:
     title: Link with MACsec passes no traffic
     platform: fabric-engine
     tags: [macsec, mka, encryption, link, key]
+    symptoms:
+      - macsec link passes no traffic
+      - link down after enabling encryption
+      - mka session not established
+      - macsec key expired
     summary: >
       With MACsec both ends must agree on the CA (CKN/CAK), the mode (static or MKA) and the cipher. A
       one-sided config usually blocks all traffic.
@@ -346,6 +405,12 @@ flows:
     title: Switch is slow, CLI lags or protocols flap (high CPU)
     platform: fabric-engine
     tags: [cpu, memory, performance, slow, khi]
+    symptoms:
+      - switch cli very slow
+      - high cpu
+      - protocols flapping
+      - switch unresponsive
+      - resource table full
     summary: >
       Find out which process uses the CPU and why. Typical causes are loops or broadcast storms, routing
       or IS-IS churn, ARP floods, or a resource limit.
@@ -376,6 +441,12 @@ flows:
     title: Juniper SRX routes, but traffic does not pass
     platform: junos-srx
     tags: [srx, routing, policy, session, zone, drop]
+    symptoms:
+      - srx routes but traffic dropped
+      - firewall drops routed traffic
+      - traffic through srx not passing
+      - no session on srx
+      - bgp or ospf neighbor down on srx
     summary: >
       On an SRX in flow mode, routing is only half the story. Every flow also needs a security policy
       between the zones of the ingress and egress interfaces.

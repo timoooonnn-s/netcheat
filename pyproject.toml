@@ -7,8 +7,9 @@ name = "netcheat"
 version = "1.0.0"
 description = "Searchable command cheatsheet for Extreme Fabric Engine (VOSS) and Juniper SRX"
 readme = "README.md"
+authors = [{ name = "Timmy" }]
 requires-python = ">=3.9"
-dependencies = ["rich>=13", "PyYAML>=6"]
+dependencies = ["rich>=13", "PyYAML>=6", "textual>=8"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7"]

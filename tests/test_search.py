@@ -59,3 +59,7 @@ def test_pasted_command_with_brackets_finds_itself(library):
 
 def test_punctuation_only_query_matches_nothing(library):
     assert search_commands(library.commands, ["[]"]) == []
+
+
+def test_flow_search_uses_symptoms(library):
+    assert search_flows(library.flows, ["radius", "reject"])[0].id == "nac-auth-failure"

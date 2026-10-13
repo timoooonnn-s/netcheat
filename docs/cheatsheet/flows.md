@@ -10,6 +10,8 @@ _Extreme Fabric Engine · id: `client-no-connectivity`_
 
 Work from the bottom up: link, authentication, VLAN/I-SID, MAC learning, gateway and DHCP. Most cases end in the first three steps.
 
+Typical symptoms: client has no network; pc gets no ip address; laptop cannot reach anything; user says the network is down; device on access port not working.
+
 1. **Is the port up, error-free, and does it have the expected name?**
    - `show interfaces gigabitEthernet name 1/5`
    - `show interfaces gigabitEthernet error 1/5`
@@ -48,6 +50,8 @@ _Extreme Fabric Engine · id: `nac-auth-failure`_
 
 Check the switch side first (EAP enabled, client seen, RADIUS reachable), then the decision in ExtremeControl. A reject means RADIUS answered and the policy decided. A timeout is a network or configuration problem between the switch and the NAC.
 
+Typical symptoms: client not authenticated; 802.1x fails; radius reject; client lands in guest vlan; phone works but pc behind it does not; wrong vlan after login.
+
 1. **Is EAP enabled globally and on the port?**
    - `show eapol system`
    - `show eapol port interface gigabitEthernet 1/5`
@@ -76,6 +80,8 @@ Check the switch side first (EAP enabled, client seen, RADIUS reachable), then t
 _Extreme Fabric Engine · id: `isis-adjacency-down`_
 
 An adjacency needs a working link, IS-IS on both ends, the same area, the same B-VLANs and primary B-VLAN, matching hello authentication and unique system-ids and nicknames.
+
+Typical symptoms: isis neighbor not coming up; adjacency stuck in init; nni link up but no fabric; new uplink does not join the fabric; hello authentication mismatch.
 
 1. **Is the link up and the port configured as NNI (manually or by Auto-sense)?**
    - `show interfaces gigabitEthernet name 1/49`
@@ -109,6 +115,8 @@ _Extreme Fabric Engine · id: `l2vsn-not-working`_
 
 For an L2 VSN every BEB must map the VLAN to the same I-SID, and the fabric must carry it between them. Check the mapping on both sides, then the I-SID discovery, then MAC learning.
 
+Typical symptoms: same vlan at two sites cannot talk; stretched vlan not working; clients in other building not reachable at layer 2; remote mac not learned.
+
 1. **Is the VLAN mapped to the right I-SID on both switches?**
    - `show vlan i-sid 100`
    - `show i-sid 20100`
@@ -131,6 +139,8 @@ For an L2 VSN every BEB must map the VLAN to the same I-SID, and the fabric must
 _Extreme Fabric Engine · id: `l3vsn-route-missing`_
 
 A prefix is only distributed if the source BEB has the VRF as an L3 VSN with the same I-SID, redistributes the route into IS-IS and has applied the redistribution.
+
+Typical symptoms: route missing in vrf; subnet not reachable from other site; prefix not advertised into the fabric; vrf route not on remote beb.
 
 1. **Is the route in the VRF on the source BEB?**
    - `show ip route -s 10.20.0.0/16 vrf CORP`
@@ -157,6 +167,8 @@ A prefix is only distributed if the source BEB has the VRF as an L3 VSN with the
 _Extreme Fabric Engine · id: `vist-smlt-problem`_
 
 The vIST runs through the fabric, so it needs SPBM connectivity between the peers, a vIST VLAN with a unique I-SID and IP subnet, and the peer system-id. SMLTs then need the same MLT IDs and VLAN/I-SID sets on both peers.
+
+Typical symptoms: vist down; smlt peer down; dual homed server loses connectivity; lacp bundle only on one switch; cluster peer not reachable.
 
 1. **Is the vIST up?**
    - `show virtual-ist`
@@ -187,6 +199,8 @@ _Extreme Fabric Engine · id: `autosense-onboarding`_
 
 Auto-sense decides by LLDP what the port becomes. The port state tells you where onboarding gets stuck. New switches need an NNI (and matching IS-IS auth), APs need FA with the management I-SID.
 
+Typical symptoms: new switch does not onboard; new switch does not join the fabric; access point does not come up; auto-sense port stuck in wait; zero touch not working; fa assignment rejected.
+
 1. **Which state is the port in?**
    - `show interfaces gigabitEthernet auto-sense 1/12`
    - `show logging file tail | include Auto-sense`
@@ -215,6 +229,8 @@ _Extreme Fabric Engine · id: `loop-broadcast-storm`_
 
 A loop usually starts at the access layer (two ports patched together, an unmanaged switch). Find the port where MACs flap or SLPP triggered, and cut it.
 
+Typical symptoms: network very slow everywhere; broadcast storm; suspected loop; mac addresses moving between ports; port shut down by slpp.
+
 1. **Has loop protection already acted?**
    - `show slpp interface gigabitEthernet`
    - `show logging file tail | include SLPP`
@@ -238,6 +254,8 @@ _Extreme Fabric Engine · id: `port-errors-flapping`_
 
 Most physical problems are cables, connectors or optics. Prove whether errors are still increasing, then check the optics and the cable.
 
+Typical symptoms: port flapping; crc errors on uplink; link goes up and down; fiber link unstable; low rx light on sfp.
+
 1. **Are errors still increasing?**
    - `clear-stats port 1/49`
    - `monitor ports error 1/49 main`
@@ -259,6 +277,8 @@ _Extreme Fabric Engine · id: `macsec-link-down`_
 
 With MACsec both ends must agree on the CA (CKN/CAK), the mode (static or MKA) and the cipher. A one-sided config usually blocks all traffic.
 
+Typical symptoms: macsec link passes no traffic; link down after enabling encryption; mka session not established; macsec key expired.
+
 1. **Is MACsec enabled and encrypting on both ends?**
    - `show macsec status 1/49`
    - `show macsec connectivity-association`
@@ -279,6 +299,8 @@ With MACsec both ends must agree on the CA (CKN/CAK), the mode (static or MKA) a
 _Extreme Fabric Engine · id: `switch-slow-high-cpu`_
 
 Find out which process uses the CPU and why. Typical causes are loops or broadcast storms, routing or IS-IS churn, ARP floods, or a resource limit.
+
+Typical symptoms: switch cli very slow; high cpu; protocols flapping; switch unresponsive; resource table full.
 
 1. **How busy are the CPU and memory?**
    - `show khi performance cpu`
@@ -303,6 +325,8 @@ Find out which process uses the CPU and why. Typical causes are loops or broadca
 _Juniper SRX · id: `srx-routed-traffic-dropped`_
 
 On an SRX in flow mode, routing is only half the story. Every flow also needs a security policy between the zones of the ingress and egress interfaces.
+
+Typical symptoms: srx routes but traffic dropped; firewall drops routed traffic; traffic through srx not passing; no session on srx; bgp or ospf neighbor down on srx.
 
 1. **Is the route correct, and active in the right table?**
    - `show route 10.20.30.40`

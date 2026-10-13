@@ -1,10 +1,14 @@
+import os
+import subprocess
+import sys
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
 import yaml
 
 from netcheat.add import append_command
-from netcheat.cli import main
+from netcheat.cli import _default_docs_dir, main
 from netcheat.loader import DataError, load_library
 from netcheat.markdown import HEADER
 
@@ -79,3 +83,14 @@ def test_build_md_removes_stale_generated_pages(tmp_path):
     main(["build-md", "-o", str(tmp_path)])
     assert not (tmp_path / "old-topic.md").exists()
     assert (tmp_path / "notes.md").exists()
+
+
+def test_short_missing_data_path_gives_a_data_error():
+    env = {**os.environ, "NETCHEAT_DATA": "/nope"}  # used to crash while building the parser
+    result = subprocess.run([sys.executable, "-m", "netcheat", "topics"], env=env, capture_output=True, text=True)
+    assert result.returncode == 2
+    assert "data folder not found" in result.stdout
+
+
+def test_build_md_default_is_this_checkout():
+    assert _default_docs_dir() == Path(__file__).resolve().parents[1] / "docs" / "cheatsheet"

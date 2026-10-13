@@ -15,7 +15,9 @@ from rich.table import Table
 from rich.text import Text
 from rich.theme import Theme
 
+from netcheat import CREDIT
 from netcheat.models import Command, Concept, Flow, Library
+from netcheat.search import Diagnosis
 
 KIND_ICONS = {"show": "»", "config": "✎", "action": "►", "clear": "↺"}
 RARE, CAUTION, CISCO, NEW, REMOVED, LINK, FLOW, CONCEPT = "◆", "▲", "≈", "↑", "✕", "↗", "☰", "◇"
@@ -90,17 +92,21 @@ def print_search(
         _print_related(console, CONCEPT, "Concepts", [concept.term for concept in concepts], "ncs concept <term>")
 
 
-def command_block(command: Command, detail: bool) -> RenderableType:
-    head = Text.assemble((f"{KIND_ICONS[command.kind]} ", f"kind.{command.kind}"), (command.cmd, "cmd"))
+def command_title(command: Command) -> Text:
+    """Kind icon, command and badges (gem, version added/removed, caution)."""
+    title = Text.assemble((f"{KIND_ICONS[command.kind]} ", f"kind.{command.kind}"), (command.cmd, "cmd"))
     if command.rare:
-        head.append(f"  {RARE}", "rare")
+        title.append(f"  {RARE}", "rare")
     if command.since:
-        head.append(f"  {NEW} {command.since}", "new")
+        title.append(f"  {NEW} {command.since}", "new")
     if command.removed:
-        head.append(f"  {REMOVED} removed in {command.removed}", "removed")
+        title.append(f"  {REMOVED} removed in {command.removed}", "removed")
     if command.caution:
-        head.append(f"  {CAUTION}", "caution")
+        title.append(f"  {CAUTION}", "caution")
+    return title
 
+
+def command_block(command: Command, detail: bool) -> RenderableType:
     meta = Text(f"{command.topic} · {command.mode}", style="meta")
     if command.cisco:
         meta.append(f" · {CISCO} Cisco: {command.cisco}")
@@ -115,31 +121,53 @@ def command_block(command: Command, detail: bool) -> RenderableType:
             body.append(Text(f"{CAUTION} {command.caution}", style="caution"))
         if command.ref:
             body.append(Text(f"{LINK} {command.ref}", style="meta"))
-    return Group(head, Indent(Group(*body)))
+    return Group(command_title(command), Indent(Group(*body)))
 
 
-def print_flow(console: Console, flow: Flow) -> None:
-    console.print(Text.assemble((f"{FLOW} ", "label"), (flow.title, "cmd"), (f"  [{flow.platform}]", "meta")))
-    console.print(Indent(Text(flow.summary)))
+def flow_block(flow: Flow) -> RenderableType:
+    parts: list[RenderableType] = [
+        Text.assemble((f"{FLOW} ", "label"), (flow.title, "cmd"), (f"  [{flow.platform}]", "meta")),
+        Indent(Text(flow.summary)),
+    ]
     for number, step in enumerate(flow.steps, 1):
-        console.print()
-        console.print(Text.assemble((f"{number:>2}  ", "label"), (step.title, "label")))
         lines: list[RenderableType] = [Text.assemble((f"{KIND_ICONS['show']} ", "kind.show"), (cmd, "cmd")) for cmd in step.cmds]
         if step.look_for:
             lines.append(Text.assemble(("Look for: ", "meta"), step.look_for))
-        console.print(Indent(Group(*lines), 6))
+        title = Table.grid(padding=(0, 2))
+        title.add_column(width=2, justify="right")
+        title.add_row(Text(str(number), style="label"), Text(step.title, style="label"))
+        parts += [Text(), title, Indent(Group(*lines), 6)]
+    return Group(*parts)
 
 
-def print_concept(console: Console, concept: Concept) -> None:
+def concept_block(concept: Concept) -> RenderableType:
     head = Text.assemble((f"{CONCEPT} ", "label"), (concept.term, "cmd"))
     if concept.aka:
         head.append(f"  ({', '.join(concept.aka)})", "meta")
     body: list[RenderableType] = [Text(concept.text)]
     if concept.see:
         body.append(Text.assemble(("See: ", "meta"), (" · ".join(concept.see), "cmd")))
-    console.print(head)
-    console.print(Indent(Group(*body)))
+    return Group(head, Indent(Group(*body)))
+
+
+def print_diagnosis(console: Console, diagnosis: Diagnosis) -> None:
+    console.print(Text.assemble(("Understood: ", "meta"), (" · ".join(diagnosis.understood), "label")))
     console.print()
+    if diagnosis.flows:
+        best, *others = diagnosis.flows
+        console.print(flow_block(best))
+        if others:
+            console.print()
+            _print_related(console, FLOW, "Also check", [flow.id for flow in others], "ncs flow <id>")
+    if diagnosis.commands:
+        console.print()
+        console.print(Text("Helpful commands", style="label"))
+        console.print()
+        for command in diagnosis.commands:
+            console.print(command_block(command, detail=False))
+            console.print()
+    if diagnosis.concepts:
+        _print_related(console, CONCEPT, "Background", [c.term for c in diagnosis.concepts], "ncs concept <term>")
 
 
 def print_flow_list(console: Console, flows: Sequence[Flow]) -> None:
@@ -171,6 +199,7 @@ def print_topics(console: Console, library: Library) -> None:
         Text(f"{len(library.commands)} commands · {len(library.flows)} flows · {len(library.concepts)} concepts", style="meta")
     )
     console.print(Text("Search: ncs <words>   Topic: ncs -t <topic>   Help: ncs -h", style="meta"))
+    console.print(Text(CREDIT, style="meta"))
 
 
 def _print_related(console: Console, icon: str, label: str, names: Sequence[str], hint: str) -> None:

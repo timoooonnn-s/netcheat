@@ -75,3 +75,8 @@ def test_non_list_value_is_reported(tmp_path):
     (tmp_path / "concepts.yaml").write_text("concepts: oops\n")
     with pytest.raises(DataError, match="concepts.yaml: concepts: expected a list"):
         load_library(tmp_path)
+
+
+def test_missing_data_folder_is_reported(tmp_path):
+    with pytest.raises(DataError, match="data folder not found"):
+        load_library(tmp_path / "nope")
