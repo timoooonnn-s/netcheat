@@ -118,6 +118,7 @@ Back to the [Quick start](#quick-start).
 - [Tab completion](#tab-completion)
 - [Adding and editing content](#adding-and-editing-content)
 - [Exit codes and environment](#exit-codes-and-environment)
+- [Moving the repository](#moving-the-repository)
 - [Sources and versions](#sources-and-versions)
 
 ### Install details
@@ -402,6 +403,24 @@ generated pages of topics that no longer exist. Hand-written files in that folde
 
 `NETCHEAT_DATA=<dir>` makes `ncs` read its data from another folder with the same layout, for example to try out
 changes without touching the checkout.
+
+### Moving the repository
+
+To move the project to another Git server (or a machine without access to this one), pack it into a single file:
+
+```bash
+python scripts/make_bootstrap.py          # writes dist/netcheat-bootstrap.py (about 250 KB)
+```
+
+The generated script contains every file of the working tree (tracked and new, not ignored) with a SHA-256 checksum,
+and needs only Python 3.9+. Copy it over and run:
+
+```bash
+python netcheat-bootstrap.py netcheat --git   # recreate the files, git init and commit
+cd netcheat && git remote add origin <url> && git push -u origin main
+```
+
+It refuses to write into a non-empty folder and stops if a file was damaged in transfer. `--git` needs Git 2.28 or newer.
 
 ### Sources and versions
 
