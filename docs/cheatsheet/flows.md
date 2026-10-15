@@ -2,6 +2,8 @@
 
 # Troubleshooting Flows
 
+Legend: » show · ✎ config · ► action
+
 Work through the steps in order; each step narrows down the fault.
 
 ## Client has no network connectivity
@@ -13,40 +15,40 @@ Work from the bottom up: link, authentication, VLAN/I-SID, MAC learning, gateway
 Typical symptoms: client has no network; pc gets no ip address; laptop cannot reach anything; user says the network is down; device on access port not working; clients blocked after enabling dhcp snooping or arp inspection.
 
 1. **Is the port up, error-free, and does it have the expected name?**
-   - `show interfaces gigabitEthernet name 1/5`
-   - `show interfaces gigabitEthernet error 1/5`
-   - `show pluggable-optical-modules detail 1/5`
+   - » `show interfaces gigabitEthernet name 1/5`
+   - » `show interfaces gigabitEthernet error 1/5`
+   - » `show pluggable-optical-modules detail 1/5`
    - Look for: Oper status up, speed/duplex as expected, no rising CRC errors (clear-stats and check again).
 2. **Was the port disabled by loop protection?**
-   - `show slpp interface gigabitEthernet 1/5`
-   - `show spanning-tree bpduguard 1/5`
-   - `show logging file tail | include 1/5`
+   - » `show slpp interface gigabitEthernet 1/5`
+   - » `show spanning-tree bpduguard 1/5`
+   - » `show logging file tail | include 1/5`
    - Look for: A shutdown by SLPP, SLPP Guard or BPDU Guard. Remove the loop first, then re-enable the port.
 3. **Is it an Auto-sense port, and in which state?**
-   - `show interfaces gigabitEthernet auto-sense 1/5`
+   - » `show interfaces gigabitEthernet auto-sense 1/5`
    - Look for: UNI for a normal client. WAIT means the port is still waiting for LLDP. An unexpected NNI/FA state means something else is plugged in.
 4. **Did NAC authenticate the client, and into which VLAN/I-SID?**
-   - `show eapol sessions eap 1/5`
-   - `show eapol sessions neap 1/5 verbose`
+   - » `show eapol sessions eap 1/5`
+   - » `show eapol sessions neap 1/5 verbose`
    - Look for: The client MAC with state authenticated and the expected VLAN/I-SID. If it is missing or not authenticated, follow the flow nac-auth-failure.
 5. **Is the client MAC learned in the right VLAN?**
-   - `show interfaces gigabitEthernet fdb-entry 1/5`
-   - `show vlan mac-address-entry mac 00:11:22:33:44:55`
+   - » `show interfaces gigabitEthernet fdb-entry 1/5`
+   - » `show vlan mac-address-entry mac 00:11:22:33:44:55`
    - Look for: No MAC means the client sends nothing (cable, NIC, power). A MAC in the wrong VLAN means a port config or NAC policy problem.
 6. **Does the VLAN map to the right I-SID, and is that I-SID present at the gateway?**
-   - `show vlan i-sid 100`
-   - `show isis spbm i-sid all id 20100`
+   - » `show vlan i-sid 100`
+   - » `show isis spbm i-sid all id 20100`
    - Look for: The same I-SID on the access switch and on the BEB with the gateway (DvR, VRRP or firewall).
 7. **Is first-hop security dropping the client (DHCP snooping, DAI, IP Source Guard)?**
-   - `show ip dhcp-snooping binding vlan 100`
-   - `show ip arp-inspection vlan 100`
-   - `show ip source binding interface gigabitEthernet 1/5`
+   - » `show ip dhcp-snooping binding vlan 100`
+   - » `show ip arp-inspection vlan 100`
+   - » `show ip source binding interface gigabitEthernet 1/5`
    - Look for: A binding for the client's MAC and IP. Without one, DAI drops its ARPs and IP Source Guard its traffic; check that the uplink is trusted for DHCP snooping and DAI, and add static bindings for static-IP devices.
 8. **Does the client get DHCP, and is the gateway reachable?**
-   - `show ip dhcp-relay counters vrf CORP`
-   - `show ip arp 10.10.100.25`
-   - `show dvr host-entries ipv4 10.10.100.25`
-   - `ping 10.10.100.25 vrf CORP`
+   - » `show ip dhcp-relay counters vrf CORP`
+   - » `show ip arp 10.10.100.25`
+   - » `show dvr host-entries ipv4 10.10.100.25`
+   - ► `ping 10.10.100.25 vrf CORP`
    - Look for: Relay requests with replies, an ARP or DvR host entry for the client IP, and the ping answering from the gateway VRF.
 
 ## Client is not authenticated or lands in the wrong VLAN/I-SID
@@ -58,26 +60,26 @@ Check the switch side first (EAP enabled, client seen, RADIUS reachable), then t
 Typical symptoms: client not authenticated; 802.1x fails; radius reject; client lands in guest vlan; phone works but pc behind it does not; wrong vlan after login.
 
 1. **Is EAP enabled globally and on the port?**
-   - `show eapol system`
-   - `show eapol port interface gigabitEthernet 1/5`
+   - » `show eapol system`
+   - » `show eapol port interface gigabitEthernet 1/5`
    - Look for: Global EAP enabled, port status auto, NEAP enabled for non-802.1X devices, mac-max large enough.
 2. **Does the switch see the client session?**
-   - `show eapol sessions eap 1/5`
-   - `show eapol sessions neap 1/5 verbose`
-   - `show eapol auth-stats interface gigabitethernet 1/5`
+   - » `show eapol sessions eap 1/5`
+   - » `show eapol sessions neap 1/5 verbose`
+   - » `show eapol auth-stats interface gigabitethernet 1/5`
    - Look for: The session state. Many EAP timeouts mean the client has no supplicant, so NEAP or NEAP fallback (9.3+) must handle it.
 3. **Are the RADIUS servers reachable, and do they answer?**
-   - `show radius-server statistics`
-   - `show radius reachability`
-   - `ping 10.0.0.50`
+   - » `show radius-server statistics`
+   - » `show radius reachability`
+   - ► `ping 10.0.0.50`
    - Look for: Rising timeouts mean a routing, firewall or shared-secret problem. Rejects mean the policy decided, so look at the ExtremeControl event log for this MAC.
 4. **Did ExtremeControl assign a VLAN/I-SID that exists on this switch?**
-   - `show i-sid`
-   - `show vlan i-sid`
+   - » `show i-sid`
+   - » `show vlan i-sid`
    - Look for: The assigned I-SID or VLAN exists (or dynamic creation through the VSA is allowed). Otherwise the client ends in guest/fail-open or gets no access.
 5. **Force a fresh authentication after fixing the policy**
-   - `clear eapol non-eap 1/5 00:11:22:33:44:55`
-   - `clear eapol eap 1/5`
+   - ► `clear eapol non-eap 1/5 00:11:22:33:44:55`
+   - ► `clear eapol eap 1/5`
    - Look for: The client authenticates again and shows the new VLAN/I-SID. With CoA configured, ExtremeControl can do the same remotely.
 
 ## IS-IS adjacency on an NNI does not come up
@@ -89,29 +91,29 @@ An adjacency needs a working link, IS-IS on both ends, the same area, the same B
 Typical symptoms: isis neighbor not coming up; adjacency stuck in init; nni link up but no fabric; new uplink does not join the fabric; hello authentication mismatch.
 
 1. **Is the link up and the port configured as NNI (manually or by Auto-sense)?**
-   - `show interfaces gigabitEthernet name 1/49`
-   - `show interfaces gigabitEthernet auto-sense 1/49`
-   - `show isis interface`
+   - » `show interfaces gigabitEthernet name 1/49`
+   - » `show interfaces gigabitEthernet auto-sense 1/49`
+   - » `show isis interface`
    - Look for: Link up and IS-IS active on the port or MLT. Auto-sense ports should be NNI-ISIS-UP; NNI-AUTH-FAIL means a hello-auth mismatch.
 2. **What state does the neighbor have?**
-   - `show isis adjacencies`
+   - » `show isis adjacencies`
    - Look for: INIT means hellos are seen in one direction only, or parameters differ. A missing neighbor means no hellos at all (link, VLAN membership, IS-IS disabled at the far end).
 3. **Compare the fabric parameters on both ends**
-   - `show isis spbm`
-   - `show isis manual-area`
-   - `show isis`
+   - » `show isis spbm`
+   - » `show isis manual-area`
+   - » `show isis`
    - Look for: The same B-VIDs and primary B-VLAN, the same manual area, and IS-IS admin state up.
 4. **Check authentication and the error counters**
-   - `show isis int-counters`
-   - `show auto-sense isis`
+   - » `show isis int-counters`
+   - » `show auto-sense isis`
    - Look for: Rising authentication failures mean the hello-auth type or key is different on the two ends.
 5. **Rule out a duplicate system-id or nickname**
-   - `show isis spbm nick-name`
-   - `show logging file tail | include ISIS`
+   - » `show isis spbm nick-name`
+   - » `show logging file tail | include ISIS`
    - Look for: Duplicate messages in the log. Fix the duplicate (`isis dup-detection-temp-disable` gives you time to do it).
 6. **Verify the path end to end once the adjacency is up**
-   - `l2 ping vlan 4051 routernodename SW-CORE-02`
-   - `l2 traceroute vlan 4052 routernodename SW-CORE-02`
+   - ► `l2 ping vlan 4051 routernodename SW-CORE-02`
+   - ► `l2 traceroute vlan 4052 routernodename SW-CORE-02`
    - Look for: Replies in both B-VLANs.
 
 ## Same VLAN at two sites cannot talk (L2 VSN)
@@ -123,20 +125,20 @@ For an L2 VSN every BEB must map the VLAN to the same I-SID, and the fabric must
 Typical symptoms: same vlan at two sites cannot talk; stretched vlan not working; clients in other building not reachable at layer 2; remote mac not learned.
 
 1. **Is the VLAN mapped to the right I-SID on both switches?**
-   - `show vlan i-sid 100`
-   - `show i-sid 20100`
+   - » `show vlan i-sid 100`
+   - » `show i-sid 20100`
    - Look for: The same I-SID on both ends. The local VLAN IDs may differ; a typo in the I-SID is the most common error.
 2. **Does the fabric know both endpoints of the I-SID?**
-   - `show isis spbm i-sid all id 20100`
-   - `show isis spbm multicast-fib i-sid 20100`
+   - » `show isis spbm i-sid all id 20100`
+   - » `show isis spbm multicast-fib i-sid 20100`
    - Look for: Both BEBs (by nickname) in the list. If one is missing, the I-SID is not configured there or the node has no fabric connectivity.
 3. **Are the remote MACs learned across the fabric?**
-   - `show vlan remote-mac-table 100`
-   - `show vlan mac-address-entry 100`
+   - » `show vlan remote-mac-table 100`
+   - » `show vlan mac-address-entry 100`
    - Look for: The remote client MACs behind the remote B-MAC. If none are there, check the flooding tree with l2 tracetree.
 4. **Trace the service path**
-   - `l2 tracetree 4051 20100`
-   - `l2 traceroute vlan 4051 routernodename SW-SITE-B`
+   - ► `l2 tracetree 4051 20100`
+   - ► `l2 traceroute vlan 4051 routernodename SW-SITE-B`
    - Look for: All expected BEBs in the tree, and the path between the sites.
 
 ## Route of a VRF is missing on another BEB (L3 VSN)
@@ -148,23 +150,23 @@ A prefix is only distributed if the source BEB has the VRF as an L3 VSN with the
 Typical symptoms: route missing in vrf; subnet not reachable from other site; prefix not advertised into the fabric; vrf route not on remote beb.
 
 1. **Is the route in the VRF on the source BEB?**
-   - `show ip route -s 10.20.0.0/16 vrf CORP`
-   - `show ip interface vrf CORP`
+   - » `show ip route -s 10.20.0.0/16 vrf CORP`
+   - » `show ip interface vrf CORP`
    - Look for: The prefix as LOC (connected) or STAT (static) on the source switch.
 2. **Is the VRF an L3 VSN with the same I-SID on both BEBs?**
-   - `show ip ipvpn vrf CORP`
+   - » `show ip ipvpn vrf CORP`
    - Look for: IP VPN enabled and the same I-SID on every BEB of the VRF.
 3. **Is redistribution configured and applied?**
-   - `show ip isis redistribute vrf CORP`
-   - `isis apply redistribute direct vrf CORP`
+   - » `show ip isis redistribute vrf CORP`
+   - ► `isis apply redistribute direct vrf CORP`
    - Look for: Redistribution of direct/static enabled for the VRF. If it was changed recently, applying it again is harmless.
 4. **Does the fabric carry the prefix?**
-   - `show isis spbm ip-unicast-fib id 30010`
-   - `show isis lsdb tlv 185 detail`
+   - » `show isis spbm ip-unicast-fib id 30010`
+   - » `show isis lsdb tlv 185 detail`
    - Look for: The prefix with the advertising BEB. If it is present there but not in the VRF, check IS-IS accept policies and route-maps.
 5. **Check the route on the receiving BEB**
-   - `show ip route 10.20.30.40 vrf CORP`
-   - `l2 traceroute ip-address 10.20.30.40 vrf CORP`
+   - » `show ip route 10.20.30.40 vrf CORP`
+   - ► `l2 traceroute ip-address 10.20.30.40 vrf CORP`
    - Look for: The route via ISIS to the source BEB, and a working fabric path to it.
 
 ## vIST down or SMLT dual-homing not working
@@ -176,26 +178,26 @@ The vIST runs through the fabric, so it needs SPBM connectivity between the peer
 Typical symptoms: vist down; smlt peer down; dual homed server loses connectivity; lacp bundle only on one switch; cluster peer not reachable.
 
 1. **Is the vIST up?**
-   - `show virtual-ist`
-   - `show virtual-ist stat`
+   - » `show virtual-ist`
+   - » `show virtual-ist stat`
    - Look for: Peer up. Hellos received should increase.
 2. **Check the SPBM side of the cluster**
-   - `show isis spbm`
-   - `show isis adjacencies`
+   - » `show isis spbm`
+   - » `show isis adjacencies`
    - Look for: The smlt-peer-system-id points to the other peer and the virtual B-MAC is the same on both. There is an IS-IS path between the peers.
 3. **Check the vIST VLAN, I-SID and peer reachability**
-   - `show vlan i-sid 4000`
-   - `show isis spbm i-sid discover id 15999000`
-   - `show ip arp vlan 4000`
-   - `ping 10.255.255.2`
+   - » `show vlan i-sid 4000`
+   - » `show isis spbm i-sid discover id 15999000`
+   - » `show ip arp vlan 4000`
+   - ► `ping 10.255.255.2`
    - Look for: The same vIST I-SID on both peers (unique in the fabric), the peer MAC in ARP, and the ping answering.
 4. **Check the SMLTs themselves**
-   - `show smlt mlt`
-   - `show mlt`
-   - `show lacp interface mlt`
+   - » `show smlt mlt`
+   - » `show mlt`
+   - » `show lacp interface mlt`
    - Look for: The same MLT IDs on both peers, links active on both sides, LACP aggregated. For LACP, both peers need the same `lacp smlt-sys-id`.
 5. **Are all SMLT VLANs mapped to I-SIDs on both peers?**
-   - `show vlan i-sid`
+   - » `show vlan i-sid`
    - Look for: Every VLAN on an SMLT has an I-SID, and the same VLAN/I-SID exists on the peer.
 
 ## New switch or AP on an Auto-sense port does not onboard
@@ -207,25 +209,25 @@ Auto-sense decides by LLDP what the port becomes. The port state tells you where
 Typical symptoms: new switch does not onboard; new switch does not join the fabric; access point does not come up; auto-sense port stuck in wait; zero touch not working; fa assignment rejected.
 
 1. **Which state is the port in?**
-   - `show interfaces gigabitEthernet auto-sense 1/12`
-   - `show logging file tail | include Auto-sense`
+   - » `show interfaces gigabitEthernet auto-sense 1/12`
+   - » `show logging file tail | include Auto-sense`
    - Look for: NNI-ISIS-UP for a switch, FA or FA-PROXY for an AP or proxy, VOICE for a phone. WAIT for a long time means no LLDP from the device.
 2. **For a new switch, does the NNI form?**
-   - `show isis adjacencies`
-   - `show auto-sense isis`
-   - `show spbm nick-name`
+   - » `show isis adjacencies`
+   - » `show auto-sense isis`
+   - » `show spbm nick-name`
    - Look for: NNI-AUTH-FAIL means a hello-auth key mismatch (the new switch has none). Is there a nickname server so the new node gets a nickname?
 3. **For an AP or FA proxy, are the FA assignments accepted?**
-   - `show fa elements 1/12`
-   - `show fa assignment 1/12`
-   - `show auto-sense fa`
+   - » `show fa elements 1/12`
+   - » `show fa assignment 1/12`
+   - » `show auto-sense fa`
    - Look for: The element is discovered and its assignments are active, not rejected. The management I-SID matches what the AP expects.
 4. **Can the device reach management through the onboarding I-SID?**
-   - `show auto-sense onboarding`
-   - `show isis spbm i-sid all id 15999999`
+   - » `show auto-sense onboarding`
+   - » `show isis spbm i-sid all id 15999999`
    - Look for: The onboarding I-SID exists in the fabric and reaches the network where DHCP and ExtremeCloud IQ / Site Engine live.
 5. **Is the port blocked from becoming an NNI on purpose?**
-   - `show running-config module port | include no-nni`
+   - » `show running-config module port | include no-nni`
    - Look for: `auto-sense no-nni` on the port (9.3+) prevents NNI and SD-WAN states.
 
 ## Network slow, suspected loop or broadcast storm
@@ -237,20 +239,20 @@ A loop usually starts at the access layer (two ports patched together, an unmana
 Typical symptoms: network very slow everywhere; broadcast storm; suspected loop; mac addresses moving between ports; port shut down by slpp.
 
 1. **Has loop protection already acted?**
-   - `show slpp interface gigabitEthernet`
-   - `show logging file tail | include SLPP`
+   - » `show slpp interface gigabitEthernet`
+   - » `show logging file tail | include SLPP`
    - Look for: A port shut down by SLPP or SLPP Guard is your culprit. Also check which VLAN.
 2. **Is the CPU busy and are there signs of MAC flapping?**
-   - `show khi performance cpu`
-   - `show logging file tail | include MAC`
+   - » `show khi performance cpu`
+   - » `show logging file tail | include MAC`
    - Look for: A high CPU and MAC move messages naming the ports involved.
 3. **Find the ports with the broadcast traffic**
-   - `monitor ports statistics 1/1-1/48 interface utilization`
-   - `show interfaces gigabitEthernet statistics verbose 1/5`
+   - ► `monitor ports statistics 1/1-1/48 interface utilization`
+   - » `show interfaces gigabitEthernet statistics verbose 1/5`
    - Look for: Access ports with very high input rates (especially broadcast/multicast). Shut the suspicious port, then confirm the load drops.
 4. **Prevent it next time**
-   - `slpp enable`
-   - `spanning-tree bpduguard enable`
+   - ✎ `slpp enable`
+   - ✎ `spanning-tree bpduguard enable`
    - Look for: SLPP on the client VLANs with packet-rx on the access ports, and BPDU Guard/SLPP Guard on edge ports.
 
 ## Port flaps or counts errors (copper or fiber)
@@ -262,18 +264,18 @@ Most physical problems are cables, connectors or optics. Prove whether errors ar
 Typical symptoms: port flapping; crc errors on uplink; link goes up and down; fiber link unstable; low rx light on sfp.
 
 1. **Are errors still increasing?**
-   - `clear-stats port 1/49`
-   - `monitor ports error 1/49 main`
+   - ► `clear-stats port 1/49`
+   - ► `monitor ports error 1/49 main`
    - Look for: Rising CRC/FCS or alignment errors right now, not old counters.
 2. **Check the optics (fiber)**
-   - `show pluggable-optical-modules detail 1/49`
+   - » `show pluggable-optical-modules detail 1/49`
    - Look for: Rx power near the low alarm threshold (dirty or bad patch, too long a link), or a high temperature. Compare with the far end.
 3. **Check the cable (copper)**
-   - `tdr-test port 1/5`
+   - ► `tdr-test port 1/5`
    - Look for: Open or short pairs and the distance to the fault. The test interrupts the link briefly.
 4. **Look at the flap history**
-   - `show logging file tail | include 1/49`
-   - `show debug spbm isis spf-log`
+   - » `show logging file tail | include 1/49`
+   - » `show debug spbm isis spf-log`
    - Look for: Link up/down messages and, on NNIs, SPF runs at the same times. `link-debounce` can hide very short flaps but does not fix the cause.
 
 ## Link with MACsec passes no traffic
@@ -285,18 +287,18 @@ With MACsec both ends must agree on the CA (CKN/CAK), the mode (static or MKA) a
 Typical symptoms: macsec link passes no traffic; link down after enabling encryption; mka session not established; macsec key expired.
 
 1. **Is MACsec enabled and encrypting on both ends?**
-   - `show macsec status 1/49`
-   - `show macsec connectivity-association`
+   - » `show macsec status 1/49`
+   - » `show macsec connectivity-association`
    - Look for: The same CA name and mode on both switches.
 2. **Does the MKA session come up?**
-   - `show macsec mka participant 1/49 verbose`
-   - `show macsec mka keychain`
+   - » `show macsec mka participant 1/49 verbose`
+   - » `show macsec mka keychain`
    - Look for: A live peer. If there is none, the CKN/CAK or the profile settings differ, or a keychain key has expired.
 3. **Check the counters**
-   - `show macsec statistics 1/49`
+   - » `show macsec statistics 1/49`
    - Look for: Rising invalid or not-valid frames point to a key or replay-window mismatch.
 4. **Platform prerequisites**
-   - `show boot config flags`
+   - » `show boot config flags`
    - Look for: On the 5320 and 5420 Series the macsec boot flag must be enabled (with a reboot).
 
 ## Switch is slow, CLI lags or protocols flap (high CPU)
@@ -308,21 +310,21 @@ Find out which process uses the CPU and why. Typical causes are loops or broadca
 Typical symptoms: switch cli very slow; high cpu; protocols flapping; switch unresponsive; resource table full.
 
 1. **How busy are the CPU and memory?**
-   - `show khi performance cpu`
-   - `show khi performance memory`
-   - `show khi performance pthread sort cpu`
+   - » `show khi performance cpu`
+   - » `show khi performance memory`
+   - » `show khi performance pthread sort cpu`
    - Look for: A high 5-minute average and which thread uses it.
 2. **Is the fabric or routing churning?**
-   - `show debug spbm isis spf-log`
-   - `show logging file tail`
+   - » `show debug spbm isis spf-log`
+   - » `show logging file tail`
    - Look for: SPF runs every few seconds, flapping adjacencies or neighbors.
 3. **Is a resource running full?**
-   - `show khi resource-scaling`
-   - `show alarm database`
+   - » `show khi resource-scaling`
+   - » `show alarm database`
    - Look for: Tables close to 100 % (since 9.4 the switch also raises an alarm at 80/90/100 %).
 4. **Collect data before you reboot**
-   - `show fulltech file /intflash/fulltech_case.txt`
-   - `flight-recorder all 1`
+   - » `show fulltech file /intflash/fulltech_case.txt`
+   - ► `flight-recorder all 1`
    - Look for: Files for the Extreme GTAC case. A reboot erases the evidence.
 
 ## Juniper SRX routes, but traffic does not pass
@@ -334,22 +336,22 @@ On an SRX in flow mode, routing is only half the story. Every flow also needs a 
 Typical symptoms: srx routes but traffic dropped; firewall drops routed traffic; traffic through srx not passing; no session on srx; bgp or ospf neighbor down on srx.
 
 1. **Is the route correct, and active in the right table?**
-   - `show route 10.20.30.40`
-   - `show route forwarding-table destination 10.20.30.40`
+   - » `show route 10.20.30.40`
+   - » `show route forwarding-table destination 10.20.30.40`
    - Look for: The active route (*) with the expected next hop and egress interface. For a routing instance, add `table <ri>.inet.0`.
 2. **Are the interfaces up and in the expected zones?**
-   - `show interfaces terse`
-   - `show interfaces ge-0/0/1 extensive | match "zone|error"`
+   - » `show interfaces terse`
+   - » `show interfaces ge-0/0/1 extensive | match "zone|error"`
    - Look for: Interfaces up/up and in the expected security zones.
 3. **Does a session exist, and does a policy match?**
-   - `show security flow session destination-prefix 10.20.30.40`
-   - `show security policies hit-count`
-   - `show security flow status`
+   - » `show security flow session destination-prefix 10.20.30.40`
+   - » `show security policies hit-count`
+   - » `show security flow status`
    - Look for: A session for the flow, and hits on the expected policy. No session usually means no policy between the zones.
 4. **Check the routing protocols and the return path**
-   - `show ospf neighbor`
-   - `show bgp summary`
-   - `ping 10.20.30.40 source 10.255.0.1 rapid count 20`
+   - » `show ospf neighbor`
+   - » `show bgp summary`
+   - ► `ping 10.20.30.40 source 10.255.0.1 rapid count 20`
    - Look for: Neighbors Full/Established, and a ping with the right source (the return route must also point back through the SRX).
 
 ## Multicast stream does not reach the receivers
@@ -361,23 +363,23 @@ Multicast over the fabric needs SPBM multicast on every BEB, IGMP snooping on th
 Typical symptoms: multicast not working; receivers get no stream; iptv or video stream missing at one site; multicast works locally but not across the fabric; multicast stream down or broken.
 
 1. **Is fabric multicast enabled on the BEBs?**
-   - `show isis spbm multicast`
+   - » `show isis spbm multicast`
    - Look for: Multicast enabled on the sender's and every receiver's BEB (`spbm 1 multicast enable`).
 2. **Is IGMP snooping on, with the right mode and version?**
-   - `show ip igmp interface vlan 100`
-   - `show ip igmp snooping`
+   - » `show ip igmp interface vlan 100`
+   - » `show ip igmp snooping`
    - Look for: Mode snoop-spb on the VLAN, the same IGMP version as the hosts, and a querier (snoop-querier) if there is no IP interface.
 3. **Does the switch see the sender and the receivers?**
-   - `show ip igmp sender group 239.1.1.10`
-   - `show ip igmp group group 239.1.1.10`
+   - » `show ip igmp sender group 239.1.1.10`
+   - » `show ip igmp group group 239.1.1.10`
    - Look for: The source on the sender's BEB, the joins on the receivers' BEBs. A missing join usually means an access switch without snooping or a version mismatch.
 4. **Is the stream carried through the fabric?**
-   - `show isis spbm ip-multicast-route detail`
-   - `l2 tracemroute source 10.10.100.50 group 239.1.1.10 vlan 100`
+   - » `show isis spbm ip-multicast-route detail`
+   - ► `l2 tracemroute source 10.10.100.50 group 239.1.1.10 vlan 100`
    - Look for: The stream with its data I-SID and the receiving BEBs listed. If a receiving BEB is missing, check the I-SID and snooping there.
 5. **Is there a second querier?**
-   - `show ip igmp snooping`
-   - `show logging file tail | include IGMP`
+   - » `show ip igmp snooping`
+   - » `show logging file tail | include IGMP`
    - Look for: Only the BEBs may query on an L2 VSN. A multicast router or another switch querying in the same VLAN causes traffic loss.
 
 ## Juniper SRX failed over, is slow or shows alarms
@@ -389,28 +391,28 @@ Work from the box's own view: alarms and hardware, then the control plane and th
 Typical symptoms: srx cluster failed over; firewall failover happened; srx slow or high cpu; srx shows alarms; srx rebooted unexpectedly.
 
 1. **Any alarms, and did it reboot?**
-   - `show chassis alarms`
-   - `show system alarms`
-   - `show system uptime`
-   - `show system core-dumps`
+   - » `show chassis alarms`
+   - » `show system alarms`
+   - » `show system uptime`
+   - » `show system core-dumps`
    - Look for: No active alarms, an expected boot time, and no fresh core files. A recent unexpected boot with a core file is a crash case for JTAC.
 2. **Is the hardware healthy?**
-   - `show chassis environment`
-   - `show chassis hardware`
+   - » `show chassis environment`
+   - » `show chassis hardware`
    - Look for: All temperatures, fans and power supplies OK.
 3. **Control plane or data plane load?**
-   - `show chassis routing-engine`
-   - `show system processes extensive | no-more`
-   - `show security monitoring`
-   - `show security flow session summary`
+   - » `show chassis routing-engine`
+   - » `show system processes extensive | no-more`
+   - » `show security monitoring`
+   - » `show security flow session summary`
    - Look for: Routing Engine CPU and memory, the busiest processes, and flow (SPU) CPU and sessions against the maximum.
 4. **What is the cluster state, and why did it change?**
-   - `show chassis cluster status`
-   - `show chassis cluster interfaces`
-   - `show chassis cluster information`
-   - `show chassis cluster statistics`
+   - » `show chassis cluster status`
+   - » `show chassis cluster interfaces`
+   - » `show chassis cluster information`
+   - » `show chassis cluster statistics`
    - Look for: The expected primary per redundancy group, priority 0 for a failed monitored interface, control and fabric links up, and the event that triggered the failover.
 5. **Collect data for JTAC**
-   - `request support information | save /var/tmp/rsi.txt`
-   - `show log messages | last 200`
+   - ► `request support information | save /var/tmp/rsi.txt`
+   - » `show log messages | last 200`
    - Look for: Save the RSI and the logs before a reboot; a reboot erases the evidence.

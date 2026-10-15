@@ -3,6 +3,7 @@
 Layout of the data directory:
     <platform>/<topic>.yaml   one topic per file, e.g. fabric-engine/spbm-isis.yaml
     flows.yaml                troubleshooting flows
+    changes.yaml              change workflows: remove, replace and re-add a configuration cleanly
     concepts.yaml             short concept explanations
     synonyms.yaml             words that mean the same thing, for `ncs fix`
 """
@@ -37,11 +38,12 @@ def load_library(root: Path = DATA_DIR) -> Library:
     )
     _ensure_unique([topic.slug for topic in topics], "topic file name")
 
-    flows_file, concepts_file = root / "flows.yaml", root / "concepts.yaml"
     flows = tuple(
-        _build_flow(raw, f"{flows_file.name} #{i}")
-        for i, raw in enumerate(_list(_read(flows_file).get("flows"), f"{flows_file.name}: flows"), 1)
+        _build_flow(raw, f"{file.name} #{i}", kind)
+        for file, kind in ((root / "flows.yaml", "troubleshoot"), (root / "changes.yaml", "change"))
+        for i, raw in enumerate(_list(_read(file).get("flows"), f"{file.name}: flows"), 1)
     )
+    concepts_file = root / "concepts.yaml"
     concepts = tuple(
         _build(Concept, raw, f"{concepts_file.name} #{i}")
         for i, raw in enumerate(_list(_read(concepts_file).get("concepts"), f"{concepts_file.name}: concepts"), 1)
@@ -79,12 +81,12 @@ def _read(path: Path) -> dict[str, Any]:
     return doc or {}
 
 
-def _build_flow(raw: Any, where: str) -> Flow:
+def _build_flow(raw: Any, where: str, kind: str) -> Flow:
     raw = _mapping(raw, where)
     steps = tuple(
         _build(Step, step, f"{where} step {i}") for i, step in enumerate(_list(raw.get("steps"), f"{where}: steps"), 1)
     )
-    return _build(Flow, {**raw, "steps": steps}, where)
+    return _build(Flow, {**raw, "steps": steps}, where, kind=kind)
 
 
 def _build(cls: type[T], raw: Any, where: str, **context: str) -> T:

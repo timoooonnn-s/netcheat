@@ -1,0 +1,255 @@
+# Fields: see README.md -> "Adding and editing commands". Keep `commands:` as the last key.
+title: Management Access (RADIUS, TACACS+, Users, SSH)
+description: Who may log in and how. RADIUS for CLI/web login and for NAC, TACACS+, local users, SSH and banners, including the exact `no` forms to remove each piece. Step by step removal and re-adding is in the change workflows (`ncs flow change`).
+
+commands:
+  - cmd: show radius
+    desc: Global RADIUS switches (enable, accounting, cli-profile, maxserver, secure-flag) in one view.
+    kind: show
+    mode: User EXEC
+    tags: [radius, global, aaa, login, enable, accounting]
+    notes: >
+      The servers themselves are in `show radius-server`. Every server entry is one row per host and `used-by`
+      (cli, eapol, web, snmp, endpoint-tracking), so the same IP can appear twice.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_radius.shtml
+
+  - cmd: radius enable
+    desc: Turn RADIUS on globally. Needed for every RADIUS use (CLI login and EAP/NEAP).
+    kind: config
+    mode: Global Config
+    tags: [radius, enable, global, aaa, login]
+    example: |
+      radius enable
+      radius accounting enable
+      no radius accounting enable
+      no radius enable
+    notes: >
+      `no radius enable` switches RADIUS off but keeps every server entry in the config. To get rid of the
+      servers, remove each one with `no radius server host <ip> used-by <app>`.
+    caution: With NAC in use, `no radius enable` stops all EAP/NEAP authentication on the switch.
+    cisco: aaa new-model
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/radius_enable.shtml
+
+  - cmd: radius accounting enable
+    desc: Send RADIUS accounting (session start/stop) to the servers that have acct-enable.
+    kind: config
+    mode: Global Config
+    tags: [radius, accounting, global]
+    example: |
+      radius accounting enable
+      no radius accounting enable
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/radius_accounting_enable.shtml
+
+  - cmd: radius server host <ip> key <secret> used-by cli [priority <1-10>] [timeout <1-180>]
+    desc: Add a RADIUS server for admin logins (CLI, SSH). Separate entry from the NAC (eapol) server.
+    kind: config
+    mode: Global Config
+    tags: [radius, server, login, cli, ssh, admin, aaa, add]
+    example: |
+      radius server host 10.0.0.50 key <secret> used-by cli priority 1
+      radius server host 10.0.0.51 key <secret> used-by cli priority 2
+      radius enable
+    notes: >
+      `used-by` defaults to cli. The host can also be an FQDN or IPv6 address. Use `used-by web` for EDM/web login.
+      Default priority is 10, so set it explicitly on every server to get a defined order.
+    caution: Test a RADIUS login from a second session before you close the one you are working in.
+    cisco: radius server <name> / aaa authentication login default group radius local
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/radius_server_host.shtml
+
+  - cmd: no radius server host <ip> used-by {cli | eapol | web | snmp | endpoint-tracking}
+    desc: Delete one RADIUS server entry. The entry is identified by host + used-by, the key is not needed.
+    kind: config
+    mode: Global Config
+    tags: [radius, server, remove, delete, deconfigure, cleanup, "no", migration]
+    example: |
+      show radius-server
+      no radius server host 10.0.0.50 used-by eapol
+      no radius server host 10.0.0.50 used-by cli
+      no radius server host 10.0.0.50 used-by eapol acct-enable
+    notes: >
+      There is no command that removes all RADIUS servers at once, and `no radius enable` keeps them. Remove each
+      row of `show radius-server` with its host and used-by. Adding a keyword after used-by only switches that
+      option off (the last example disables accounting for that server and keeps the entry).
+      `default radius server host <ip> used-by <app> <option>` resets one option (timeout, retry, port, ...) to
+      its default.
+    cisco: no radius server <name>
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/radius_server_host.shtml
+
+  - cmd: no radius dynamic-server client <nac-ip>
+    desc: Delete a CoA/Disconnect client (an old NAC engine that may no longer change sessions).
+    kind: config
+    mode: Global Config
+    tags: [radius, coa, dynamic authorization, remove, delete, nac, migration]
+    example: |
+      show radius dynamic-server
+      no radius dynamic-server client 10.0.0.50
+      radius dynamic-server client 10.0.0.60 secret <secret> enable
+    notes: >
+      To only stop the client and keep the entry, use `no radius dynamic-server client <nac-ip> enable`.
+      Check the result with `show radius dynamic-server [statistics]`.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/radius_dynamic_server_client.shtml
+
+  - cmd: show radius dynamic-server [client <ip>] [statistics]
+    desc: The CoA/Disconnect clients (NAC engines) allowed to change sessions, with their counters.
+    kind: show
+    mode: User EXEC
+    tags: [radius, coa, dynamic authorization, nac, statistics]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_radius_dynamic_server.shtml
+
+  - cmd: radius cli-profile
+    desc: Let the RADIUS server send a per-user list of allowed or denied CLI commands (CLI profiling).
+    kind: config
+    mode: Global Config
+    tags: [radius, cli, profile, authorization, commands]
+    example: |
+      radius cli-profile
+      no radius cli-profile
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/radius_cli_profile.shtml
+
+  - cmd: show tacacs
+    desc: TACACS+ servers, global state and which applications use it (authentication, authorization, accounting).
+    kind: show
+    mode: User EXEC
+    tags: [tacacs, aaa, login, server]
+    cisco: show tacacs
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_tacacs.shtml
+
+  - cmd: tacacs server host <ip> key <secret> [port <1-65535>] [timeout <10-30>] [single-connection]
+    desc: Set the primary TACACS+ server. The backup uses `tacacs server secondary-host <ip> key <secret>`.
+    kind: config
+    mode: Global Config
+    tags: [tacacs, server, aaa, login, add, primary, secondary]
+    example: |
+      tacacs server host 10.0.0.70 key <secret>
+      tacacs server secondary-host 10.0.0.71 key <secret>
+      tacacs authentication cli
+      tacacs protocol enable
+    notes: >
+      Only a primary and a secondary server exist. In the 8.9 User Guide, TACACS+ falls back to the local
+      users only when no server is reachable. An access-denied answer stops the login without trying local.
+    caution: Keep a second session open and test a TACACS+ login before you log out.
+    cisco: tacacs server <name> / address ipv4 <ip> / key <secret>
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/tacacs_server_host.shtml
+
+  - cmd: no tacacs server <ip>
+    desc: Delete a TACACS+ server (primary or secondary), without the word `host`.
+    kind: config
+    mode: Global Config
+    tags: [tacacs, server, remove, delete, deconfigure, "no", migration]
+    example: |
+      show tacacs
+      no tacacs server 10.0.0.70
+      no tacacs server 10.0.0.71
+    notes: >
+      Created with `tacacs server host` or `tacacs server secondary-host`, but removed with `no tacacs server <ip>`
+      for both. `default tacacs server <ip> {port | timeout | single-connection}` resets one option.
+    cisco: no tacacs server <name>
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/tacacs_server_host.shtml
+
+  - cmd: tacacs protocol enable
+    desc: Turn TACACS+ on or off globally (default off).
+    kind: config
+    mode: Global Config
+    tags: [tacacs, enable, global, aaa]
+    example: |
+      tacacs protocol enable
+      no tacacs protocol enable
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/tacacs_protocol_enable.shtml
+
+  - cmd: tacacs authentication {cli | web | all}
+    desc: Choose which logins TACACS+ authenticates (default cli). Remove with `no tacacs authentication <app>`.
+    kind: config
+    mode: Global Config
+    tags: [tacacs, authentication, cli, web, login]
+    example: |
+      tacacs authentication all
+      no tacacs authentication web
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/tacacs_authentication.shtml
+
+  - cmd: tacacs accounting enable cli / tacacs authorization enable
+    desc: Log CLI commands to TACACS+ (accounting) and let it permit or deny each command (authorization).
+    kind: config
+    mode: Global Config
+    tags: [tacacs, accounting, authorization, commands, audit]
+    example: |
+      tacacs accounting enable cli
+      tacacs authorization enable
+      tacacs authorization level all
+      no tacacs authorization enable
+      no tacacs accounting cli
+    notes: With command authorization on and the server lost, a TACACS+ user can only run `exit` and `logout` (8.9 User Guide).
+    caution: Switch on authorization last, after a test login works.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/tacacs_authorization.shtml
+
+  - cmd: show cli password
+    desc: Password rules for the local accounts (min length, aging, lockout, history).
+    kind: show
+    mode: User EXEC
+    tags: [user, password, local, account, policy]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_cli_password.shtml
+
+  - cmd: username add <name> level {ro | rw | rwa} enable
+    desc: Create a local CLI user with an access level.
+    kind: config
+    mode: Global Config
+    tags: [user, local, account, add, create, login, admin]
+    example: |
+      username add netops level rwa enable
+      username netops level rw
+      no username netops
+    notes: >
+      Change the level later with `username <name> level <l1 | l2 | l3 | ro | rw | rwa>`. Delete with
+      `no username <name>`, or only disable it with `no username <name> enable`. With enhanced secure mode the
+      commands are `password create-user` and `password delete-user` instead.
+    cisco: username <name> privilege 15 secret <password>
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/username.shtml
+
+  - cmd: cli password <login> {read-only | read-write | read-write-all | layer1 | layer2 | layer3}
+    desc: Change the login name or password of a built-in access level (ro, rw, rwa, l1, l2, l3).
+    kind: config
+    mode: Global Config
+    tags: [user, password, local, change, admin, default]
+    example: |
+      cli password rwa read-write-all
+    notes: Out of the box each level has login and password equal to its name (rwa/rwa, rw/rw, ro/ro, ...). Check them with `show cli password`.
+    caution: Default logins on a production switch are a finding in every audit. Change them during commissioning.
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/cli_password.shtml
+
+  - cmd: show ssh global
+    desc: SSH server state, version, enabled authentication methods, port and max sessions.
+    kind: show
+    mode: User EXEC
+    tags: [ssh, global, server, management]
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ssh_global.shtml
+
+  - cmd: ssh
+    desc: Turn the SSH server on (default off). `no ssh` turns it off.
+    kind: config
+    mode: Global Config
+    tags: [ssh, enable, server, management]
+    example: |
+      ssh
+      no ssh pass-auth
+    notes: >
+      `boot config flags sshd` is the boot-time switch for the same daemon. Turn telnet off with
+      `no boot config flags telnetd`. Password logins can be turned off with `no ssh pass-auth` once key login works.
+    caution: "`no ssh` over an SSH session ends your own access: do it from the console or another method."
+    cisco: ip ssh version 2
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ssh_configuration.shtml
+
+  - cmd: banner motd <text> / login-message <text>
+    desc: Message of the day after login, and the text of the login prompt. `no banner motd` / `no login-message` remove them.
+    kind: config
+    mode: Global Config
+    tags: [banner, motd, login, message, legal]
+    example: |
+      banner motd "Authorized access only"
+      banner displaymotd
+      no banner motd
+      no login-message
+    notes: The MOTD only shows when `banner displaymotd` is set. `show banner` shows the current texts.
+    cisco: banner motd
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/banner.shtml

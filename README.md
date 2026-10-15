@@ -1,10 +1,11 @@
 # netcheat
 
 `ncs` is a command cheatsheet for the terminal. It covers **Extreme Fabric Engine (VOSS)** in depth and the
-**Juniper SRX** troubleshooting basics: 361 commands with descriptions, examples, notes, Cisco equivalents and links to
-the official documentation, plus 14 step-by-step troubleshooting flows and 31 short concept notes. Everything works offline.
+**Juniper SRX** troubleshooting basics: 402 commands with descriptions, examples, notes, Cisco equivalents and links to
+the official documentation, plus 14 step-by-step troubleshooting flows, 4 change workflows (remove and re-add RADIUS,
+SNMP, syslog/NTP/DNS and admin logins cleanly) and 31 short concept notes. Everything works offline.
 
-It is an inventory of the commands you don't use every day: 187 of them are marked ◆ ("gem"), so you can look at
+It is an inventory of the commands you don't use every day: 196 of them are marked ◆ ("gem"), so you can look at
 them on purpose before you forget them.
 
 **[Quick start](#quick-start)**: install and the everyday how-tos.
@@ -51,7 +52,7 @@ More: [Search](#search) and [Reading the output](#reading-the-output).
 ncs browse
 ```
 
-Pick a topic, "Gems", "Troubleshooting flows" or "Concepts" on the left, type `/` to filter, `c` to copy the
+Pick a topic, "Gems", "Troubleshooting flows", "Change workflows" or "Concepts" on the left, type `/` to filter, `c` to copy the
 highlighted command, `q` to quit. More: [Browser](#browser).
 
 ### How to troubleshoot a problem
@@ -66,6 +67,19 @@ ncs fix phone works but the pc behind it does not
 You get the best-matching troubleshooting flow step by step, plus other flows worth checking, helpful commands and
 background concepts. To pick a flow yourself: `ncs flow` lists them, `ncs flow vist-smlt-problem` opens one.
 More: [Problem matching](#problem-matching-ncs-fix) and [Troubleshooting flows](#troubleshooting-flows).
+
+### How to remove or replace a configuration
+
+```bash
+ncs fix remove the old radius servers
+ncs flow snmp-replace
+ncs no snmp-server       # every removal command of one feature
+```
+
+Fabric Engine has no single `no radius` or `default snmp` that wipes a feature: each server, community or user is
+removed with its own `no` command and the values that identify it. The change workflows list them in a safe order:
+see what is set, add the new config, test, remove the old pieces, verify, save.
+More: [Change workflows](#change-workflows).
 
 ### How to rediscover forgotten commands
 
@@ -113,6 +127,7 @@ Back to the [Quick start](#quick-start).
 - [Browser](#browser)
 - [Problem matching (ncs fix)](#problem-matching-ncs-fix)
 - [Troubleshooting flows](#troubleshooting-flows)
+- [Change workflows](#change-workflows)
 - [Concepts](#concepts)
 - [Topics](#topics)
 - [Tab completion](#tab-completion)
@@ -138,7 +153,7 @@ Back to the [Quick start](#quick-start).
 | `ncs` (no arguments) / `ncs topics` | overview of all topics with command and gem counts | |
 | `ncs browse [words]` | full-screen browser, optionally with the filter prefilled | see [Browser](#browser) |
 | `ncs fix <problem>` | match a problem description to flows, commands and concepts | `-p fe\|srx` |
-| `ncs flow [id \| words]` | list flows, open one by id, or search them | |
+| `ncs flow [id \| words]` | list troubleshooting flows and change workflows, open one by id, or search them | |
 | `ncs concept [words]` | list concepts or show the matching ones | |
 | `ncs tip` | a random gem with details | `-p fe\|srx` |
 | `ncs add` | add a command interactively | |
@@ -201,7 +216,7 @@ terminal font.
 
 | Area | Content |
 |---|---|
-| left | All commands, Gems, the topics per platform, Troubleshooting flows, Concepts |
+| left | All commands, Gems, the topics per platform, Troubleshooting flows, Change workflows, Concepts |
 | middle | the entries of the selected area, narrowed live by the filter |
 | right | details of the highlighted entry: the same content as `ncs ... -d`, `ncs flow <id>` or `ncs concept` |
 
@@ -265,6 +280,23 @@ The example values (port 1/5, VLAN 100, I-SID 20100, VRF CORP) are placeholders 
 | `srx-routed-traffic-dropped` | the SRX routes, but traffic does not pass |
 | `srx-unhealthy-or-failover` | the SRX failed over, is slow or shows alarms |
 
+### Change workflows
+
+Change workflows (⇄) are flows for configuration changes instead of faults: remove, replace or re-add a feature
+without guessing the `no` syntax and without locking yourself out. `ncs flow` lists them together with the
+troubleshooting flows (☰), and `ncs fix` finds them ("remove radius", "change snmp community"). Inside a step,
+» marks show commands, ✎ config commands and ► actions. ▲ marks a step with a risk, e.g. losing your own login.
+
+| Flow id | For |
+|---|---|
+| `radius-replace` | replace or remove RADIUS servers for NAC (eapol) and admin login (cli), and the CoA client |
+| `snmp-replace` | replace or remove communities, v3 users, groups, views and trap receivers |
+| `syslog-ntp-dns-replace` | replace or remove syslog, NTP and DNS servers |
+| `admin-login-change` | replace TACACS+ or RADIUS login servers, clean up local users, SSH and telnet |
+
+The single `no` commands with their exact syntax are in the topics `mgmt-access` and `mgmt-services`
+(`ncs -t mgmt-services no`).
+
 ### Concepts
 
 `ncs concept` lists all concepts; `ncs concept <words>` shows the matching ones with a short explanation and the
@@ -285,6 +317,8 @@ Use the id with `-t`. `ncs topics` shows the current counts.
 | `l2vsn-isid` | Extreme Fabric Engine | L2 VSN and I-SID Services | 15 |
 | `l3vsn-routing` | Extreme Fabric Engine | L3 VSN, VRF and Routing | 33 |
 | `macsec` | Extreme Fabric Engine | MACsec | 13 |
+| `mgmt-access` | Extreme Fabric Engine | Management Access (RADIUS, TACACS+, Users, SSH) | 20 |
+| `mgmt-services` | Extreme Fabric Engine | Management Services (SNMP, Syslog, NTP, DNS) | 21 |
 | `mlt-smlt-vist` | Extreme Fabric Engine | MLT, SMLT, vIST and LACP | 18 |
 | `multicast` | Extreme Fabric Engine | IP Multicast and IGMP | 14 |
 | `nac-eap-radius` | Extreme Fabric Engine | NAC, EAP/NEAP and RADIUS | 25 |
@@ -319,6 +353,7 @@ All content lives in YAML files under `src/netcheat/data/`:
 fabric-engine/<topic>.yaml   one topic per file; the file name is the topic id for -t
 junos-srx/<topic>.yaml
 flows.yaml                   troubleshooting flows (with typical symptoms for ncs fix)
+changes.yaml                 change workflows (same format as flows.yaml)
 concepts.yaml                concept explanations
 synonyms.yaml                words that mean the same thing, for ncs fix
 ```
@@ -363,7 +398,10 @@ A topic file starts with `title:` (required) and `description:`, and ends with `
       - title: Is the port up?          # required
         cmds: [show interfaces gigabitEthernet name 1/5]
         look_for: Oper status up, no rising CRC errors.
+        caution: ...                    # a risk in this step, shows ▲
 ```
+
+A change workflow (in `changes.yaml`) has exactly the same fields; the file decides the kind.
 
 **A concept** (in `concepts.yaml`, under `concepts:`): `term`, `text` and `platform` are required; `aka` (other
 names) and `see` (related commands, each the exact `cmd` text of an existing command) are optional.
@@ -390,7 +428,7 @@ pytest
 ncs build-md
 ```
 
-`ncs build-md` rewrites `docs/cheatsheet/` (one page per topic, plus flows, concepts and an index) and removes
+`ncs build-md` rewrites `docs/cheatsheet/` (one page per topic, plus flows, change workflows, concepts and an index) and removes
 generated pages of topics that no longer exist. Hand-written files in that folder are left alone.
 
 ### Exit codes and environment

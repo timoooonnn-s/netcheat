@@ -16,11 +16,12 @@ from rich.text import Text
 from rich.theme import Theme
 
 from netcheat import CREDIT
-from netcheat.models import Command, Concept, Flow, Library
+from netcheat.models import FLOW_KINDS, Command, Concept, Flow, Library
 from netcheat.search import Diagnosis
 
 KIND_ICONS = {"show": "»", "config": "✎", "action": "►", "clear": "↺"}
-RARE, CAUTION, CISCO, NEW, REMOVED, LINK, FLOW, CONCEPT = "◆", "▲", "≈", "↑", "✕", "↗", "☰", "◇"
+RARE, CAUTION, CISCO, NEW, REMOVED, LINK, FLOW, CHANGE, CONCEPT = "◆", "▲", "≈", "↑", "✕", "↗", "☰", "⇄", "◇"
+FLOW_ICONS = {"troubleshoot": FLOW, "change": CHANGE}
 
 THEME = Theme(
     {
@@ -86,8 +87,10 @@ def print_search(
         console.print("No matching commands.", style="meta")
         if suggestions:
             console.print(Text.assemble(("Did you mean: ", "meta"), (", ".join(dict.fromkeys(suggestions)), "label")))
-    if flows:
-        _print_related(console, FLOW, "Flows", [flow.id for flow in flows], "ncs flow <id>")
+    for kind, name in FLOW_KINDS.items():
+        ids = [flow.id for flow in flows if flow.kind == kind]
+        if ids:
+            _print_related(console, FLOW_ICONS[kind], name, ids, "ncs flow <id>")
     if concepts:
         _print_related(console, CONCEPT, "Concepts", [concept.term for concept in concepts], "ncs concept <term>")
 
@@ -126,18 +129,33 @@ def command_block(command: Command, detail: bool) -> RenderableType:
 
 def flow_block(flow: Flow) -> RenderableType:
     parts: list[RenderableType] = [
-        Text.assemble((f"{FLOW} ", "label"), (flow.title, "cmd"), (f"  [{flow.platform}]", "meta")),
+        Text.assemble((f"{FLOW_ICONS[flow.kind]} ", "label"), (flow.title, "cmd"), (f"  [{flow.platform}]", "meta")),
         Indent(Text(flow.summary)),
     ]
     for number, step in enumerate(flow.steps, 1):
-        lines: list[RenderableType] = [Text.assemble((f"{KIND_ICONS['show']} ", "kind.show"), (cmd, "cmd")) for cmd in step.cmds]
+        lines: list[RenderableType] = []
+        for cmd in step.cmds:
+            kind = step_kind(cmd)
+            lines.append(Text.assemble((f"{KIND_ICONS[kind]} ", f"kind.{kind}"), (cmd, "cmd")))
         if step.look_for:
             lines.append(Text.assemble(("Look for: ", "meta"), step.look_for))
+        if step.caution:
+            lines.append(Text(f"{CAUTION} {step.caution}", style="caution"))
         title = Table.grid(padding=(0, 2))
         title.add_column(width=2, justify="right")
         title.add_row(Text(str(number), style="label"), Text(step.title, style="label"))
         parts += [Text(), title, Indent(Group(*lines), 6)]
     return Group(*parts)
+
+
+ACTION_VERBS = ("clear", "reset", "save", "copy", "ping", "traceroute", "l2 ", "monitor", "tdr-test", "flight-recorder", "request", "isis apply")
+
+
+def step_kind(cmd: str) -> str:
+    """Icon kind of a command inside a flow step, guessed from its first word(s)."""
+    if cmd.startswith("show "):
+        return "show"
+    return "action" if cmd.startswith(ACTION_VERBS) else "config"
 
 
 def concept_block(concept: Concept) -> RenderableType:
@@ -158,7 +176,7 @@ def print_diagnosis(console: Console, diagnosis: Diagnosis) -> None:
         console.print(flow_block(best))
         if others:
             console.print()
-            _print_related(console, FLOW, "Also check", [flow.id for flow in others], "ncs flow <id>")
+            _print_related(console, FLOW_ICONS[best.kind], "Also check", [flow.id for flow in others], "ncs flow <id>")
     if diagnosis.commands:
         console.print()
         console.print(Text("Helpful commands", style="label"))
@@ -171,11 +189,12 @@ def print_diagnosis(console: Console, diagnosis: Diagnosis) -> None:
 
 
 def print_flow_list(console: Console, flows: Sequence[Flow]) -> None:
-    table = _table("Flow id", "Title", "Steps")
+    table = _table("", "Flow id", "Title", "Steps")
     for flow in flows:
-        table.add_row(Text(flow.id, style="cmd"), flow.title, str(len(flow.steps)))
+        table.add_row(Text(FLOW_ICONS[flow.kind], style="label"), Text(flow.id, style="cmd"), flow.title, str(len(flow.steps)))
     console.print(table)
-    console.print(Text("Open one with: ncs flow <id>", style="meta"))
+    legend = "   ".join(f"{FLOW_ICONS[kind]} {name.lower()}" for kind, name in FLOW_KINDS.items())
+    console.print(Text(f"{legend}   Open one with: ncs flow <id>", style="meta"))
 
 
 def print_concept_list(console: Console, concepts: Sequence[Concept]) -> None:
@@ -196,7 +215,11 @@ def print_topics(console: Console, library: Library) -> None:
             table.add_row(Text(topic.slug, style="cmd"), topic.title, str(len(topic.commands)), str(gems))
     console.print(table)
     console.print(
-        Text(f"{len(library.commands)} commands · {len(library.flows)} flows · {len(library.concepts)} concepts", style="meta")
+        Text(
+            f"{len(library.commands)} commands · {len(library.flows_of('troubleshoot'))} troubleshooting flows · "
+            f"{len(library.flows_of('change'))} change workflows · {len(library.concepts)} concepts",
+            style="meta",
+        )
     )
     console.print(Text("Search: ncs <words>   Topic: ncs -t <topic>   Help: ncs -h", style="meta"))
     console.print(Text(CREDIT, style="meta"))

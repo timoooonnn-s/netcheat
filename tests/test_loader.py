@@ -80,3 +80,28 @@ def test_non_list_value_is_reported(tmp_path):
 def test_missing_data_folder_is_reported(tmp_path):
     with pytest.raises(DataError, match="data folder not found"):
         load_library(tmp_path / "nope")
+
+
+FLOW = "flows:\n  - id: x\n    title: X\n    platform: fabric-engine\n    summary: s\n    steps:\n      - title: t\n        cmds: [show isis]\n"
+
+
+def test_flow_kind_comes_from_the_file(tmp_path):
+    write_topic(tmp_path, VALID_ENTRY)
+    (tmp_path / "flows.yaml").write_text(FLOW)
+    (tmp_path / "changes.yaml").write_text(FLOW.replace("id: x", "id: y"))
+    assert [(flow.id, flow.kind) for flow in load_library(tmp_path).flows] == [("x", "troubleshoot"), ("y", "change")]
+
+
+def test_flow_kind_in_yaml_is_rejected(tmp_path):
+    write_topic(tmp_path, VALID_ENTRY)
+    (tmp_path / "changes.yaml").write_text(FLOW + "    kind: change\n")
+    with pytest.raises(DataError, match="unknown field.*kind"):
+        load_library(tmp_path)
+
+
+def test_flow_ids_are_unique_across_both_files(tmp_path):
+    write_topic(tmp_path, VALID_ENTRY)
+    (tmp_path / "flows.yaml").write_text(FLOW)
+    (tmp_path / "changes.yaml").write_text(FLOW)
+    with pytest.raises(DataError, match="duplicate flow id: x"):
+        load_library(tmp_path)

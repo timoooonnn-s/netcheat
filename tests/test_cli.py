@@ -31,7 +31,18 @@ def test_no_match_returns_1_and_suggests(capsys):
 def test_build_md_writes_one_page_per_topic(tmp_path):
     assert main(["build-md", "-o", str(tmp_path)]) == 0
     library = load_library()
-    assert len(list(tmp_path.glob("*.md"))) == len(library.topics) + 3
+    assert len(list(tmp_path.glob("*.md"))) == len(library.topics) + 4  # + flows, changes, concepts, README
+    changes = (tmp_path / "changes.md").read_text()
+    assert "radius-replace" in changes and "vist-smlt-problem" not in changes
+
+
+def test_change_workflow_marks_config_commands_and_cautions(capsys):
+    assert main(["flow", "radius-replace"]) == 0
+    out = capsys.readouterr().out
+    assert "⇄ Replace or remove RADIUS" in out
+    assert "✎ no radius server host 10.0.0.50 used-by eapol" in out
+    assert "» show radius-server" in out
+    assert "▲" in out
 
 
 def test_append_command_keeps_file_valid_and_reverts_on_error(tmp_path):

@@ -40,6 +40,11 @@ def library():
         ("clients blocked after enabling dhcp snooping", "client-no-connectivity"),
         ("srx cluster failed over last night", "srx-unhealthy-or-failover"),
         ("srx shows alarms and is slow", "srx-unhealthy-or-failover"),
+        ("remove the old radius servers", "radius-replace"),
+        ("get rid of public and private snmp community", "snmp-replace"),
+        ("unconfigure snmp", "snmp-replace"),
+        ("swap ntp server", "syslog-ntp-dns-replace"),
+        ("migrate tacacs servers", "admin-login-change"),
     ],
 )
 def test_problem_descriptions_find_the_right_flow(library, problem, flow):

@@ -249,7 +249,7 @@ def _parser() -> argparse.ArgumentParser:
     fix.add_argument("problem", nargs="+", help='e.g. clients get no ip address (quotes are optional)')
     fix.add_argument("-p", "--platform", type=_platform, help="fe | srx")
 
-    for name, help_text in (("flow", "troubleshooting flows"), ("concept", "concept explanations")):
+    for name, help_text in (("flow", "troubleshooting flows and change workflows"), ("concept", "concept explanations")):
         sub.add_parser(name, help=help_text).add_argument("terms", nargs="*", help="id or words; empty lists all")
 
     sub.add_parser("topics", help="list topics with command counts")

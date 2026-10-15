@@ -52,10 +52,15 @@ def test_gems_toggle_and_scopes():
         assert app.entries and all(entry.rare for entry in app.entries)
 
         tree = app.query_one("#nav", Tree)
-        flows_node = next(node for node in tree.root.children if node.data == Scope("flows"))
+        flows_node = next(node for node in tree.root.children if node.data == Scope("troubleshoot"))
         tree.move_cursor(flows_node)
         await pilot.pause()
-        assert [entry.id for entry in app.entries] == [flow.id for flow in app.library.flows]
+        assert [entry.id for entry in app.entries] == [flow.id for flow in app.library.flows_of("troubleshoot")]
+
+        changes_node = next(node for node in tree.root.children if node.data == Scope("change"))
+        tree.move_cursor(changes_node)
+        await pilot.pause()
+        assert app.entries and all(entry.kind == "change" for entry in app.entries)
 
     drive(steps)
 

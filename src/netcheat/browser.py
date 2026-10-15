@@ -1,6 +1,6 @@
 """`ncs browse`: a full-screen browser for when you only have a broad idea of what you need.
 
-Left: topics, gems, flows and concepts. Middle: the matching entries, narrowed live by the filter.
+Left: topics, gems, troubleshooting flows, change workflows and concepts. Middle: the matching entries, narrowed live by the filter.
 Right: the details of the highlighted entry, rendered with the same blocks as the plain CLI.
 """
 
@@ -18,8 +18,8 @@ from textual.widgets import Footer, Header, Input, OptionList, Static, Tree
 from textual.widgets.option_list import Option
 
 from netcheat import CREDIT
-from netcheat.models import Command, Concept, Flow, Library
-from netcheat.render import CONCEPT, FLOW, RARE, THEME, command_block, command_title, concept_block, flow_block
+from netcheat.models import FLOW_KINDS, Command, Concept, Flow, Library
+from netcheat.render import CONCEPT, FLOW_ICONS, RARE, THEME, command_block, command_title, concept_block, flow_block
 from netcheat.search import Filters, search_commands, search_concepts, search_flows
 
 Entry = Union[Command, Flow, Concept]
@@ -27,7 +27,7 @@ Entry = Union[Command, Flow, Concept]
 
 @dataclass(frozen=True)
 class Scope:
-    """What the middle list shows: commands (of one topic, or all; optionally only gems), flows or concepts."""
+    """What the middle list shows: commands (of one topic, or all; optionally only gems), flows of one kind or concepts."""
 
     kind: str
     topic: str | None = None
@@ -49,7 +49,7 @@ def view(entry: Entry) -> View:
         key = f"command:{entry.topic}:{entry.mode}:{entry.cmd}"
         return View(key, command_title(entry), entry.cmd, lambda: command_block(entry, detail=True))
     if isinstance(entry, Flow):
-        return View(f"flow:{entry.id}", Text.assemble((f"{FLOW} ", "label"), entry.title), entry.id, lambda: flow_block(entry))
+        return View(f"flow:{entry.id}", Text.assemble((f"{FLOW_ICONS[entry.kind]} ", "label"), entry.title), entry.id, lambda: flow_block(entry))
     return View(f"concept:{entry.term}", Text.assemble((f"{CONCEPT} ", "label"), entry.term), entry.term, lambda: concept_block(entry))
 
 
@@ -104,7 +104,8 @@ class Browser(App[None]):
             platform = tree.root.add(name, expand=True)
             for topic in topics:
                 platform.add_leaf(f"{topic.slug} ({len(topic.commands)})", Scope("commands", topic=topic.slug))
-        tree.root.add_leaf(f"{FLOW} Troubleshooting flows", Scope("flows"))
+        for kind, name in FLOW_KINDS.items():
+            tree.root.add_leaf(f"{FLOW_ICONS[kind]} {name}", Scope(kind))
         tree.root.add_leaf(f"{CONCEPT} Concepts", Scope("concepts"))
         return tree
 
@@ -155,15 +156,17 @@ class Browser(App[None]):
         self.views = {shown.key: shown for shown in map(view, self.entries)}
         items = self.query_one("#items", OptionList)
         items.set_options(Option(shown.label, id=key) for key, shown in self.views.items())
-        items.border_title = f"{len(self.entries)} {self.scope.kind}" + (f" {RARE} gems only" if self.scope.gems else "")
+        noun = "flows" if self.scope.kind in FLOW_KINDS else self.scope.kind
+        items.border_title = f"{len(self.entries)} {noun}" + (f" {RARE} gems only" if self.scope.gems else "")
         if self.entries:
             items.highlighted = 0
         else:
             self.query_one("#detail", Static).update(Text("Nothing matches. Change the filter or pick another topic.", style="dim"))
 
     def _matching_entries(self, terms: list[str]) -> list[Entry]:
-        if self.scope.kind == "flows":
-            return search_flows(self.library.flows, terms) if terms else list(self.library.flows)
+        if self.scope.kind in FLOW_KINDS:
+            flows = self.library.flows_of(self.scope.kind)
+            return search_flows(flows, terms) if terms else flows
         if self.scope.kind == "concepts":
             return search_concepts(self.library.concepts, terms) if terms else list(self.library.concepts)
         commands = [c for c in self.library.commands if self.scope.topic in (None, c.topic)]

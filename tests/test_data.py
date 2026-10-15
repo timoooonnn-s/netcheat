@@ -42,3 +42,7 @@ def test_fabric_engine_commands_cite_the_official_reference(library):
 def test_versions_are_not_newer_than_the_latest_known_release(library):
     latest = version_key("9.4.2")
     assert [c.cmd for c in library.commands if c.since and version_key(c.since) > latest] == []
+
+
+def test_both_flow_kinds_are_shipped(library):
+    assert library.flows_of("troubleshoot") and library.flows_of("change")

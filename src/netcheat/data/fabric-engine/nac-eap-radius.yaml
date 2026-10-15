@@ -83,7 +83,8 @@ commands:
       logins. ExtremeControl assigns VLANs and I-SIDs dynamically with the Extreme-Dynamic-Client-Assignments
       VSA. Dynamic VLANs and I-SIDs only exist while clients use them and are not saved in the config. The VSA is
       not supported on MLT/SMLT ports, and it cannot create VLANs on a DvR leaf. Since 9.3.1 it also understands
-      create=none and igmpqaddr=....
+      create=none and igmpqaddr=.... Remove a server with `no radius server host <ip> used-by eapol`
+      (`ncs flow radius-replace`).
     cisco: radius server <name> / aaa group server radius
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/radius_server_host.shtml
 

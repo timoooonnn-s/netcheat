@@ -57,3 +57,8 @@ groups:
   - [srx, juniper, junos, firewall]
   - [policy, policies, zone, zones, session, sessions, flow mode, dropped by firewall]
   - [bgp, ospf, routing protocol, neighbor down]
+
+  # Changes (change workflows)
+  - [remove, delete, deconfigure, unconfigure, clean up, cleanup, get rid of, wipe]
+  - [replace, migrate, migration, swap, reconfigure, move to, new server, old server]
+  - [admin login, management login, ssh login, cli login, tacacs, tacacs+, aaa]

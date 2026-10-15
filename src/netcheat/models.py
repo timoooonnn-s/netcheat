@@ -13,6 +13,10 @@ PLATFORMS = {
 }
 PLATFORM_ALIASES = {"fe": "fabric-engine", "voss": "fabric-engine", "srx": "junos-srx", "junos": "junos-srx"}
 KINDS = ("show", "config", "action", "clear")
+FLOW_KINDS = {
+    "troubleshoot": "Troubleshooting flows",
+    "change": "Change workflows",
+}
 
 _VERSION = re.compile(r"^\d+(\.\d+)*$")
 
@@ -75,6 +79,7 @@ class Step:
     title: str
     cmds: tuple[str, ...] = ()
     look_for: str = ""
+    caution: str = ""
 
     def __post_init__(self) -> None:
         _check_list("cmds", self.cmds)
@@ -89,8 +94,11 @@ class Flow:
     steps: tuple[Step, ...]
     tags: tuple[str, ...] = ()
     symptoms: tuple[str, ...] = ()
+    kind: str = "troubleshoot"
 
     def __post_init__(self) -> None:
+        if self.kind not in FLOW_KINDS:
+            raise ValueError(f"flow kind must be one of {', '.join(FLOW_KINDS)}, got {self.kind!r}")
         _check_platform(self.platform)
         _check_list("tags", self.tags)
         _check_list("symptoms", self.symptoms)
@@ -140,6 +148,9 @@ class Library:
     @cached_property
     def commands(self) -> tuple[Command, ...]:
         return tuple(command for topic in self.topics for command in topic.commands)
+
+    def flows_of(self, kind: str) -> list[Flow]:
+        return [flow for flow in self.flows if flow.kind == kind]
 
     def topics_by_platform(self) -> list[tuple[str, list[Topic]]]:
         """(platform display name, topics) in PLATFORMS order, skipping platforms without topics."""
