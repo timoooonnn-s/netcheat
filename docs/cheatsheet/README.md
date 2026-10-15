@@ -2,7 +2,7 @@
 
 # Network Cheatsheet
 
-402 commands. Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem · ▲ caution · ↑ version added · ✕ removed
+420 commands. Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem · ▲ caution · ↑ version added · ✕ removed
 
 ## Extreme Fabric Engine
 
@@ -14,20 +14,22 @@
 | [L2 VSN and I-SID Services](l2vsn-isid.md) | 15 | Layer 2 services across the fabric. VLAN-to-I-SID mapping (C-VLAN), Switched UNI (ELAN), Transparent UNI and remote MAC learning. |
 | [L3 VSN, VRF and Routing](l3vsn-routing.md) | 33 | VRFs and L3 VSNs (IP VPN over SPB), IP interfaces, routes, ARP, inter-VRF leaking, VRRP/RSMLT, DHCP relay, OSPF/BGP basics and Segmented VRF. |
 | [MACsec](macsec.md) | 13 | Link encryption (802.1AE) with a static CAK or with MKA, MKA profiles and keychains (9.3+), status and counters. |
-| [Management Access (RADIUS, TACACS+, Users, SSH)](mgmt-access.md) | 20 | Who may log in and how. RADIUS for CLI/web login and for NAC, TACACS+, local users, SSH and banners, including the exact `no` forms to remove each piece. Step by step removal and re-adding is in the change workflows (`ncs flow change`). |
-| [Management Services (SNMP, Syslog, NTP, DNS)](mgmt-services.md) | 21 | SNMP v2c/v3, syslog servers, NTP and DNS, including the exact `no` forms to remove each piece. Step by step removal and re-adding is in the change workflows (`ncs flow change`). |
+| [Management Access (RADIUS, TACACS+, Users, SSH)](mgmt-access.md) | 20 | Who may log in and how. RADIUS for CLI/web login and for NAC, TACACS+, local users, SSH and banners, including the exact `no` forms to remove each piece. Step by step removal and re-adding is in the change workflows (`ncs list flows`). |
+| [Management Services (SNMP, Syslog, NTP, DNS)](mgmt-services.md) | 25 | SNMP v2c/v3, syslog servers, NTP and DNS, including the exact `no` forms to remove each piece. Step by step removal and re-adding is in the change workflows (`ncs list flows`). |
 | [MLT, SMLT, vIST and LACP](mlt-smlt-vist.md) | 18 | Link aggregation (static MLT and LACP) and dual-homing with SMLT over a virtual IST (vIST) through the fabric. |
 | [IP Multicast and IGMP](multicast.md) | 14 | IGMP snooping and queriers, IP multicast over Fabric Connect for L2 VSNs and routed (GRT / L3 VSN) multicast, and how to find receivers and senders. |
 | [NAC, EAP/NEAP and RADIUS](nac-eap-radius.md) | 25 | Port-based access control with ExtremeControl (XIQ-SE NAC). 802.1X (EAP), MAC authentication (NEAP), RADIUS, CoA, guest and fail-open I-SIDs. |
+| [Output Filters and Paging](output-filters.md) | 9 | Cut long show output down to what you need with a pipe after the command (\| include, \| exclude, \| begin, \| count, \| head, \| tail), plus the column and header options most people never use. Filters work on every show command except show fulltech. |
 | [Ports, VLANs and Loop Protection](ports.md) | 48 | Port status, counters and settings, platform VLANs, MAC tables, LLDP, PoE, mirroring and loop protection (SLPP, BPDU Guard). |
 | [QoS, Filters and Traffic Monitoring](qos-monitoring.md) | 7 | Queue drops per port and toward the CPU, ACL filter counters, and flow monitoring with sFlow and IPFIX. |
 | [SPBM, IS-IS and Fabric OAM](spbm-isis.md) | 40 | The Fabric Connect core. IS-IS adjacencies, nicknames, B-VLANs, unicast and multicast FIBs, CFM, l2 ping and l2 traceroute. |
-| [System, CLI and Files](system.md) | 54 | Inventory, logs, saving and backing up the config, software upgrades and CLI productivity. |
+| [System, CLI and Files](system.md) | 50 | Inventory, logs, saving and backing up the config, software upgrades and CLI productivity. |
 
 ## Juniper SRX
 
 | Topic | Commands | Description |
 |---|---|---|
+| [Juniper SRX Output Filters](srx-output-filters.md) | 9 | Junos pipe options after any command (\| match, \| except, \| find, \| count, \| last, \| no-more, \| save, \| refresh, \| compare). Patterns are regular expressions, and filters can be combined. |
 | [Juniper SRX Routing, Interfaces and Traffic](srx-routing.md) | 27 | The Junos operational commands you need when an SRX acts as a router. Routes, interfaces, OSPF/BGP, sessions, and safe changes with commit confirmed. |
 | [Juniper SRX System Health and Chassis Cluster](srx-system.md) | 16 | Operational health checks for standalone and clustered SRX. Version and uptime, hardware and alarms, CPU and memory, storage and core dumps, cluster state, and data for a JTAC case. |
 
@@ -35,7 +37,7 @@
 
 - [Troubleshooting flows](flows.md) (14)
 - [Change workflows](changes.md) (4)
-- [Concepts](concepts.md) (31)
+- [Concepts](concepts.md) (33)
 
 ---
 

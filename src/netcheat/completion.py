@@ -2,7 +2,7 @@
 
 Enable it with `eval "$(ncs completion zsh)"` (or bash) in the shell profile. On every <Tab> the shell
 calls `ncs __complete <index> <words...>`, and `candidates` answers from the argparse definition
-(options, choices) and the data (topics, flow ids, concept words, search words). The data is only
+(options, choices) and the data (topics, flow ids, concept names, search words). The data is only
 loaded when a candidate needs it, so completing options and choices skips reading the YAML files.
 """
 
@@ -82,14 +82,16 @@ def _option_values(sub: argparse.ArgumentParser, option: str, load: Loader) -> l
 
 
 def _positionals(command: str, load: Loader, current: str) -> list[str]:
-    if command == "flow":
+    if command == "export":
         return [flow.id for flow in load().flows]
-    if command == "concept":
-        return _tokens(" ".join((concept.term, *concept.aka)) for concept in load().concepts)
-    if not current:  # search and fix have hundreds of words: only complete once the first letter is typed
+    if not current:  # search, what and fix have hundreds of words: only complete once the first letter is typed
         return []
-    if command == "search":
-        return _tokens(" ".join((c.cmd, *c.tags)) for c in load().commands)
+    if command == "search":  # an exact flow id or concept name opens it, so those are offered too
+        library = load()
+        names = (" ".join((concept.term, *concept.aka)) for concept in library.concepts)
+        return [flow.id for flow in library.flows] + _tokens(" ".join((c.cmd, *c.tags)) for c in library.commands) + _tokens(names)
+    if command == "what":
+        return _tokens(c.cmd for c in load().commands)
     if command == "fix":  # free text: offer the vocabulary that `ncs fix` understands
         return _tokens(" ".join(group.words) for group in load().synonyms)
     return []
@@ -103,4 +105,5 @@ VALUE_COMPLETERS: dict[str, Callable[[Loader], list[str]]] = {
     "platform": lambda load: [*PLATFORM_ALIASES, *PLATFORMS],
     "topic": lambda load: [topic.slug for topic in load().topics],
     "since": lambda load: sorted({c.since for c in load().commands if c.since}),
+    "release": lambda load: sorted({v for c in load().commands for v in (c.since, c.removed) if v}),
 }

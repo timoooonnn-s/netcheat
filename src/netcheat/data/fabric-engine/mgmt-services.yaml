@@ -1,6 +1,6 @@
 # Fields: see README.md -> "Adding and editing commands". Keep `commands:` as the last key.
 title: Management Services (SNMP, Syslog, NTP, DNS)
-description: SNMP v2c/v3, syslog servers, NTP and DNS, including the exact `no` forms to remove each piece. Step by step removal and re-adding is in the change workflows (`ncs flow change`).
+description: SNMP v2c/v3, syslog servers, NTP and DNS, including the exact `no` forms to remove each piece. Step by step removal and re-adding is in the change workflows (`ncs list flows`).
 
 commands:
   - cmd: show snmp-server {community | user | group | view | notify-filter | context}
@@ -16,8 +16,8 @@ commands:
       show snmp-server host
       show running-config | include snmp
     notes: >
-      `show snmp-server` alone lists the main settings. There is no `module snmp` for `show running-config`,
-      filter with `| include snmp` instead.
+      `show snmp-server` alone lists the main settings. There is no `module snmp` for `show running-config`:
+      the SNMP lines are in `show running-config module sys`, or filter with `| include snmp`.
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_snmp_server.shtml
 
   - cmd: snmp-server community <string> [group <group>] index <index> secname <secname>
@@ -33,6 +33,12 @@ commands:
       The index is just a row name (first, second, third, ...). The examples are the Extreme KB 000078215 way to
       replace the defaults.
     cisco: snmp-server community <string> ro|rw
+    undo:
+      - match: "snmp-server community ... index <index> ..."
+        remove: "no snmp-server community-by-index <index>"
+        note: "Check `show snmp-server community` afterwards: on older releases removing by index alone was not always enough."
+      - match: "snmp-server community ..."
+        note: "The community string is masked. Find its index with `show snmp-server community`, then run `no snmp-server community-by-index <index>`."
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/snmp_server_community.shtml
 
   - cmd: no snmp-server community <string>
@@ -45,7 +51,9 @@ commands:
       no snmp-server community private
       no snmp-server community-by-index third
     notes: >
-      If you do not know the string, delete the row with `no snmp-server community-by-index <index>` (index from
+      Communities are stored outside the running config (Extreme KB 000115014): after a reboot they no longer
+      appear in `show running-config`, and `show snmp-server community` shows the string masked. If you don't know
+      the string, delete the row with `no snmp-server community-by-index <index>` (index from
       `show snmp-server community`). Extreme KB 000067212 says removing by index alone was not always enough on
       older releases, so check `show snmp-server community` afterwards.
     caution: Add the new community and test it from the NMS before you delete the one the NMS uses today.
@@ -65,6 +73,11 @@ commands:
       `read-view`/`write-view`/`notify-view`. Because of the prompts, the command can't be pasted as a block with
       the passwords; automation has to answer the prompts.
     cisco: snmp-server user <user> <group> v3 auth sha <pw> priv aes 128 <pw>
+    undo:
+      - match: "snmp-server user engine-id ..."
+        note: "A user of a remote engine (informs). The 9.4 reference shows `no snmp-server user engine-id <engine-id>`; check the exact form with `?` on the switch."
+      - match: "snmp-server user <user> ..."
+        remove: "no snmp-server user <user>"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/snmp_server_user_word1_32_sha.shtml
 
   - cmd: no snmp-server user <user>
@@ -75,7 +88,7 @@ commands:
     example: |
       show snmp-server user
       no snmp-server user nms-v3
-    notes: Users created for a remote engine (informs) are removed with `no snmp-server user engine-id <engine-id> <user>`.
+    notes: For users of a remote engine (informs) the 9.4 reference shows `no snmp-server user engine-id <engine-id>`. Check the exact form with `?` on the switch.
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/snmp_server_user.shtml
 
   - cmd: snmp-server group <group> "" {auth-priv | auth-no-priv | no-auth-no-priv} [read-view <view>] [write-view <view>] [notify-view <view>]
@@ -90,6 +103,9 @@ commands:
       Remove with `no snmp-server group <group> [<context>]`, using the name and context from `show snmp-server group`.
       A safe order: delete the hosts and users that use the group, then the group, then views nobody uses.
     rare: true
+    undo:
+      - match: "snmp-server group <group> <context> ..."
+        remove: "no snmp-server group <group> <context>"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/snmp_server_group.shtml
 
   - cmd: snmp-server view <view> <oid>
@@ -102,6 +118,9 @@ commands:
       no snmp-server view v3read 1.3.6.1
     notes: Removal needs the view name and the subtree, exactly as in `show snmp-server view`. Remove every subtree to remove the view.
     rare: true
+    undo:
+      - match: "snmp-server view <view> <oid>"
+        remove: "no snmp-server view <view> <oid>"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/snmp_server_view.shtml
 
   - cmd: snmp-server host <ip> [port <port>] {v2c <secname> | v3 {authPriv | authNoPriv | noAuthNoPriv} <user>} [inform] [filter <profile>]
@@ -114,6 +133,19 @@ commands:
       snmp-server host 10.0.0.81 v3 authPriv nms-v3
     notes: Check with `show snmp-server host`. Restrict which traps go out with `filter` and `snmp-server notify-filter`.
     cisco: snmp-server host <ip> version 2c <community>
+    undo:
+      - match: "snmp-server host <ip> v1 <name> ..."
+        remove: "no snmp-server host <ip> v1 <name>"
+      - match: "snmp-server host <ip> port <port> v1 <name> ..."
+        remove: "no snmp-server host <ip> port <port> v1 <name>"
+      - match: "snmp-server host <ip> v2c <name> ..."
+        remove: "no snmp-server host <ip> v2c <name>"
+      - match: "snmp-server host <ip> port <port> v2c <name> ..."
+        remove: "no snmp-server host <ip> port <port> v2c <name>"
+      - match: "snmp-server host <ip> v3 <level> <name> ..."
+        remove: "no snmp-server host <ip> v3 <name>"
+      - match: "snmp-server host <ip> port <port> v3 <level> <name> ..."
+        remove: "no snmp-server host <ip> port <port> v3 <name>"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/snmp_server_host_v2.shtml
 
   - cmd: no snmp-server host <ip> [port <port>] {v2c | v3} <name>
@@ -142,6 +174,9 @@ commands:
       no snmp-server notify-filter only-link +1.3.6.1.6.3.1.1.5
     notes: Removal needs the profile and the OID, as in `show snmp-server notify-filter`. Delete or re-add the hosts that use the profile (`filter`) first.
     rare: true
+    undo:
+      - match: "snmp-server notify-filter <profile> <oid>"
+        remove: "no snmp-server notify-filter <profile> <oid>"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/snmp_server_notify_filter.shtml
 
   - cmd: snmp-server {name | contact | location} <text>
@@ -153,6 +188,13 @@ commands:
       snmp-server location "Building A, Room 1.12, Rack 3"
       snmp-server contact "netops@example.com"
       no snmp-server contact
+    undo:
+      - match: "snmp-server name ..."
+        remove: "no snmp-server name"
+      - match: "snmp-server contact ..."
+        remove: "no snmp-server contact"
+      - match: "snmp-server location ..."
+        remove: "no snmp-server location"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/snmp_server_location.shtml
 
   - cmd: snmp-server authentication-trap enable
@@ -164,6 +206,9 @@ commands:
       snmp-server authentication-trap enable
       no snmp-server authentication-trap
     rare: true
+    undo:
+      - match: "snmp-server authentication-trap enable"
+        remove: "no snmp-server authentication-trap"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/snmp_server_authentication_trap_enable.shtml
 
   - cmd: boot config flags block-snmp
@@ -176,6 +221,9 @@ commands:
       no boot config flags block-snmp
     caution: Blocks your NMS too (XIQ-SE discovery and monitoring).
     rare: true
+    undo:
+      - match: "boot config flags block-snmp"
+        remove: "no boot config flags block-snmp"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/boot_config_flags_block_snmp.shtml
 
   - cmd: show syslog
@@ -184,6 +232,19 @@ commands:
     mode: User EXEC
     tags: [syslog, logging, global]
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_syslog.shtml
+
+  - cmd: syslog enable
+    desc: Turn sending to all syslog hosts on (default off). `no syslog enable` stops it and keeps the hosts.
+    kind: config
+    mode: Global Config
+    tags: [syslog, logging, enable, global]
+    example: |
+      syslog enable
+      no syslog enable
+    undo:
+      - match: "syslog enable"
+        remove: "no syslog enable"
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/syslog_enable.shtml
 
   - cmd: syslog host <1-10> address <ip>
     desc: Add a syslog server in slot 1-10. Every setting of that server refers to the same slot number.
@@ -197,6 +258,9 @@ commands:
       syslog enable
     notes: Default max is 5 hosts, raise it with `syslog max-hosts <1-10>`. Check with `show syslog host`.
     cisco: logging host <ip>
+    undo:
+      - match: "syslog host <id> ..."
+        remove: "no syslog host <id>"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/syslog_host.shtml
 
   - cmd: no syslog host <1-10>
@@ -213,6 +277,34 @@ commands:
     cisco: no logging host <ip>
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/syslog_host.shtml
 
+  - cmd: ntp
+    desc: Turn the NTP client on (default off). `no ntp` turns it off and keeps the servers.
+    kind: config
+    mode: Global Config
+    tags: [ntp, time, clock, enable, global]
+    example: |
+      ntp
+      no ntp
+    undo:
+      - match: "ntp"
+        remove: "no ntp"
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ntp.shtml
+
+  - cmd: ntp authentication-key <1-65534> <secret> [type {md5 | sha1}]
+    desc: An NTP authentication key. Servers use it with `auth-enable authentication-key <key-id>`.
+    kind: config
+    mode: Global Config
+    tags: [ntp, key, authentication, security]
+    example: |
+      ntp authentication-key 1 <secret> type sha1
+      no ntp authentication-key 1
+    notes: Remove the servers that use a key before the key itself. `show ntp key` lists the keys.
+    rare: true
+    undo:
+      - match: "ntp authentication-key <id> ..."
+        remove: "no ntp authentication-key <id>"
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ntp_authentication_key.shtml
+
   - cmd: ntp server <ip | fqdn> [auth-enable authentication-key <key-id>] enable
     desc: Add an NTP server. `ntp` (alone) turns the NTP client on.
     kind: config
@@ -225,6 +317,9 @@ commands:
       ntp
     notes: Up to 20 servers. Check with `show ntp server` and `show ntp statistics`.
     cisco: ntp server <ip>
+    undo:
+      - match: "ntp server <server> ..."
+        remove: "no ntp server <server>"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ntp_server.shtml
 
   - cmd: no ntp server <ip | fqdn>
@@ -258,16 +353,30 @@ commands:
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_dns.shtml
 
   - cmd: ip name-server {primary | secondary | tertiary} <ip>
-    desc: Set a DNS server. Remove with `no ip name-server primary` (only the slot, no IP).
+    desc: Set a DNS server. Remove with `no ip name-server primary` (only the position, no IP).
     kind: config
     mode: Global Config
     tags: [dns, name server, resolver, add, remove, "no"]
     example: |
       ip name-server primary 10.0.0.53
       ip name-server secondary 10.0.0.54
-      ip domain-name example.local
       no ip name-server secondary
-      no ip domain-name
     notes: Servers learned by DHCP are removed with `no ip name-server primary-dynamic` (secondary-dynamic, tertiary-dynamic).
     cisco: ip name-server <ip>
+    undo:
+      - match: "ip name-server <position> <ip>"
+        remove: "no ip name-server <position>"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ip_name_server.shtml
+
+  - cmd: ip domain-name <name>
+    desc: The default DNS domain of the switch. `no ip domain-name` clears it.
+    kind: config
+    mode: Global Config
+    tags: [dns, domain, resolver]
+    example: |
+      ip domain-name example.local
+      no ip domain-name
+    undo:
+      - match: "ip domain-name ..."
+        remove: "no ip domain-name"
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ip_domain_name.shtml

@@ -4,7 +4,7 @@
 
 _Extreme Fabric Engine · 20 commands_
 
-Who may log in and how. RADIUS for CLI/web login and for NAC, TACACS+, local users, SSH and banners, including the exact `no` forms to remove each piece. Step by step removal and re-adding is in the change workflows (`ncs flow change`).
+Who may log in and how. RADIUS for CLI/web login and for NAC, TACACS+, local users, SSH and banners, including the exact `no` forms to remove each piece. Step by step removal and re-adding is in the change workflows (`ncs list flows`).
 
 Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem · ▲ caution · ↑ version added · ✕ removed
 

@@ -18,8 +18,15 @@ A personal and team **inventory of commands**, so useful commands are not forgot
 - Organize by task and topic (SPBM, L2/L3 VSN, DvR, SMLT/vIST, NAC, MACsec...), not by CLI mode.
 - Mark commands that are rarely used but valuable ("gems"), so you can browse them on purpose (`ncs -r`, `ncs tip`).
 - Give guided **troubleshooting flows** for the common problems, and short **concept** notes for the building blocks.
-- **Browse** when you only have a broad idea (`ncs browse`), and **describe a problem in your own words** to get the
-  matching flow and commands (`ncs fix`), offline, using symptom phrasings and an editable synonym list.
+- **Browse** when you only have a broad idea (`ncs` opens the browser), with personal favourites and recent entries,
+  and **describe a problem in your own words** to get the matching flow and commands (`ncs fix`), offline, using
+  symptom phrasings and an editable synonym list.
+- **Read pasted configuration:** explain a command or config line (`ncs what`) and write the commands that remove it,
+  in a safe order (`ncs undo`). Removing management configuration on Fabric Engine means one `no` command per object
+  with the values that identify it; guessing that syntax during a migration is what this avoids.
+- **Change workflows** for replacing RADIUS, SNMP, syslog/NTP/DNS and admin logins, with your own values filled in
+  and an export for the change ticket that includes a generated rollback (`ncs export`).
+- **Only what your switches have:** hide commands newer than your Fabric Engine release (`NCS_RELEASE`).
 - **Tab completion** in zsh and bash for options, topics, flow ids and search words.
 - Be precise: every Fabric Engine command is checked against the official documentation, links to it, and is tagged
   with the release that introduced it, when that release is newer than 9.1.
@@ -47,7 +54,9 @@ In scope:
   SPBM/IS-IS and fabric OAM (CFM, l2 ping/traceroute), L2 VSN/I-SID services, L3 VSN/VRF/routing, DvR and Anycast
   Gateway, MLT/SMLT/vIST/LACP, NAC (EAP/NEAP/RADIUS), Auto-sense/Fabric Attach/Zero Touch, MACsec.
 - Juniper SRX routing basics and the safe-change workflow (commit confirmed).
-- Troubleshooting flows and concept explanations.
+- Output filters on the switch (`| include`, `| exclude`, `| begin`, ... and the Junos pipe), with `ncs what` explaining piped lines.
+- Troubleshooting flows, change workflows for management configuration, and concept explanations.
+- Removal commands for global management configuration (`ncs undo`); data-plane configuration is out of scope there.
 
 Out of scope (on purpose):
 
@@ -68,6 +77,9 @@ Out of scope (on purpose):
 | `ncs fix` is keyword and synonym matching, not AI | Works on jump hosts without internet, sends no problem descriptions anywhere, and is deterministic and testable. Wording is improved by editing `synonyms.yaml` and flow `symptoms`. |
 | Browser built with Textual | From the authors of rich (already used), pure Python, works over SSH; it reuses the same render blocks as the CLI. |
 | Completion via `ncs __complete` | One small shell function per shell; candidates come from the argparse definition and the data, so they never drift. |
+| `ncs what`/`undo` match the data's own syntax | The `cmd` notation (`<value>`, `[option]`, `{a \| b}`) is parsed into patterns, so every entry is explainable without extra data, and undo rules are short patterns next to the command they remove. Nothing is guessed: lines without a rule are listed, risky removals are kept out of the paste block. |
+| Undo prints, never applies | The tool has no switch access by design; the engineer reviews and pastes. |
+| Favourites and recents outside the repo | Personal state belongs to the user (`~/.local/share/netcheat`), not to the shared data, and must never break the tool. |
 
 ## Sources
 
@@ -79,6 +91,7 @@ Primary (official Extreme Networks documentation):
 
 Secondary:
 
+- Extreme KB articles 000067212, 000078215 and 000115014 for how SNMP communities are stored and shown.
 - Extreme community forum (community.extremenetworks.com), used only for practical hints; such hints say so in the
   entry's notes.
 - Juniper TechLibrary for the Junos commands.

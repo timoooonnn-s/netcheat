@@ -2,7 +2,7 @@
 
 # System, CLI and Files
 
-_Extreme Fabric Engine · 54 commands_
+_Extreme Fabric Engine · 50 commands_
 
 Inventory, logs, saving and backing up the config, software upgrades and CLI productivity.
 
@@ -13,7 +13,7 @@ Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem 
 | » | [`show sys-info`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_sys_info.shtml) | Model, serial number, MAC, uptime, last boot reason and hardware health in one view.<br>≈ Cisco: `show version / show inventory` | User EXEC |
 | » | [`show software [detail]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_software.shtml) | Unpacked releases on flash and which one is primary, backup and committed.<br>≈ Cisco: `show version` | User EXEC |
 | » | [`show sys software`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_sys_software.shtml) | Running image and the config file the switch booted from. | User EXEC |
-| » | [`show running-config module <module>`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_running_config.shtml) ◆ | Show only one part of the config (isis, i-sid, mlt, vlan, eap, radius, macsec, dvr, spbm, ...).<br>≈ Cisco: `show running-config \| section <x>` | Privileged EXEC |
+| » | [`show running-config [module <module>]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_running_config.shtml) ◆ | The running config, or only one part of it (isis, i-sid, mlt, vlan, eap, radius, ntp, sys, ...).<br>≈ Cisco: `show running-config \| section <x>` | Privileged EXEC |
 | » | [`show running-config verbose`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_running_config.shtml) ◆ | Full running config including all default values.<br>≈ Cisco: `show running-config all` | Privileged EXEC |
 | ► | [`save config [file <name>] [backup <name>]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/save_config.shtml) | Save the running config to the startup config, or to a named file as a backup.<br>≈ Cisco: `copy running-config startup-config / write memory` | Privileged EXEC |
 | ► | [`copy <source> <destination> [-y]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/copy.shtml) | Copy files on flash, USB or to and from a TFTP/FTP server, e.g. config backups.<br>≈ Cisco: `copy` | Privileged EXEC |
@@ -48,10 +48,6 @@ Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem 
 | ► | [`delete /intflash/.ssh/known_hosts`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/delete.shtml) ◆ ↑ 9.3.1 | Clear the switch's SSH known-hosts file after a remote switch was factory reset (host key changed). | Privileged EXEC |
 | ► | [`ping <ip> [vrf <vrf>] [source <ip>] [count <n>] [datasize <bytes>] [-s]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/ping.shtml) | Ping from the GRT or a VRF, with optional source address, packet size or continuous mode.<br>≈ Cisco: `ping vrf <vrf> <ip> source <if>` | User EXEC |
 | ► | [`traceroute <ip> [vrf <vrf>] [source <ip>]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/traceroute.shtml) | IP traceroute from the GRT or a VRF.<br>≈ Cisco: `traceroute vrf <vrf> <ip>` | Privileged EXEC |
-| » | [`<show command> \| include <pattern>`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommongrepclishowcommands.shtml) | Keep only matching lines. exclude removes them and begin starts output at the first match.<br>≈ Cisco: `\| include / \| exclude / \| begin` | any |
-| » | [`<show command> \| count`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommongrepclishowcommands.shtml) ◆ | Count output lines, e.g. how many MACs, routes or adjacencies there are.<br>≈ Cisco: `\| count` | any |
-| » | [`<show command> \| no-more`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommongrepclishowcommands.shtml) ◆ | Print the whole output without "--More--" paging (one command only). Also \| head &lt;n&gt; and \| tail &lt;n&gt;. | any |
-| ✎ | [`terminal more disable`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/terminal.shtml) | Turn off paging for the whole session, e.g. before capturing output to a file.<br>≈ Cisco: `terminal length 0` | User EXEC |
 | » | [`show history`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_history.shtml) | The last 32 commands of this session.<br>≈ Cisco: `show history` | Privileged EXEC |
 | ✎ | [`sys name <hostname>`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/sys_name.shtml) | Set the system name (also used as the CLI prompt and IS-IS hostname source).<br>≈ Cisco: `hostname` | Global Config |
 | ✎ | [`clilog enable`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/clilog.shtml) ◆ ↑ 9.4 | Log every CLI command that users run (audit trail). | Global Config |
@@ -83,7 +79,7 @@ Sub-options bmc, card, cpld, fan, led, power, ssd, temperature, uboot and usb de
 The first thing to check before and after an upgrade.
 
 
-### `show running-config module <module>`
+### `show running-config [module <module>]`
 
 ```
 show running-config module isis
@@ -91,7 +87,7 @@ show running-config module i-sid
 show running-config module mlt
 ```
 
-Much faster to read than grepping the full config. Use `show running-config verbose` to include default values.
+A module is much faster to read than the full config. Some features have no module of their own (SNMP lines are in `module sys`, Extreme KB 000115014); for those, filter with `| include` (`ncs -t output-filters`). Use `show running-config verbose` to include default values.
 
 
 ### `show running-config verbose`
@@ -305,41 +301,6 @@ traceroute 10.10.20.1 vrf CORP
 ```
 
 Inside the fabric, `l2 traceroute` shows the SPB hops. IP traceroute only shows the routed hops.
-
-
-### `<show command> | include <pattern>`
-
-```
-show running-config | include i-sid
-show isis adjacencies | exclude UP
-show running-config | begin "interface mlt"
-```
-
-Supported pipe functions are include, exclude, begin, count, head, tail and no-more. They do not work with show fulltech.
-
-
-### `<show command> | count`
-
-```
-show vlan mac-address-entry 100 | count
-show isis adjacencies | include UP | count
-```
-
-
-### `<show command> | no-more`
-
-```
-show running-config | no-more
-show logging file | tail 20
-```
-
-
-### `terminal more disable`
-
-```
-terminal more disable
-terminal length 64
-```
 
 
 ### `sys name <hostname>`

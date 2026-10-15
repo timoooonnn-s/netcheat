@@ -17,9 +17,10 @@ from typing import Any, TypeVar
 
 import yaml
 
-from netcheat.models import PLATFORMS, Command, Concept, Flow, Library, Step, SynonymGroup, Topic
+from netcheat.models import PLATFORMS, Command, Concept, Flow, Library, Step, SynonymGroup, Topic, UndoRule
 
 DATA_DIR = Path(os.environ.get("NETCHEAT_DATA", Path(__file__).parent / "data"))
+_YAML_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)  # the C parser is ~10x faster, if PyYAML has it
 
 T = TypeVar("T")
 
@@ -63,7 +64,7 @@ def load_topic(path: Path, platform: str) -> Topic:
         if key not in doc:
             raise DataError(f"{path.name}: missing top-level key '{key}'")
     commands = tuple(
-        _build(Command, raw, f"{path.name} #{i}", platform=platform, topic=path.stem)
+        _build_command(raw, f"{path.name} #{i}", platform, path.stem)
         for i, raw in enumerate(_list(doc["commands"], f"{path.name}: commands"), 1)
     )
     return Topic(path.stem, doc["title"], platform, doc.get("description", ""), path, commands)
@@ -73,7 +74,7 @@ def _read(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
     try:
-        doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+        doc = yaml.load(path.read_text(encoding="utf-8"), Loader=_YAML_LOADER)
     except yaml.YAMLError as err:
         raise DataError(f"{path.name}: invalid YAML: {err}") from err
     if doc is not None and not isinstance(doc, dict):
@@ -81,12 +82,26 @@ def _read(path: Path) -> dict[str, Any]:
     return doc or {}
 
 
+def _build_command(raw: Any, where: str, platform: str, topic: str) -> Command:
+    raw = _mapping(raw, where)
+    rules = tuple(
+        _build(UndoRule, rule, f"{where} undo {i}") for i, rule in enumerate(_list(raw.get("undo"), f"{where}: undo"), 1)
+    )
+    return _build(Command, {**raw, "undo": rules}, where, platform=platform, topic=topic)
+
+
 def _build_flow(raw: Any, where: str, kind: str) -> Flow:
     raw = _mapping(raw, where)
     steps = tuple(
         _build(Step, step, f"{where} step {i}") for i, step in enumerate(_list(raw.get("steps"), f"{where}: steps"), 1)
     )
-    return _build(Flow, {**raw, "steps": steps}, where, kind=kind)
+    values = {str(name): _text_item(value) for name, value in _mapping(raw.get("values") or {}, f"{where}: values").items()}
+    flow = _build(Flow, {**raw, "steps": steps, "values": values}, where, kind=kind)
+    try:
+        flow.check_values()
+    except ValueError as err:
+        raise DataError(f"{where} ({flow.id}): {err}") from err
+    return flow
 
 
 def _build(cls: type[T], raw: Any, where: str, **context: str) -> T:
@@ -128,12 +143,12 @@ def _clean(value: Any) -> Any:
     if isinstance(value, str):
         return value.strip()
     if isinstance(value, list):
-        return tuple(_list_item(item) for item in value)
+        return tuple(_text_item(item) for item in value)
     return value
 
 
-def _list_item(item: Any) -> Any:
-    """Whole numbers such as model numbers (tags: [5520]) are fine as text; other non-strings stay and fail validation."""
+def _text_item(item: Any) -> Any:
+    """Whole numbers (tags: [5520], values: {vlan: 100}) are fine as text; other non-strings stay and fail validation."""
     is_whole_number = isinstance(item, int) and not isinstance(item, bool)
     return str(item) if is_whole_number else _clean(item)
 

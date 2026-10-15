@@ -32,8 +32,8 @@ commands:
     tags: [version, firmware, config, boot]
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_sys_software.shtml
 
-  - cmd: show running-config module <module>
-    desc: Show only one part of the config (isis, i-sid, mlt, vlan, eap, radius, macsec, dvr, spbm, ...).
+  - cmd: show running-config [module <module>]
+    desc: The running config, or only one part of it (isis, i-sid, mlt, vlan, eap, radius, ntp, sys, ...).
     kind: show
     mode: Privileged EXEC
     tags: [config, running, filter]
@@ -41,7 +41,10 @@ commands:
       show running-config module isis
       show running-config module i-sid
       show running-config module mlt
-    notes: Much faster to read than grepping the full config. Use `show running-config verbose` to include default values.
+    notes: >
+      A module is much faster to read than the full config. Some features have no module of their own (SNMP lines
+      are in `module sys`, Extreme KB 000115014); for those, filter with `| include` (`ncs -t output-filters`). Use
+      `show running-config verbose` to include default values.
     rare: true
     cisco: show running-config | section <x>
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_running_config.shtml
@@ -397,53 +400,6 @@ commands:
     notes: Inside the fabric, `l2 traceroute` shows the SPB hops. IP traceroute only shows the routed hops.
     cisco: traceroute vrf <vrf> <ip>
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/traceroute.shtml
-
-  - cmd: <show command> | include <pattern>
-    desc: Keep only matching lines. exclude removes them and begin starts output at the first match.
-    kind: show
-    mode: any
-    tags: [grep, filter, pipe, include, exclude, begin, output]
-    example: |
-      show running-config | include i-sid
-      show isis adjacencies | exclude UP
-      show running-config | begin "interface mlt"
-    notes: Supported pipe functions are include, exclude, begin, count, head, tail and no-more. They do not work with show fulltech.
-    cisco: "| include / | exclude / | begin"
-    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommongrepclishowcommands.shtml
-
-  - cmd: <show command> | count
-    desc: Count output lines, e.g. how many MACs, routes or adjacencies there are.
-    kind: show
-    mode: any
-    tags: [grep, filter, pipe, count, output]
-    example: |
-      show vlan mac-address-entry 100 | count
-      show isis adjacencies | include UP | count
-    rare: true
-    cisco: "| count"
-    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommongrepclishowcommands.shtml
-
-  - cmd: <show command> | no-more
-    desc: Print the whole output without "--More--" paging (one command only). Also | head <n> and | tail <n>.
-    kind: show
-    mode: any
-    tags: [pipe, paging, more, output, head, tail]
-    example: |
-      show running-config | no-more
-      show logging file | tail 20
-    rare: true
-    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommongrepclishowcommands.shtml
-
-  - cmd: terminal more disable
-    desc: Turn off paging for the whole session, e.g. before capturing output to a file.
-    kind: config
-    mode: User EXEC
-    tags: [terminal, paging, more, length, output]
-    example: |
-      terminal more disable
-      terminal length 64
-    cisco: terminal length 0
-    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/terminal.shtml
 
   - cmd: show history
     desc: The last 32 commands of this session.

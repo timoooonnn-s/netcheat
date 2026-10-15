@@ -1,12 +1,15 @@
 import asyncio
+import io
 
 from rich.console import Console
 
-from textual.widgets import OptionList, Static, Tree
+from textual.widgets import Input, OptionList, Static, Tree
 from textual.widgets.option_list import Option
 
 from netcheat.browser import Browser, Scope
 from netcheat.loader import load_library
+from netcheat.models import entry_key
+from netcheat.state import State
 
 
 def drive(steps, terms=()):
@@ -72,7 +75,7 @@ def test_highlight_from_a_replaced_list_is_ignored():
         await pilot.press("slash", *"macsec mka keychain")
         await pilot.pause()
         app.on_option_list_option_highlighted(stale)  # used to index the new, shorter list and crash
-        shown = Console(width=100, record=True)
+        shown = Console(width=100, record=True, file=io.StringIO())
         shown.print(app.query_one("#detail", Static).content)
         assert "keychain" in shown.export_text()
 
@@ -85,5 +88,48 @@ def test_list_shows_the_same_badges_as_the_cli():
         await pilot.pause()
         label = app.query_one("#items", OptionList).get_option_at_index(0).prompt
         assert "↑ 9.4" in label.plain
+
+    drive(steps)
+
+
+def select(app, scope):
+    tree = app.query_one("#nav", Tree)
+    tree.move_cursor(next(node for node in tree.root.children if node.data == scope))
+
+
+def test_star_shows_in_favourites_and_is_saved():
+    async def steps(app, pilot):
+        await pilot.press("slash", *"isis adj", "enter", "f")
+        await pilot.pause()
+        starred = app.entries[0]
+        assert State.load().favourites == [entry_key(starred)]
+        select(app, Scope("favourites"))
+        await pilot.pause()
+        assert app.entries == [starred]  # the filter still applies: "isis adj" matches it
+        assert app.query_one("#items", OptionList).get_option_at_index(0).prompt.plain.startswith("★")
+
+    drive(steps)
+
+
+def test_copied_and_selected_entries_become_recent():
+    async def steps(app, pilot):
+        await pilot.press("slash", *"isis adj", "enter", "c")
+        await pilot.pause()
+        assert State.load().recent[0] == entry_key(app.entries[0])
+
+    drive(steps)
+
+
+def test_number_copies_a_flow_step_with_values():
+    async def steps(app, pilot):
+        select(app, Scope("change"))
+        await pilot.pause()
+        app.query_one("#items", OptionList).focus()
+        await pilot.press("v")
+        await pilot.pause()
+        app.screen.query_one(Input).value = "old_radius=192.0.2.9"
+        await pilot.press("enter", "5")
+        await pilot.pause()
+        assert app.clipboard.splitlines()[0] == "no radius server host 192.0.2.9 used-by eapol"
 
     drive(steps)

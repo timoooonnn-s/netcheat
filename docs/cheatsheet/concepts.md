@@ -98,6 +98,12 @@ Changes go into a candidate config and only take effect with `commit`. `show | c
 
 See: `show | compare / commit check / commit confirmed <minutes>`, `reset -in <[d:][hh:]mm>`
 
+## Junos pipe (junos grep, match, except, junos regex)
+
+Junos filters any output with `| match`, `| except` and `| find` (POSIX regular expressions, `a|b` for either term, quoted when they contain spaces or operators) and shapes it with `| count`, `| last`, `| no-more`, `| save` and `| refresh`. Several filters can follow each other, e.g. `show configuration | display set | match "security policies"`.
+
+See: `<command> | match <pattern>`, `<command> | except <pattern>`, `show configuration <section> | display set`
+
 ## L2 VSN (layer 2 virtual service network, l2vsn, stretched vlan)
 
 A Layer 2 service across the fabric: all BEBs that map a VLAN (or S-UNI/T-UNI endpoints) to the same I-SID form one broadcast domain. BUM traffic only goes to the BEBs that have the I-SID. MACs are learned as "client MAC behind remote B-MAC".
@@ -121,6 +127,12 @@ See: `show macsec status [<ports>]`, `macsec connectivity-association <name> con
 A 2.5-byte short ID of a fabric node (format x.xx.xx, e.g. 1.01.01). It is used to build the multicast MACs for I-SID flooding and must be unique in the fabric. It is set statically or handed out by a dynamic nickname server (Zero Touch Fabric).
 
 See: `spbm 1 nick-name <x.xx.xx>`, `show spbm nick-name`, `spbm nick-name server`
+
+## Output filters (pipe) (grep, pipe, include, regex, regular expression, filter output)
+
+After any show command, `| include`, `| exclude` and `| begin` keep, drop or jump to lines that match a regular expression; `| count`, `| head`, `| tail` and `| no-more` shape the rest. Quote patterns with spaces, and add `ignore-case`, because matching is case-sensitive. `field <n>` matches one column only and `header <n>` keeps the table header. Extreme documents the pattern as a regular expression but shows no example of `a|b` alternation or of several filters in a row, so test those once on your release. `show fulltech` takes no filters.
+
+See: `<show command> | include <pattern> [field <n>] [ignore-case] [header <n>]`, `<show command> | exclude <pattern> [field <n>] [ignore-case] [header <n>]`, `<show command> | include <pattern> field <n> header <n>`, `show running-config [module <module>]`
 
 ## Routing instance (vrf, virtual router, routing-instances, inet.0)
 

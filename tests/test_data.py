@@ -46,3 +46,20 @@ def test_versions_are_not_newer_than_the_latest_known_release(library):
 
 def test_both_flow_kinds_are_shipped(library):
     assert library.flows_of("troubleshoot") and library.flows_of("change")
+
+
+def test_every_undo_rule_wins_for_its_own_line(library):
+    """A sample line built from each rule's pattern must be removed by that rule, not by a competing one."""
+    from netcheat.config import _best_undo
+    from netcheat.syntax import fill, slots
+
+    for command in library.commands:
+        for rule in command.undo:
+            values = {name: f"v{index}" for index, name in enumerate(slots(rule.match))}
+            line = " ".join(fill(rule.match, values).replace("...", "").split())
+            found = _best_undo(library.commands, line)
+            assert found is not None and found[1] == rule, f"{line!r} is taken by {found and found[1].match!r}"
+
+
+def test_change_workflows_have_example_values(library):
+    assert all(flow.values for flow in library.flows_of("change"))

@@ -1,12 +1,14 @@
-"""Generate the Markdown cheatsheet (one page per topic, plus flows, change workflows and concepts)."""
+"""Markdown: the generated cheatsheet in docs/cheatsheet (`ncs build-md`) and flows as Markdown (`ncs export --md`)."""
 
 from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import Optional, Sequence
 
 from netcheat import CREDIT
-from netcheat.models import PLATFORMS, Command, Flow, Library, Topic
+from netcheat.config import rollback
+from netcheat.models import FLOW_KINDS, PLATFORMS, Command, Flow, Library, Topic
 from netcheat.render import CAUTION, CISCO, KIND_ICONS, NEW, RARE, REMOVED, step_kind
 
 _CODE_SPAN = re.compile(r"(`[^`]*`)")
@@ -15,19 +17,21 @@ LEGEND = (
     " · ".join(f"{icon} {kind}" for kind, icon in KIND_ICONS.items())
     + f" · {RARE} rarely used gem · {CAUTION} caution · {NEW} version added · {REMOVED} removed"
 )
+FLOW_PAGES = {  # flow kind: (file, intro)
+    "troubleshoot": ("flows.md", "Work through the steps in order; each step narrows down the fault."),
+    "change": ("changes.md", "Remove, replace or re-add a configuration cleanly: see what is set, add the new, test, remove the old, verify."),
+}
+ROLLBACK_NOTE = (
+    "Removes what this plan adds, in this order. Configuration the plan removes can only be restored from the "
+    "original lines: save `show running-config` before step 1."
+)
 
 
 def build_markdown(library: Library, out_dir: Path) -> list[Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     pages = {f"{topic.slug}.md": topic_page(topic) for topic in library.topics}
-    pages["flows.md"] = flows_page(
-        "Troubleshooting Flows", "Work through the steps in order; each step narrows down the fault.",
-        library.flows_of("troubleshoot"),
-    )
-    pages["changes.md"] = flows_page(
-        "Change Workflows", "Remove, replace or re-add a configuration cleanly: see what is set, remove it in order, verify.",
-        library.flows_of("change"),
-    )
+    for kind, (name, intro) in FLOW_PAGES.items():
+        pages[name] = flows_page(FLOW_KINDS[kind], intro, library.flows_of(kind), library)
     pages["concepts.md"] = concepts_page(library)
     pages["README.md"] = index_page(library)
 
@@ -47,10 +51,10 @@ def index_page(library: Library) -> str:
     lines = ["# Network Cheatsheet", "", f"{len(library.commands)} commands. Legend: {LEGEND}", ""]
     for name, topics in library.topics_by_platform():
         lines += [f"## {name}", "", "| Topic | Commands | Description |", "|---|---|---|"]
-        lines += [f"| [{t.title}]({t.slug}.md) | {len(t.commands)} | {_cell(t.description)} |" for t in topics]
+        lines += [f"| [{t.title}]({t.slug}.md) | {len(t.commands)} | {cell(t.description)} |" for t in topics]
         lines.append("")
-    lines += ["## Workflows and background", "", f"- [Troubleshooting flows](flows.md) ({len(library.flows_of('troubleshoot'))})"]
-    lines.append(f"- [Change workflows](changes.md) ({len(library.flows_of('change'))})")
+    lines += ["## Workflows and background", ""]
+    lines += [f"- [{FLOW_KINDS[kind]}]({name}) ({len(library.flows_of(kind))})" for kind, (name, _) in FLOW_PAGES.items()]
     lines += [f"- [Concepts](concepts.md) ({len(library.concepts)})", "", "---", "", f"_{CREDIT}_", ""]
     return "\n".join(lines)
 
@@ -58,7 +62,7 @@ def index_page(library: Library) -> str:
 def topic_page(topic: Topic) -> str:
     lines = [f"# {topic.title}", "", f"_{PLATFORMS[topic.platform]} · {len(topic.commands)} commands_", ""]
     if topic.description:
-        lines += [_prose(topic.description), ""]
+        lines += [prose(topic.description), ""]
     lines += [f"Legend: {LEGEND}", "", "| | Command | What it does | Mode |", "|---|---|---|---|"]
     lines += [_table_row(command) for command in topic.commands]
 
@@ -70,27 +74,39 @@ def topic_page(topic: Topic) -> str:
             if command.example:
                 lines += ["```", command.example, "```", ""]
             if command.notes:
-                lines += [_prose(command.notes), ""]
+                lines += [prose(command.notes), ""]
             if command.caution:
-                lines += [f"> {CAUTION} **Caution:** {_prose(command.caution)}", ""]
+                lines += [f"> {CAUTION} **Caution:** {prose(command.caution)}", ""]
     return "\n".join(lines).rstrip() + "\n"
 
 
-def flows_page(title: str, intro: str, flows: list[Flow]) -> str:
+def flows_page(title: str, intro: str, flows: Sequence[Flow], library: Library) -> str:
     lines = [f"# {title}", "", f"Legend: {KIND_ICONS['show']} show · {KIND_ICONS['config']} config · {KIND_ICONS['action']} action", ""]
-    lines += [intro, ""]
+    lines += [intro, "Example values are shown filled in; `ncs export <id> --set name=value` uses your own.", ""]
     for flow in flows:
-        lines += [f"## {flow.title}", "", f"_{PLATFORMS[flow.platform]} · id: `{flow.id}`_", "", _prose(flow.summary), ""]
-        if flow.symptoms:
-            lines += ["Typical symptoms: " + "; ".join(_prose(symptom) for symptom in flow.symptoms) + ".", ""]
-        for number, step in enumerate(flow.steps, 1):
-            lines.append(f"{number}. **{step.title}**")
-            lines += [f"   - {KIND_ICONS[step_kind(cmd)]} `{cmd}`" for cmd in step.cmds]
-            if step.look_for:
-                lines.append(f"   - Look for: {_cell(step.look_for)}")
-            if step.caution:
-                lines.append(f"   - {CAUTION} **Caution:** {_cell(step.caution)}")
-        lines.append("")
+        lines += [flow_markdown(flow.with_values(), library, level=2), ""]
+    return "\n".join(lines)
+
+
+def flow_markdown(flow: Flow, library: Optional[Library] = None, level: int = 1) -> str:
+    """A flow (with its values filled in) as Markdown; `level` is the heading level of its title.
+    With a library, a change workflow also gets a rollback section."""
+    lines = [f"{'#' * level} {flow.title}", "", f"_{PLATFORMS[flow.platform]} · id: `{flow.id}`_", "", prose(flow.summary), ""]
+    if flow.values:
+        lines += ["Values: " + ", ".join(f"{name} = `{value}`" for name, value in flow.values.items()), ""]
+    if flow.symptoms:
+        lines += ["Typical symptoms: " + "; ".join(prose(symptom) for symptom in flow.symptoms) + ".", ""]
+    for number, step in enumerate(flow.steps, 1):
+        lines.append(f"{number}. **{prose(step.title)}**")
+        lines += [f"   - {KIND_ICONS[step_kind(cmd)]} `{cmd}`" for cmd in step.cmds]
+        if step.look_for:
+            lines.append(f"   - Look for: {cell(step.look_for)}")
+        if step.caution:
+            lines.append(f"   - {CAUTION} **Caution:** {cell(step.caution)}")
+    if library and flow.kind == "change":
+        back = rollback(library, flow)
+        lines += ["", f"{'#' * (level + 1)} Rollback", "", ROLLBACK_NOTE, "", "```", *back.commands, "```"]
+        lines += [f"- {CAUTION} Not in the block above, check first: `{r.remove or r.line}`: {cell(r.note)}" for r in back.flagged]
     return "\n".join(lines)
 
 
@@ -98,7 +114,7 @@ def concepts_page(library: Library) -> str:
     lines = ["# Concepts", ""]
     for concept in sorted(library.concepts, key=lambda c: c.term.lower()):
         aka = f" ({', '.join(concept.aka)})" if concept.aka else ""
-        lines += [f"## {concept.term}{aka}", "", _prose(concept.text), ""]
+        lines += [f"## {concept.term}{aka}", "", prose(concept.text), ""]
         if concept.see:
             lines += ["See: " + ", ".join(f"`{cmd}`" for cmd in concept.see), ""]
     return "\n".join(lines)
@@ -107,24 +123,25 @@ def concepts_page(library: Library) -> str:
 def _table_row(command: Command) -> str:
     badges = [RARE] * command.rare + [f"{NEW} {command.since}"] * bool(command.since)
     badges += [f"{REMOVED} {command.removed}"] * bool(command.removed) + [CAUTION] * bool(command.caution)
-    desc = _cell(command.desc)
+    desc = cell(command.desc)
     if command.cisco:
         desc += f"<br>{CISCO} Cisco: {_code(command.cisco)}"
     cmd = f"[{_code(command.cmd)}]({command.ref})" if command.ref else _code(command.cmd)
     if badges:
         cmd += " " + " ".join(badges)
-    return f"| {KIND_ICONS[command.kind]} | {cmd} | {desc} | {_cell(command.mode)} |"
+    return f"| {KIND_ICONS[command.kind]} | {cmd} | {desc} | {cell(command.mode)} |"
 
 
 def _code(text: str) -> str:
     return "`" + text.replace("|", "\\|") + "`"
 
 
-def _prose(text: str) -> str:
+def prose(text: str) -> str:
     """Escape angle brackets outside `code spans`, so syntax like <1-4094> is not read as HTML."""
     parts = _CODE_SPAN.split(text)
     return "".join(part if part.startswith("`") else part.replace("<", "&lt;").replace(">", "&gt;") for part in parts)
 
 
-def _cell(text: str) -> str:
-    return _prose(text).replace("|", "\\|").replace("\n", "<br>")
+def cell(text: str) -> str:
+    """Text for a table cell or list item: also escapes pipes and keeps line breaks."""
+    return prose(text).replace("|", "\\|").replace("\n", "<br>")

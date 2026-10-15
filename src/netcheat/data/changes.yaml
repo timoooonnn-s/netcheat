@@ -2,7 +2,7 @@
 # Fabric Engine has no `no radius` or `default snmp` that wipes a whole feature: every object (server, community,
 # user, host...) is removed with its own `no` command and the values that identify it. These workflows list
 # them in an order that keeps you logged in and the NMS working.
-# Replace the example values (old servers 10.0.0.x, new servers 10.0.1.x, names) with your own.
+# Example values are written as {name} with a default under `values:`; `--set name=value` replaces them.
 flows:
   - id: radius-replace
     title: Replace or remove RADIUS servers (NAC and admin login)
@@ -21,6 +21,7 @@ flows:
       server. Each server row is identified by its host and its `used-by` (eapol for NAC, cli for admin logins), and
       the same IP can have several rows. Add the new servers first, test, then delete the old rows one by one. To
       remove RADIUS completely, skip steps 3 and 4 and do step 7.
+    values: {old_radius: 10.0.0.50, old_radius2: 10.0.0.51, new_radius: 10.0.1.50, new_radius2: 10.0.1.51, port: 1/5}
     steps:
       - title: List everything RADIUS on the switch
         cmds:
@@ -41,26 +42,26 @@ flows:
           if it goes wrong, the scheduled reset reloads the saved config. Cancel it with `reset -cancel` at the end.
       - title: Add the new servers (one row per host and used-by)
         cmds:
-          - radius server host 10.0.1.50 key <secret> used-by eapol acct-enable priority 1
-          - radius server host 10.0.1.51 key <secret> used-by eapol acct-enable priority 2
-          - radius server host 10.0.1.50 key <secret> used-by cli priority 1
-          - radius dynamic-server client 10.0.1.50 secret <secret> enable
+          - radius server host {new_radius} key <secret> used-by eapol acct-enable priority 1
+          - radius server host {new_radius2} key <secret> used-by eapol acct-enable priority 2
+          - radius server host {new_radius} key <secret> used-by cli priority 1
+          - radius dynamic-server client {new_radius} secret <secret> enable
         look_for: "`show radius-server` lists the new rows next to the old ones. Set `priority` on every server so the order is defined, not left at the default 10."
       - title: Test the new servers before you delete anything
         cmds:
           - show radius-server statistics
           - show radius reachability
-          - clear eapol non-eap 1/5
-          - show eapol sessions neap 1/5 verbose
+          - clear eapol non-eap {port}
+          - show eapol sessions neap {port} verbose
         look_for: >
           Requests and accepts count up on the new servers, a test client authenticates again with the expected
           VLAN/I-SID, and an SSH login with a RADIUS account works in a new session.
       - title: Delete the old rows, one per host and used-by
         cmds:
-          - no radius server host 10.0.0.50 used-by eapol
-          - no radius server host 10.0.0.51 used-by eapol
-          - no radius server host 10.0.0.50 used-by cli
-          - no radius dynamic-server client 10.0.0.50
+          - no radius server host {old_radius} used-by eapol
+          - no radius server host {old_radius2} used-by eapol
+          - no radius server host {old_radius} used-by cli
+          - no radius dynamic-server client {old_radius}
         look_for: Each command removes exactly one row of `show radius-server`. An error usually means the used-by or host is different from what is configured.
       - title: Check that nothing old is left
         cmds:
@@ -99,6 +100,7 @@ flows:
       own `no` command with its own key. There is no `no snmp-server` for everything. Add the new access first and let
       the NMS use it, then remove the old entries from the outside in: trap hosts, then communities and users, then
       groups, views and filters nobody uses any more.
+    values: {new_nms: 10.0.1.80, old_nms: 10.0.0.80, v3_user: nms-v3, old_v3_user: nms-old, community: NewRead, v3_group: nms-grp, v3_view: v3read}
     steps:
       - title: List every SNMP table
         cmds:
@@ -112,15 +114,15 @@ flows:
         look_for: Note the community strings or indexes, the v3 user names, and for each trap host its IP, port, version and secname/user.
       - title: Add the new v2c community or v3 user
         cmds:
-          - snmp-server community NewRead group readgrp index third secname readview
-          - snmp-server group nms-grp "" auth-priv read-view v3read notify-view v3read
-          - snmp-server view v3read 1.3.6.1
-          - snmp-server user nms-v3 group nms-grp sha aes
+          - snmp-server community {community} group readgrp index third secname readview
+          - snmp-server group {v3_group} "" auth-priv read-view {v3_view} notify-view {v3_view}
+          - snmp-server view {v3_view} 1.3.6.1
+          - snmp-server user {v3_user} group {v3_group} sha aes
         look_for: The switch prompts for the auth and privacy passwords of the v3 user. Use only the lines for the version you need.
       - title: Add the new trap receivers
         cmds:
-          - snmp-server host 10.0.1.80 v2c readview
-          - snmp-server host 10.0.1.80 v3 authPriv nms-v3
+          - snmp-server host {new_nms} v2c readview
+          - snmp-server host {new_nms} v3 authPriv {v3_user}
           - show snmp-server host
         look_for: v2c takes the secname of the community, not the community string. v3 takes the user name.
       - title: Switch the NMS (XIQ-SE) over and test it
@@ -130,16 +132,16 @@ flows:
         look_for: The NMS polls the switch with the new credentials (in XIQ-SE, the device is reachable with the new profile) and receives a test trap, e.g. after a port bounce.
       - title: Delete the old trap receivers
         cmds:
-          - no snmp-server host 10.0.0.80 v2c readview
-          - no snmp-server host 10.0.0.81 v3 nms-old
-          - no snmp-server host 10.0.0.82 port 1162 v2c readview
+          - no snmp-server host {old_nms} v2c readview
+          - no snmp-server host {old_nms} v3 {old_v3_user}
+          - no snmp-server host {old_nms} port 1162 v2c readview
         look_for: Copy IP, port (only if not 162), version and name exactly from `show snmp-server host`. No security level for v3.
       - title: Delete the old communities and v3 users
         cmds:
           - no snmp-server community public
           - no snmp-server community private
           - no snmp-server community-by-index second
-          - no snmp-server user nms-old
+          - no snmp-server user {old_v3_user}
         look_for: Delete by string when you know it, by index otherwise. Then check `show snmp-server community` again.
         caution: Do not delete the community or user the NMS still uses, or XIQ-SE loses access to the switch.
       - title: Delete groups, views and filters that nobody uses any more
@@ -169,6 +171,7 @@ flows:
       These three are simpler than RADIUS and SNMP, but each one identifies its servers differently: syslog by slot
       number (1-10), NTP by address, DNS by position (primary, secondary, tertiary). Add the new server, check it is
       used, then remove the old one.
+    values: {new_slot: 3, old_slot: 1, new_syslog: 10.0.1.60, new_ntp: 10.0.1.10, new_ntp2: 10.0.1.11, old_ntp: 10.0.0.10, dns: 10.0.1.53, domain: example.local}
     steps:
       - title: List the current servers
         cmds:
@@ -179,24 +182,24 @@ flows:
         look_for: The syslog slot numbers, the NTP server addresses and the keys they use, and the DNS servers by position.
       - title: Syslog, add the new host in a free slot, then delete the old slot
         cmds:
-          - syslog host 3 address 10.0.1.60
-          - syslog host 3 severity info warning error fatal
-          - syslog host 3 enable
-          - no syslog host 1
-        look_for: The log server receives messages from the new slot before you delete the old one (`show syslog host 3`).
+          - syslog host {new_slot} address {new_syslog}
+          - syslog host {new_slot} severity info warning error fatal
+          - syslog host {new_slot} enable
+          - no syslog host {old_slot}
+        look_for: The log server receives messages from the new slot before you delete the old one (`show syslog host {new_slot}`).
       - title: NTP, add the new servers, then delete the old ones
         cmds:
-          - ntp server 10.0.1.10 enable
-          - ntp server 10.0.1.11 enable
+          - ntp server {new_ntp} enable
+          - ntp server {new_ntp2} enable
           - show ntp statistics
-          - no ntp server 10.0.0.10
+          - no ntp server {old_ntp}
           - no ntp authentication-key 1
         look_for: The new servers are reachable and one is selected. Delete a key only after no server uses it any more.
       - title: DNS, overwrite or clear a position
         cmds:
-          - ip name-server primary 10.0.1.53
+          - ip name-server primary {dns}
           - no ip name-server secondary
-          - ip domain-name example.local
+          - ip domain-name {domain}
         look_for: "`ip name-server primary <ip>` overwrites the old primary. `no ip name-server <position>` takes no address."
       - title: Check and save
         cmds:
@@ -223,6 +226,7 @@ flows:
       Changing how admins log in is the change most likely to lock you out. Work with a second session and a
       scheduled reset, add the new method first and test it in a fresh session, then remove the old one. TACACS+
       servers are created with `tacacs server host` / `secondary-host` but removed with `no tacacs server <ip>`.
+    values: {new_tacacs: 10.0.1.70, new_tacacs2: 10.0.1.71, old_tacacs: 10.0.0.70, old_tacacs2: 10.0.0.71, old_radius: 10.0.0.50, new_user: netops, old_user: olduser}
     steps:
       - title: See which login methods are active
         cmds:
@@ -238,8 +242,8 @@ flows:
         caution: Keep a second session or the console open the whole time. Do not save until a new login works. Cancel the reset with `reset -cancel` at the end.
       - title: Add the new TACACS+ servers (or RADIUS login, see radius-replace)
         cmds:
-          - tacacs server host 10.0.1.70 key <secret>
-          - tacacs server secondary-host 10.0.1.71 key <secret>
+          - tacacs server host {new_tacacs} key <secret>
+          - tacacs server secondary-host {new_tacacs2} key <secret>
           - tacacs authentication cli
           - tacacs protocol enable
         look_for: "`show tacacs` lists both servers and cli authentication."
@@ -251,14 +255,14 @@ flows:
         caution: Per the 8.9 User Guide, a TACACS+ reject does not fall back to the local users. Local login is tried only when no server is reachable.
       - title: Delete the old servers
         cmds:
-          - no tacacs server 10.0.0.70
-          - no tacacs server 10.0.0.71
-          - no radius server host 10.0.0.50 used-by cli
+          - no tacacs server {old_tacacs}
+          - no tacacs server {old_tacacs2}
+          - no radius server host {old_radius} used-by cli
         look_for: Only the new servers remain in `show tacacs` and `show radius-server`.
       - title: Clean up local accounts
         cmds:
-          - username add netops level rwa enable
-          - no username olduser
+          - username add {new_user} level rwa enable
+          - no username {old_user}
           - cli password rwa read-write-all
         look_for: No default passwords (rwa/rwa, rw/rw, ...) remain, and one local emergency account with a known password exists.
       - title: Optional, harden SSH and turn telnet off

@@ -77,7 +77,7 @@ radius server host 10.0.0.50 key <secret> used-by eapol acct-enable priority 1
 radius server host 10.0.0.51 key <secret> used-by eapol acct-enable priority 2
 ```
 
-Add both NAC engines with different priorities. `used-by cli` is a separate entry for admin logins. ExtremeControl assigns VLANs and I-SIDs dynamically with the Extreme-Dynamic-Client-Assignments VSA. Dynamic VLANs and I-SIDs only exist while clients use them and are not saved in the config. The VSA is not supported on MLT/SMLT ports, and it cannot create VLANs on a DvR leaf. Since 9.3.1 it also understands create=none and igmpqaddr=.... Remove a server with `no radius server host <ip> used-by eapol` (`ncs flow radius-replace`).
+Add both NAC engines with different priorities. `used-by cli` is a separate entry for admin logins. ExtremeControl assigns VLANs and I-SIDs dynamically with the Extreme-Dynamic-Client-Assignments VSA. Dynamic VLANs and I-SIDs only exist while clients use them and are not saved in the config. The VSA is not supported on MLT/SMLT ports, and it cannot create VLANs on a DvR leaf. Since 9.3.1 it also understands create=none and igmpqaddr=.... Remove a server with `no radius server host <ip> used-by eapol` (`ncs radius-replace`).
 
 
 ### `radius dynamic-server client <nac-ip> secret <secret> enable`

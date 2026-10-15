@@ -2,9 +2,9 @@
 
 # Management Services (SNMP, Syslog, NTP, DNS)
 
-_Extreme Fabric Engine · 21 commands_
+_Extreme Fabric Engine · 25 commands_
 
-SNMP v2c/v3, syslog servers, NTP and DNS, including the exact `no` forms to remove each piece. Step by step removal and re-adding is in the change workflows (`ncs flow change`).
+SNMP v2c/v3, syslog servers, NTP and DNS, including the exact `no` forms to remove each piece. Step by step removal and re-adding is in the change workflows (`ncs list flows`).
 
 Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem · ▲ caution · ↑ version added · ✕ removed
 
@@ -24,13 +24,17 @@ Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem 
 | ✎ | [`snmp-server authentication-trap enable`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/snmp_server_authentication_trap_enable.shtml) ◆ | Send a trap when someone uses a wrong community or v3 credentials (shows a misconfigured NMS). | Global Config |
 | ✎ | [`boot config flags block-snmp`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/boot_config_flags_block_snmp.shtml) ◆ ▲ | Block all SNMP access to the switch (the only global "SNMP off" switch). | Global Config |
 | » | [`show syslog`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_syslog.shtml) | Global syslog settings, e.g. whether sending is enabled and the maximum number of hosts. | User EXEC |
+| ✎ | [`syslog enable`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/syslog_enable.shtml) | Turn sending to all syslog hosts on (default off). `no syslog enable` stops it and keeps the hosts. | Global Config |
 | ✎ | [`syslog host <1-10> address <ip>`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/syslog_host.shtml) | Add a syslog server in slot 1-10. Every setting of that server refers to the same slot number.<br>≈ Cisco: `logging host <ip>` | Global Config |
 | ✎ | [`no syslog host <1-10>`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/syslog_host.shtml) | Delete a syslog server by its slot number (from `show syslog host`), not by IP.<br>≈ Cisco: `no logging host <ip>` | Global Config |
+| ✎ | [`ntp`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ntp.shtml) | Turn the NTP client on (default off). `no ntp` turns it off and keeps the servers. | Global Config |
+| ✎ | [`ntp authentication-key <1-65534> <secret> [type {md5 \| sha1}]`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ntp_authentication_key.shtml) ◆ | An NTP authentication key. Servers use it with `auth-enable authentication-key <key-id>`. | Global Config |
 | ✎ | [`ntp server <ip \| fqdn> [auth-enable authentication-key <key-id>] enable`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ntp_server.shtml) | Add an NTP server. `ntp` (alone) turns the NTP client on.<br>≈ Cisco: `ntp server <ip>` | Global Config |
 | ✎ | [`no ntp server <ip \| fqdn>`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ntp_server.shtml) | Delete an NTP server. Only the address is needed.<br>≈ Cisco: `no ntp server <ip>` | Global Config |
 | » | [`show ntp key`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ntp.shtml) ◆ | The configured NTP authentication keys. | User EXEC |
 | » | [`show ip dns`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_dns.shtml) | DNS client state, domain name and the primary/secondary/tertiary servers (`show sys dns` is the same). | User EXEC |
-| ✎ | [`ip name-server {primary \| secondary \| tertiary} <ip>`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ip_name_server.shtml) | Set a DNS server. Remove with `no ip name-server primary` (only the slot, no IP).<br>≈ Cisco: `ip name-server <ip>` | Global Config |
+| ✎ | [`ip name-server {primary \| secondary \| tertiary} <ip>`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ip_name_server.shtml) | Set a DNS server. Remove with `no ip name-server primary` (only the position, no IP).<br>≈ Cisco: `ip name-server <ip>` | Global Config |
+| ✎ | [`ip domain-name <name>`](https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ip_domain_name.shtml) | The default DNS domain of the switch. `no ip domain-name` clears it. | Global Config |
 
 ## Details
 
@@ -45,7 +49,7 @@ show snmp-server host
 show running-config | include snmp
 ```
 
-`show snmp-server` alone lists the main settings. There is no `module snmp` for `show running-config`, filter with `| include snmp` instead.
+`show snmp-server` alone lists the main settings. There is no `module snmp` for `show running-config`: the SNMP lines are in `show running-config module sys`, or filter with `| include snmp`.
 
 
 ### `snmp-server community <string> [group <group>] index <index> secname <secname>`
@@ -66,7 +70,7 @@ no snmp-server community private
 no snmp-server community-by-index third
 ```
 
-If you do not know the string, delete the row with `no snmp-server community-by-index <index>` (index from `show snmp-server community`). Extreme KB 000067212 says removing by index alone was not always enough on older releases, so check `show snmp-server community` afterwards.
+Communities are stored outside the running config (Extreme KB 000115014): after a reboot they no longer appear in `show running-config`, and `show snmp-server community` shows the string masked. If you don't know the string, delete the row with `no snmp-server community-by-index <index>` (index from `show snmp-server community`). Extreme KB 000067212 says removing by index alone was not always enough on older releases, so check `show snmp-server community` afterwards.
 
 > ▲ **Caution:** Add the new community and test it from the NMS before you delete the one the NMS uses today.
 
@@ -88,7 +92,7 @@ show snmp-server user
 no snmp-server user nms-v3
 ```
 
-Users created for a remote engine (informs) are removed with `no snmp-server user engine-id <engine-id> <user>`.
+For users of a remote engine (informs) the 9.4 reference shows `no snmp-server user engine-id <engine-id>`. Check the exact form with `?` on the switch.
 
 
 ### `snmp-server group <group> "" {auth-priv | auth-no-priv | no-auth-no-priv} [read-view <view>] [write-view <view>] [notify-view <view>]`
@@ -170,6 +174,14 @@ no boot config flags block-snmp
 > ▲ **Caution:** Blocks your NMS too (XIQ-SE discovery and monitoring).
 
 
+### `syslog enable`
+
+```
+syslog enable
+no syslog enable
+```
+
+
 ### `syslog host <1-10> address <ip>`
 
 ```
@@ -190,6 +202,24 @@ no syslog host 2
 ```
 
 `no syslog host <n> enable` only pauses that server. `no syslog enable` stops all syslog sending but keeps the hosts.
+
+
+### `ntp`
+
+```
+ntp
+no ntp
+```
+
+
+### `ntp authentication-key <1-65534> <secret> [type {md5 | sha1}]`
+
+```
+ntp authentication-key 1 <secret> type sha1
+no ntp authentication-key 1
+```
+
+Remove the servers that use a key before the key itself. `show ntp key` lists the keys.
 
 
 ### `ntp server <ip | fqdn> [auth-enable authentication-key <key-id>] enable`
@@ -220,9 +250,15 @@ Remove the servers that use an authentication key before you delete the key with
 ```
 ip name-server primary 10.0.0.53
 ip name-server secondary 10.0.0.54
-ip domain-name example.local
 no ip name-server secondary
-no ip domain-name
 ```
 
 Servers learned by DHCP are removed with `no ip name-server primary-dynamic` (secondary-dynamic, tertiary-dynamic).
+
+
+### `ip domain-name <name>`
+
+```
+ip domain-name example.local
+no ip domain-name
+```

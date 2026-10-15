@@ -66,6 +66,10 @@ commands:
     mode: Global Config
     tags: [eap, global, enable, nac, 802.1x]
     cisco: dot1x system-auth-control
+    undo:
+      - match: "eapol enable"
+        remove: "no eapol enable"
+        note: "Stops EAP/NEAP on every port of the switch."
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/eapol_enable.shtml
 
   - cmd: radius server host <ip> key <secret> used-by eapol [acct-enable] [priority <1-10>]
@@ -84,8 +88,11 @@ commands:
       VSA. Dynamic VLANs and I-SIDs only exist while clients use them and are not saved in the config. The VSA is
       not supported on MLT/SMLT ports, and it cannot create VLANs on a DvR leaf. Since 9.3.1 it also understands
       create=none and igmpqaddr=.... Remove a server with `no radius server host <ip> used-by eapol`
-      (`ncs flow radius-replace`).
+      (`ncs radius-replace`).
     cisco: radius server <name> / aaa group server radius
+    undo:
+      - match: "radius server host <ip> ... used-by eapol ..."
+        remove: "no radius server host <ip> used-by eapol"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/radius_server_host.shtml
 
   - cmd: radius dynamic-server client <nac-ip> secret <secret> enable
@@ -100,6 +107,9 @@ commands:
     notes: Also needs `eapol radius-dynamic-server enable` on the ports. Since 9.2, EAP authentication starts immediately after a CoA Disconnect, without the 30 s wait. Check with `show radius dynamic-server statistics`.
     rare: true
     cisco: aaa server radius dynamic-author
+    undo:
+      - match: "radius dynamic-server client <ip> ..."
+        remove: "no radius dynamic-server client <ip>"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/radius_dynamic_server_client.shtml
 
   - cmd: show radius-server [statistics]

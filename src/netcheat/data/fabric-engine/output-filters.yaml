@@ -1,0 +1,125 @@
+# Fields: see README.md -> "Adding and editing content". Keep `commands:` as the last key.
+title: Output Filters and Paging
+description: Cut long show output down to what you need with a pipe after the command (| include, | exclude, | begin, | count, | head, | tail), plus the column and header options most people never use. Filters work on every show command except show fulltech.
+
+commands:
+  - cmd: <show command> | include <pattern> [field <n>] [ignore-case] [header <n>]
+    desc: Show only the lines that match. The fastest way to see one thing in a long output or the config.
+    kind: show
+    mode: any
+    tags: [grep, filter, pipe, include, regex, output, find, running-config]
+    example: |
+      show running-config | include i-sid
+      show running-config | include "radius server host"
+      show running-config | include "^vlan create"
+      show running-config | include "radius|tacacs|snmp-server host"
+      show logging file | include error ignore-case
+    notes: >
+      The pattern is a regular expression; quote it when it contains spaces. Handy pieces: `^` start of the line,
+      `$` end of the line, `.` any character, `.*` anything, `[0-9]` one digit. Matching is case-sensitive
+      unless you add `ignore-case`. Alternation (`a|b`) is standard regular expression syntax, but no Extreme
+      document shows an example: keep the pattern in quotes and try it once on your release. Keywords can be
+      shortened like any CLI word (`| inc`).
+    cisco: "| include"
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommonusingcligrepfilters.shtml
+
+  - cmd: <show command> | exclude <pattern> [field <n>] [ignore-case] [header <n>]
+    desc: Hide the lines that match. Shows what is not in the expected state.
+    kind: show
+    mode: any
+    tags: [grep, filter, pipe, exclude, regex, output, hide]
+    example: |
+      show isis adjacencies | exclude UP
+      show running-config | exclude "^#"
+    notes: The second example drops the comment and section lines of the config, which makes it much shorter to read.
+    cisco: "| exclude"
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommonusingcligrepfilters.shtml
+
+  - cmd: <show command> | begin <pattern> [field <n>] [ignore-case] [header <n>]
+    desc: Start the output at the first matching line, e.g. jump to one section of the config.
+    kind: show
+    mode: any
+    tags: [grep, filter, pipe, begin, section, jump, running-config]
+    example: |
+      show running-config | begin "router isis"
+      show running-config | begin "interface gigabitethernet 1/5" ignore-case
+    notes: >
+      Everything after the first match is shown, not only that block. For one feature, `show running-config module
+      <module>` is shorter. The config writes "GigabitEthernet", so add `ignore-case` when you type it in lowercase.
+    rare: true
+    cisco: "| begin"
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommonusingcligrepfilters.shtml
+
+  - cmd: <show command> | include <pattern> field <n> header <n>
+    desc: Match in one column only, and keep the first lines (the table header) unchanged.
+    kind: show
+    mode: any
+    tags: [grep, filter, pipe, field, column, header, table]
+    example: |
+      show vlan basic | include byPort field 3 header 6
+      show vlan basic | exclude private field 3 header 6
+      show vlan basic | tail 8 header 6
+    notes: >
+      `field` counts the columns separated by spaces, starting at 1, so a pattern can't hit the wrong column (a
+      VLAN named "byPort-test" doesn't match in column 3). `header <n>` prints the first n lines as they are, so the
+      column names stay above the result: count the lines up to and including the column names in the plain output.
+      Works the same with exclude, begin and tail.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommonusingcligrepfilters.shtml
+
+  - cmd: <show command> | count
+    desc: Count the output lines, e.g. how many MACs, routes or VLANs there are.
+    kind: show
+    mode: any
+    tags: [grep, filter, pipe, count, output, how many]
+    example: |
+      show vlan basic | count
+      show vlan mac-address-entry 100 | count
+    notes: The count includes the title, separator and column-name lines, so subtract them for the number of table rows.
+    rare: true
+    cisco: "| count"
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommonusingcligrepfilters.shtml
+
+  - cmd: <show command> | head [<n>]
+    desc: Only the first n lines (10 if no number is given).
+    kind: show
+    mode: any
+    tags: [pipe, head, first, lines, output]
+    example: |
+      show running-config | head 40
+      show vlan basic | head 9
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommonusingcligrepfilters.shtml
+
+  - cmd: <show command> | tail [<n>] [from-line <n>] [header <n>]
+    desc: Only the last n lines (10 if no number is given), or everything from line n on.
+    kind: show
+    mode: any
+    tags: [pipe, tail, last, lines, output, logging]
+    example: |
+      show logging file | tail 20
+      show vlan basic | tail from-line 15 header 6
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommonusingcligrepfilters.shtml
+
+  - cmd: <show command> | no-more
+    desc: Print the whole output without "--More--" paging, for this one command.
+    kind: show
+    mode: any
+    tags: [pipe, paging, more, output, capture]
+    example: |
+      show running-config | no-more
+    notes: Like `terminal more disable`, but only for this command. Use it when you copy the output into a file or a ticket.
+    rare: true
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommonusingcligrepfilters.shtml
+
+  - cmd: terminal more disable
+    desc: Turn off paging for the whole session, e.g. before capturing output to a file.
+    kind: config
+    mode: User EXEC
+    tags: [terminal, paging, more, length, output]
+    example: |
+      terminal more disable
+      terminal length 64
+    cisco: terminal length 0
+    ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/terminal.shtml

@@ -1,0 +1,114 @@
+# Fields: see README.md -> "Adding and editing content". Keep `commands:` as the last key.
+title: Juniper SRX Output Filters
+description: Junos pipe options after any command (| match, | except, | find, | count, | last, | no-more, | save, | refresh, | compare). Patterns are regular expressions, and filters can be combined.
+
+commands:
+  - cmd: <command> | match <pattern>
+    desc: Show only the lines that match a regular expression. The Junos version of "| include".
+    kind: show
+    mode: operational
+    tags: [grep, filter, pipe, match, include, regex, output]
+    example: |
+      show interfaces terse | match "ge-0/0/0|ge-0/0/1"
+      show route | match 10.20.
+      show configuration | display set | match "security policies"
+    notes: >
+      Junos uses POSIX regular expressions: `a|b` either term, `^` start, `$` end, `[0-9]` a range, `( )` a
+      group. Quote the pattern when it contains spaces, operators or wildcards. Filters can be combined, as in the
+      last example.
+    cisco: "| include"
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/topic-map/filtering-operational-command.html
+
+  - cmd: <command> | except <pattern>
+    desc: Hide the lines that match. The Junos version of "| exclude".
+    kind: show
+    mode: operational
+    tags: [grep, filter, pipe, except, exclude, regex, hide]
+    example: |
+      show interfaces terse | except down
+      show configuration | display set | except "system syslog"
+    cisco: "| exclude"
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html
+
+  - cmd: <command> | find <pattern>
+    desc: Start the output at the first matching line. The Junos version of "| begin".
+    kind: show
+    mode: operational
+    tags: [grep, filter, pipe, find, begin, jump]
+    example: |
+      show route | find 10.20.0.0
+      show log messages | find "Oct 14"
+    rare: true
+    cisco: "| begin"
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html
+
+  - cmd: <command> | count
+    desc: Count the output lines, e.g. sessions, routes or ARP entries.
+    kind: show
+    mode: operational
+    tags: [pipe, count, how many, output]
+    example: |
+      show arp no-resolve | count
+      show route | match "^10\." | count
+    rare: true
+    cisco: "| count"
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html
+
+  - cmd: <command> | last <lines>
+    desc: Only the last lines of the output, e.g. the newest log messages.
+    kind: show
+    mode: operational
+    tags: [pipe, last, tail, log, lines]
+    example: |
+      show log messages | last 30
+    notes: If the number is smaller than one screen, Junos may show a full screen anyway.
+    rare: true
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html
+
+  - cmd: <command> | no-more
+    desc: Print the whole output at once, without paging. For copying into a file or ticket.
+    kind: show
+    mode: operational
+    tags: [pipe, paging, more, output, capture]
+    example: |
+      show configuration | display set | no-more
+    cisco: terminal length 0
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html
+
+  - cmd: <command> | save <file>
+    desc: Save the output to a file on the SRX (or a URL), e.g. before a change or for JTAC.
+    kind: action
+    mode: operational
+    tags: [pipe, save, file, capture, backup, jtac]
+    example: |
+      show configuration | save /var/tmp/config-before.txt
+      show security flow session summary | save /var/tmp/sessions.txt
+    notes: >
+      `| tee <file>` shows the output and saves it at the same time.
+    rare: true
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html
+
+  - cmd: <command> | refresh [<seconds>]
+    desc: Repeat the command every few seconds (default 1), like a live view. Stop with Ctrl-C.
+    kind: show
+    mode: operational
+    tags: [pipe, refresh, repeat, watch, live, monitor]
+    example: |
+      show security flow session summary | refresh 5
+      show interfaces ge-0/0/0 extensive | match "bps" | refresh 2
+    rare: true
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html
+
+  - cmd: show configuration | compare rollback <n>
+    desc: What changed between the active config and an older commit (rollback 1 is the previous one).
+    kind: show
+    mode: operational
+    tags: [pipe, compare, diff, rollback, change, commit, history]
+    example: |
+      show configuration | compare rollback 1
+      show system commit
+    notes: >
+      `show system commit` lists the commits with their rollback numbers, users and times.
+    rare: true
+    cisco: show archive config differences
+    ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html
