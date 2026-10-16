@@ -12,7 +12,6 @@ commands:
       show eapol sessions eap 1/5
       show eapol sessions neap 1/5 verbose
     notes: The first check when a client says "no network". Is the MAC there, is it authenticated, and which VLAN/I-SID did ExtremeControl assign?
-    cisco: show access-session interface <if> details
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_eapol_sessions.shtml
 
   - cmd: show eapol summary [<ports>] [verbose]
@@ -20,7 +19,6 @@ commands:
     kind: show
     mode: Privileged EXEC
     tags: [eap, neap, summary, clients, count]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_eapol_summary.shtml
 
   - cmd: show eapol port interface gigabitEthernet [<ports>]
@@ -44,7 +42,6 @@ commands:
     mode: User EXEC
     tags: [eap, statistics, counters, failure, timeout]
     notes: Many timeouts usually mean a client without an 802.1X supplicant. Is NEAP (MAC auth) enabled as a fallback?
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_eapol_auth_stats_interface.shtml
 
   - cmd: clear eapol {eap | non-eap} [<ports>] [<mac>]
@@ -57,7 +54,6 @@ commands:
       clear eapol eap 1/5
     notes: Use it after a policy change in ExtremeControl, if the client still has the old VLAN/I-SID. From ExtremeControl itself, the same happens through CoA (dynamic-server).
     rare: true
-    cisco: clear access-session interface <if>
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/clear_eapol_eap.shtml
 
   - cmd: eapol enable
@@ -65,7 +61,6 @@ commands:
     kind: config
     mode: Global Config
     tags: [eap, global, enable, nac, 802.1x]
-    cisco: dot1x system-auth-control
     undo:
       - match: "eapol enable"
         remove: "no eapol enable"
@@ -89,7 +84,6 @@ commands:
       not supported on MLT/SMLT ports, and it cannot create VLANs on a DvR leaf. Since 9.3.1 it also understands
       create=none and igmpqaddr=.... Remove a server with `no radius server host <ip> used-by eapol`
       (`ncs radius-replace`).
-    cisco: radius server <name> / aaa group server radius
     undo:
       - match: "radius server host <ip> ... used-by eapol ..."
         remove: "no radius server host <ip> used-by eapol"
@@ -105,8 +99,6 @@ commands:
       interface gigabitEthernet 1/1-1/48
         eapol radius-dynamic-server enable
     notes: Also needs `eapol radius-dynamic-server enable` on the ports. Since 9.2, EAP authentication starts immediately after a CoA Disconnect, without the 30 s wait. Check with `show radius dynamic-server statistics`.
-    rare: true
-    cisco: aaa server radius dynamic-author
     undo:
       - match: "radius dynamic-server client <ip> ..."
         remove: "no radius dynamic-server client <ip>"
@@ -118,7 +110,6 @@ commands:
     mode: User EXEC
     tags: [radius, server, statistics, timeout, reject, nac]
     notes: If timeouts increase, check the reachability and route to the NAC, and whether the switch is added there with the right IP and secret. Rejects mean ExtremeControl answered but denied the client; look up the reason in its event log.
-    cisco: show aaa servers
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_radius_server.shtml
 
   - cmd: show radius reachability
@@ -126,7 +117,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [radius, reachability, fail-open, health]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_radius_reachability.shtml
 
   - cmd: radius reachability mode {status-server | use-radius}
@@ -135,7 +125,6 @@ commands:
     mode: Global Config
     tags: [radius, reachability, fail-open, status-server]
     notes: status-server is the standard method (RFC 5997). use-radius sends dummy requests and needs `radius reachability username/password`. The keep-alive timer (default 180 s) and unreachable timer (default 60 s) set the check intervals.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/radius_reachability_mode.shtml
 
   - cmd: eapol status auto
@@ -150,7 +139,6 @@ commands:
         eapol multihost mac-max 4
         eapol status auto
     notes: Auto-sense ports in the UNI state get exactly this kind of config in the background (status auto, MHMV, NEAP via RADIUS). You will not see it in the running-config.
-    cisco: authentication port-control auto
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/eapol_status.shtml
 
   - cmd: eapol multihost eap-oper-mode {mhmv | mhsa}
@@ -169,7 +157,6 @@ commands:
     notes: >
       Since 9.3, with NEAP fallback, a client whose EAP fails is tried with NEAP after about 4 s on the same
       port. The password format of the MAC request is set globally with `eapol multihost non-eap-pwd-fmt`.
-    cisco: mab
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/eapol_multihost_radius_non_eap_enable.shtml
 
   - cmd: eapol multihost mac-max <n> / eap-mac-max <n> / non-eap-mac-max <n>
@@ -178,7 +165,6 @@ commands:
     mode: Interface Config
     tags: [eap, neap, limit, clients, mac-max]
     notes: The total mac-max of 1 is a classic cause of a "phone works, PC behind it doesn't" problem on manually configured ports. Since 9.2, Auto-sense ports default to 4 MACs (`auto-sense eapol multihost mac-max`).
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/eapol_multihost_mac_max.shtml
 
   - cmd: eapol port <ports> guest-isid <isid>
@@ -187,7 +173,6 @@ commands:
     mode: Interface Config
     tags: [guest, isid, unauthenticated, onboarding]
     notes: On Auto-sense ports the onboarding I-SID is used as the guest I-SID automatically, unless you disable that with `no auto-sense guest-isid enable` (9.4+).
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/eapol.shtml
 
   - cmd: eapol port <ports> fail-open-isid <isid>
@@ -196,8 +181,6 @@ commands:
     mode: Interface Config
     tags: [fail-open, radius down, isid, critical, resilience]
     notes: This only works when RADIUS reachability is configured, because the switch must detect that the servers are down.
-    rare: true
-    cisco: authentication event server dead action authorize vlan
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/eapol.shtml
 
   - cmd: eapol voice lldp-auth
@@ -223,7 +206,6 @@ commands:
     mode: Global Config / Interface Config
     tags: [nodealias, client, ip, hostname, accounting, framed-ip]
     notes: Since 9.2, the switch can send the client IP to ExtremeControl in RADIUS accounting (Framed-IP-Address); this needs EAP and Node Alias enabled globally and on the port. View the data with `show nodealias client-info [mac <mac>]`.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/nodealias_enable_for_a_port.shtml
 
   - cmd: show nodealias client-info [mac <mac> | port <ports>] [detail]
@@ -231,7 +213,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [nodealias, client, ip, hostname, find client]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_nodealias_client_info.shtml
 
   - cmd: show eapol session-stats interface [gigabitethernet <ports>]
@@ -239,7 +220,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [eap, sessions, statistics, termination]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_eapol_session_stats_interface.shtml
 
   - cmd: show nodealias dhcp-fingerprint [mac <mac> | port <ports>]

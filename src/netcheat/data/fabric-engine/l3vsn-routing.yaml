@@ -13,7 +13,6 @@ commands:
       show ip route 10.20.30.40 vrf CORP
       show ip route -s 10.20.0.0/16 vrf CORP
     notes: The PROT column shows ISIS for routes from other BEBs (L3 VSN or IP shortcuts), LOC for local and STAT for static routes. The next hop of an IS-IS route is the hostname of the remote BEB.
-    cisco: show ip route vrf <vrf>
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_route.shtml
 
   - cmd: show ip route count-summary vrf <vrf>
@@ -21,8 +20,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [route, count, summary, vrf, scaling]
-    rare: true
-    cisco: show ip route vrf <vrf> summary
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_route_count_summary.shtml
 
   - cmd: show ip route alternative [vrf <vrf>]
@@ -38,7 +35,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [route, bmac, next hop, spbm]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_route_spbm_nh_as_mac.shtml
 
   - cmd: show isis spbm ip-unicast-fib [all] [id <isid>]
@@ -50,7 +46,6 @@ commands:
       show isis spbm ip-unicast-fib all
       show isis spbm ip-unicast-fib id 30001
     notes: If a prefix is missing in `show ip route vrf X`, check here whether any BEB announces it at all.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_spbm_ip_unicast_fib.shtml
 
   - cmd: show ip arp [vlan <vid> | vrf <vrf> | <ip>]
@@ -62,7 +57,6 @@ commands:
       show ip arp 10.10.100.25
       show ip arp vrf CORP
     notes: '`show ip arp spbm-tunnel-as-mac` shows entries learned across the fabric with the remote B-MAC.'
-    cisco: show ip arp vrf <vrf>
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_arp.shtml
 
   - cmd: show ip interface [vrf <vrf>]
@@ -71,7 +65,6 @@ commands:
     mode: User EXEC
     tags: [ip, interface, vlan, svi, vrf, address]
     notes: Only primary addresses. `show ip address [secondary] [vrf <vrf>]` lists all, including secondary ones.
-    cisco: show ip interface brief
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_interface.shtml
 
   - cmd: show ip vrf [detail] [<vrf>]
@@ -79,7 +72,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [vrf, list, overview, routing instance]
-    cisco: show vrf
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_vrf.shtml
 
   - cmd: show ip ipvpn [vrf <vrf>]
@@ -97,7 +89,6 @@ commands:
     tags: [vrf, create, routing instance]
     example: ip vrf CORP vrfid 10
     notes: The VRF ID is only locally significant. Across the fabric only the L3 VSN I-SID counts. Using the same name and ID everywhere still makes life easier.
-    cisco: vrf definition <vrf>
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ip_vrf.shtml
 
   - cmd: router vrf <vrf>
@@ -115,7 +106,6 @@ commands:
         exit
       isis apply redistribute direct vrf CORP
     notes: This is the complete L3 VSN setup. The I-SID must be the same on every BEB of this VRF. Without redistribution, the VRF's subnets are not advertised into the fabric.
-    cisco: vrf definition + address-family / router bgp vrf
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/router_vrf.shtml
 
   - cmd: ipvpn / i-sid <isid> / ipvpn enable
@@ -175,7 +165,6 @@ commands:
         ip dhcp-relay fwd-path 10.0.0.10
         exit
     notes: Assign the VRF first, then the IP address.
-    cisco: interface vlan <id>
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/interface_vlan.shtml
 
   - cmd: vrf <vrf> [trusted | unrestricted | untrusted]
@@ -184,7 +173,6 @@ commands:
     mode: VLAN Interface Config
     tags: [vrf, vlan, membership, segmented]
     notes: The segment keywords exist only from 9.4 (Segmented VRF). Without a keyword, the VLAN joins the trusted segment.
-    cisco: vrf forwarding <vrf>
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VLAN_Interface_Configuration/vrf_for_a_vlan.shtml
 
   - cmd: ip address <ip/len> [secondary] [dvr-one-ip]
@@ -194,7 +182,6 @@ commands:
     tags: [ip, address, svi, gateway, secondary]
     example: ip address 10.10.100.1/24
     notes: '`dvr-one-ip` marks the gateway address shared by all DvR controllers of the subnet.'
-    cisco: ip address
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VLAN_Interface_Configuration/ip_address_on_a_vlan.shtml
 
   - cmd: ip route <prefix/len> <next-hop | discard> weight <1-65535> [enable]
@@ -210,7 +197,6 @@ commands:
       Advertise static routes into the fabric with `isis redistribute static`, then
       `isis apply redistribute static vrf <vrf>`. `next-hop-vrf <vrf>` points a static route
       into another VRF. Check with `show ip route static [vrf <vrf>]`.
-    cisco: ip route [vrf] <prefix> <mask> <nh>
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ip_route_globally.shtml
 
   - cmd: ip ecmp / ip ecmp max-path <1-8>
@@ -219,8 +205,6 @@ commands:
     mode: Global Config / VRF Router Config
     tags: [ecmp, load sharing, multipath, routing]
     notes: Check with `show ip ecmp max-path [vrf <vrf>]`. Disabling ECMP removes all ECMP routes.
-    rare: true
-    cisco: maximum-paths
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/ip_ecmp.shtml
 
   - cmd: ip dhcp-relay fwd-path <server-ip>
@@ -237,7 +221,6 @@ commands:
       `ip dhcp-relay` enables relay on the interface. If a path shows as disabled, enable it with
       `ip dhcp-relay fwd-path <server-ip> enable`. With VRRP, bind the path to the virtual router with
       `ip dhcp-relay fwd-path <server-ip> vrid <vrid>`. Check the paths with `show ip dhcp-relay fwd-path vrf <vrf>`.
-    cisco: ip helper-address
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VLAN_Interface_Configuration/ip_dhcp_relay_fwd_path_a_b_c_d_for_a_vlan.shtml
 
   - cmd: show ip dhcp-relay counters [vrf <vrf>]
@@ -254,7 +237,6 @@ commands:
     mode: User EXEC
     tags: [vrrp, gateway, redundancy, master, backup]
     notes: In SMLT designs, `ip vrrp <vrid> backup-master enable` makes both peers forward. On fabric designs, prefer DvR or Anycast Gateway.
-    cisco: show vrrp brief
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_vrrp.shtml
 
   - cmd: ip vrrp address <vrid> <vip> / ip vrrp <vrid> enable
@@ -269,7 +251,6 @@ commands:
         ip vrrp 100 backup-master enable
         ip vrrp 100 enable
     notes: backup-master (both SMLT peers forward for the virtual IP) is only supported on SMLT ports and must not be combined with critical IP.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VLAN_Interface_Configuration/ip_vrrp_address_for_a_vlan.shtml
 
   - cmd: show ip rsmlt [local | peer] [vrf <vrf>]
@@ -277,7 +258,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [rsmlt, smlt, vist, routing, redundancy]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_rsmlt.shtml
 
   - cmd: ip rsmlt [holdup-timer <0-9999>]
@@ -286,7 +266,6 @@ commands:
     mode: VLAN Interface Config
     tags: [rsmlt, smlt, vist, redundancy]
     notes: The holddown timer defaults to 60 s; set it longer than your routing convergence. A holdup timer of 9999 means "forever", which is common in L3 edge designs.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VLAN_Interface_Configuration/ip_rsmlt.shtml
 
   - cmd: show ip ospf neighbor [vrf <vrf>]
@@ -295,7 +274,6 @@ commands:
     mode: User EXEC
     tags: [ospf, neighbor, adjacency, routing]
     notes: '`show ip ospf interface [vrf <vrf>]` shows the interface settings (area, timers, network type) when a neighbor does not come up.'
-    cisco: show ip ospf neighbor
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_ospf_neighbor.shtml
 
   - cmd: show ip bgp summary [vrf <vrf>]
@@ -304,7 +282,6 @@ commands:
     mode: User EXEC
     tags: [bgp, peer, neighbor, summary, routing]
     notes: '`show ip bgp neighbors <ip> advertised-routes|routes [vrf <vrf>]` shows what is sent and received.'
-    cisco: show ip bgp summary
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_bgp_summary.shtml
 
   - cmd: segmented
@@ -320,7 +297,6 @@ commands:
       interfaces become trusted. With an
       L3 VSN it requires a Premier or subscription license. Not supported on the 7830 or on models
       that support only one VRF.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VRF_Router_Configuration/segmented.shtml
 
   - cmd: show ip bfd neighbors [vrf <vrf>]
@@ -328,8 +304,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [bfd, neighbor, failover, routing, ospf, bgp, static]
-    rare: true
-    cisco: show bfd neighbors
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_bfd_neighbors.shtml
 
   - cmd: show ip route preference [vrf <vrf>]
@@ -338,8 +312,6 @@ commands:
     mode: User EXEC
     tags: [preference, administrative distance, routing, isis, static, ospf]
     notes: Explains which of two routes to the same prefix wins, e.g. a static route versus one learned from IS-IS.
-    rare: true
-    cisco: administrative distance
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_route_preference.shtml
 
   - cmd: show ip vrrp interface vlan [<vid>] [verbose]
@@ -347,7 +319,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [vrrp, vlan, priority, preempt, gateway]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_vrrp_interface_vlan.shtml
 
   - cmd: show ipv6 route [vrf <vrf>] / show ipv6 neighbor
@@ -356,5 +327,4 @@ commands:
     mode: User EXEC
     tags: [ipv6, route, neighbor, ndp, routing]
     notes: '`show ipv6 interface vlan <vid>` shows the IPv6 addresses of an interface.'
-    cisco: show ipv6 route / show ipv6 neighbors
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ipv6_route.shtml

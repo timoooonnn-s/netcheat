@@ -16,10 +16,12 @@ Sizes are rough: S = an evening, M = a few sessions, L = a larger piece with its
 | 8 | [Jump from a flow step to its command entry](#8-jump-from-a-flow-step-to-its-command-entry) | Medium | S | |
 | 10 | [`ncs audit`: findings in a pasted config](#10-ncs-audit-findings-in-a-pasted-config) | Nice to have, if realistic | M | |
 | 12 | [`ncs quiz`](#12-ncs-quiz) | Low | S | |
+| 13 | [`ncs check`: validate the YAML without pytest](#13-ncs-check) | Mid (new) | S | |
 | ? | [Team overlay](#team-overlay-waiting-for-a-decision) | Waiting for a decision | M | |
 
-Not ranked yet: [tick off workflow steps](#not-ranked-yet), [personal notes per command](#not-ranked-yet),
-[`ncs check`](#not-ranked-yet). [Done in 2.0.0](#done-in-200). [Dropped](#dropped): `ncs verify`, GitLab CI.
+Not ranked yet: [tick off workflow steps](#not-ranked-yet), [personal notes per command](#not-ranked-yet).
+[Done in 2.0.0](#done-in-200). [Dropped](#dropped): `ncs verify`, `ncs add`, the release filter, Cisco equivalents,
+GitLab CI.
 
 ---
 
@@ -57,6 +59,14 @@ on but no `used-by eapol` server, SSH off.
 **Realistic if:** rules stay simple ("line present" / "line missing"). Built on the line reader and matcher of
 `ncs undo`. Start with 10 to 15 rules and only add rules with a clear fix. No scoring, no compliance claims.
 
+## 13. `ncs check`
+
+Validate the data files and print the same messages the loader does, without needing pytest installed. It took
+`ncs add`'s place: content is edited in the YAML files now, so the thing that is actually missing is a quick
+"did I break it?" for a colleague who only adds a command. Should also run the data rules the tests check
+(`ref` present, no duplicate command per platform and mode, undo rules win for their own line, lock-out
+removals carry a note).
+
 ## 12. `ncs quiz`
 
 Flashcards from the gems: you see the description and recall the command, or the other way round. Reveal with a
@@ -69,11 +79,16 @@ key, mark known or not known. The score is kept locally next to the favourites, 
 A second, optional data folder with company-specific content, kept separate from the generic cheatsheet. See the
 discussion on 2026-10-15. Decide after: is the team going to write content for it, or is it just you?
 
-## Not ranked yet
+## Not ranked yet (continued)
 
 - **Tick off workflow steps:** mark steps done during a change in the browser; progress is kept locally.
 - **Personal notes per command:** your own line under any entry, stored locally, shown in the detail view.
-- **`ncs check`:** validate the YAML without pytest, for colleagues who only add commands.
+
+## Dropped in 3.0.0
+
+`ncs add`, the release filter (`-R`, `NCS_RELEASE`, `-s/--since`) and the `cisco:` and `removed:` fields are gone;
+see [Dropped](#dropped) for why. `rare:` went from 207 commands to 43. Removals that can lock you out of a switch
+now carry a note, so `ncs undo` keeps them out of the paste-ready block.
 
 ## Done in 2.0.0
 
@@ -85,10 +100,24 @@ discussion on 2026-10-15. Decide after: is the team going to write content for i
 - `ncs export`: a flow as a text or Markdown change plan with generated rollback (was #6).
 - Copy a whole flow step in the browser with `1` to `9` (was #7).
 - Placeholders: `{name}` values in every flow, `--set` and `v` in the browser (was #9).
-- Release filter: `-R` / `NCS_RELEASE` (was #11).
+- Placeholders, favourites, exports: see above.
+
+## Not ranked yet
+
+- **`verified:` per command:** who checked this command on which switch, and when. The content is still only
+  checked against the documentation, which is the tool's weakest point; a date and a box turn "probably right"
+  into "checked". Would supersede #1.
+- **`-k` / `-p` in the browser:** the CLI has four filters, the browser has topic and gems only.
+- **`?` keys screen in the browser:** the footer truncates, and the README is far away over SSH.
 
 ## Dropped
 
 - `ncs verify` (needs web access to the docs).
+- `ncs add` (2026-10-16): it could not ask for `ref`, `caution` or `undo` rules, so every entry it wrote failed
+  the data tests; it also wrote into the installed package on a non-editable install. Edit the YAML instead.
+- The release filter `-R` / `NCS_RELEASE`, `-s/--since` and the `removed:` field (2026-10-16): a lot of surface
+  for 19 of 420 commands, and `removed:` was never set on a single one. `since:` stays as a badge.
+- Cisco equivalents (`cisco:`, 2026-10-16): 140 unverifiable mappings written without a Cisco background. A wrong
+  equivalent is worse than none. Add them back only with a citation each.
 - GitLab CI (not needed).
 - Anything online, AI-based or web-browser based.

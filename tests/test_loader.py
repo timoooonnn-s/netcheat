@@ -52,7 +52,7 @@ def test_invalid_kind_names_the_command(tmp_path):
 
 
 def test_broken_yaml_names_the_file(tmp_path):
-    write_topic(tmp_path, VALID_ENTRY + "    cisco: dir flash:\n")
+    write_topic(tmp_path, VALID_ENTRY + "    notes: dir flash:\n")
     with pytest.raises(DataError, match="test.yaml: invalid YAML"):
         load_library(tmp_path)
 

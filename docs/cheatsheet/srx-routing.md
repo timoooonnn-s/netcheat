@@ -6,37 +6,37 @@ _Juniper SRX · 27 commands_
 
 The Junos operational commands you need when an SRX acts as a router. Routes, interfaces, OSPF/BGP, sessions, and safe changes with commit confirmed.
 
-Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem · ▲ caution · ↑ version added · ✕ removed
+Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem · ▲ caution · ↑ version added
 
 | | Command | What it does | Mode |
 |---|---|---|---|
-| » | `show route <prefix> [exact] [table <instance>.inet.0]` | The routing table entry for a prefix. Shows the active route (*), protocol, preference and next hop.<br>≈ Cisco: `show ip route <prefix>` | operational |
-| » | `show route summary` | The number of routes per table and protocol. A quick sanity check after a change.<br>≈ Cisco: `show ip route summary` | operational |
+| » | `show route <prefix> [exact] [table <instance>.inet.0]` | The routing table entry for a prefix. Shows the active route (*), protocol, preference and next hop. | operational |
+| » | `show route summary` | The number of routes per table and protocol. A quick sanity check after a change. | operational |
 | » | `show route protocol <static \| ospf \| bgp \| direct> [table <table>]` | Only the routes of one protocol. | operational |
-| » | `show route <prefix> extensive` ◆ | Everything about a route, including all paths, why one was chosen and the BGP attributes. | operational |
-| » | `show route forwarding-table destination <ip>` ◆ | What the forwarding engine (PFE) actually uses for a destination, not just the RIB.<br>≈ Cisco: `show ip cef <ip>` | operational |
-| » | `show interfaces terse [<interface>]` | All interfaces with admin/link state and IP addresses. The quick overview.<br>≈ Cisco: `show ip interface brief` | operational |
-| » | `show interfaces <interface> extensive` | Counters, errors, speed/duplex and the security zone of one interface.<br>≈ Cisco: `show interfaces <if>` | operational |
-| » | `show arp no-resolve` | The ARP table without slow DNS lookups.<br>≈ Cisco: `show ip arp` | operational |
-| » | `show ospf neighbor / show ospf interface` | OSPF neighbors (should be Full) and the OSPF interfaces with area and cost.<br>≈ Cisco: `show ip ospf neighbor` | operational |
-| » | `show bgp summary` | BGP peers with their state and the number of active/received/accepted prefixes.<br>≈ Cisco: `show ip bgp summary` | operational |
-| » | `show route receive-protocol bgp <peer-ip> / show route advertising-protocol bgp <peer-ip>` ◆ | Which prefixes a BGP peer sends to you, and which you send to it.<br>≈ Cisco: `show ip bgp neighbors <ip> received-routes / advertised-routes` | operational |
-| » | `show security flow session destination-prefix <ip> [summary]` ◆ | Active sessions to a destination. Shows whether the SRX lets the traffic through at all. | operational |
-| » | `show security flow status` ◆ | The SRX forwarding mode (flow-based or packet-based) per address family. | operational |
-| » | `show security policies hit-count` ◆ | Hit counters per security policy. Shows which policy matches (or nothing matches). | operational |
-| ► | `ping <ip> source <ip> [routing-instance <ri>] [rapid count <n>] [size <bytes> do-not-fragment]` | Ping with a source address, in a routing instance, fast or with DF bit for MTU tests.<br>≈ Cisco: `ping <ip> source <if> repeat <n>` | operational |
+| » | `show route <prefix> extensive` | Everything about a route, including all paths, why one was chosen and the BGP attributes. | operational |
+| » | `show route forwarding-table destination <ip>` | What the forwarding engine (PFE) actually uses for a destination, not just the RIB. | operational |
+| » | `show interfaces terse [<interface>]` | All interfaces with admin/link state and IP addresses. The quick overview. | operational |
+| » | `show interfaces <interface> extensive` | Counters, errors, speed/duplex and the security zone of one interface. | operational |
+| » | `show arp no-resolve` | The ARP table without slow DNS lookups. | operational |
+| » | `show ospf neighbor / show ospf interface` | OSPF neighbors (should be Full) and the OSPF interfaces with area and cost. | operational |
+| » | `show bgp summary` | BGP peers with their state and the number of active/received/accepted prefixes. | operational |
+| » | `show route receive-protocol bgp <peer-ip> / show route advertising-protocol bgp <peer-ip>` | Which prefixes a BGP peer sends to you, and which you send to it. | operational |
+| » | `show security flow session destination-prefix <ip> [summary]` | Active sessions to a destination. Shows whether the SRX lets the traffic through at all. | operational |
+| » | `show security flow status` | The SRX forwarding mode (flow-based or packet-based) per address family. | operational |
+| » | `show security policies hit-count` | Hit counters per security policy. Shows which policy matches (or nothing matches). | operational |
+| ► | `ping <ip> source <ip> [routing-instance <ri>] [rapid count <n>] [size <bytes> do-not-fragment]` | Ping with a source address, in a routing instance, fast or with DF bit for MTU tests. | operational |
 | ► | `traceroute <ip> [source <ip>] [routing-instance <ri>] [no-resolve]` | Traceroute from the SRX. | operational |
-| ► | `monitor traffic interface <interface> no-resolve matching "host <ip>"` ◆ | Live packet capture of traffic to/from the Routing Engine on an interface (tcpdump-like). | operational |
-| » | `show log messages \| last 50` | The latest system log entries.<br>≈ Cisco: `show logging` | operational |
+| ► | `monitor traffic interface <interface> no-resolve matching "host <ip>"` | Live packet capture of traffic to/from the Routing Engine on an interface (tcpdump-like). | operational |
+| » | `show log messages \| last 50` | The latest system log entries. | operational |
 | » | `show configuration <section> \| display set` ◆ | Show the config (or part of it) as set commands. The easiest format to copy and compare. | operational |
-| ✎ | `show \| compare / commit check / commit confirmed <minutes>` ▲ | In configuration mode, review the diff, check the syntax, then commit with an automatic rollback if you don't confirm.<br>≈ Cisco: `no direct equivalent (reload in / archive config)` | configuration |
-| ✎ | `set routing-options static route <prefix> next-hop <ip>` | Add a static route (configuration mode). In a routing instance prefix it with `set routing-instances <ri>`.<br>≈ Cisco: `ip route` | configuration |
+| ✎ | `show \| compare / commit check / commit confirmed <minutes>` ▲ | In configuration mode, review the diff, check the syntax, then commit with an automatic rollback if you don't confirm. | configuration |
+| ✎ | `set routing-options static route <prefix> next-hop <ip>` | Add a static route (configuration mode). In a routing instance prefix it with `set routing-instances <ri>`. | configuration |
 | » | [`show route hidden [detail]`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-route-hidden.html) ◆ | Routes the SRX received but cannot use (hidden), e.g. an unresolvable next hop or rejected by a policy. | operational |
-| » | [`show bfd session [detail]`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-bfd-session.html) ◆ | BFD sessions to routing neighbors with state, interval and detection time.<br>≈ Cisco: `show bfd neighbors` | operational |
-| » | `show interfaces diagnostics optics <interface>` ◆ | Optics DOM values of a transceiver (Rx/Tx power, laser bias, temperature) with alarm thresholds.<br>≈ Cisco: `show interfaces transceiver detail` | operational |
-| » | [`monitor interface <interface>`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/monitor-interface.html) ◆ | Live, refreshing traffic and error counters of an interface (`monitor interface traffic` for all interfaces). | operational |
-| ↺ | [`clear interfaces statistics <interface>`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/clear-interfaces-statistics.html) | Reset the counters of an interface, so you can see what increases from now on.<br>≈ Cisco: `clear counters` | operational |
-| » | [`show lldp neighbors [interface <interface>]`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-lldp-neighbors.html) | LLDP neighbors per interface. Shows what the SRX is actually connected to.<br>≈ Cisco: `show lldp neighbors` | operational |
+| » | [`show bfd session [detail]`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-bfd-session.html) | BFD sessions to routing neighbors with state, interval and detection time. | operational |
+| » | `show interfaces diagnostics optics <interface>` ◆ | Optics DOM values of a transceiver (Rx/Tx power, laser bias, temperature) with alarm thresholds. | operational |
+| » | [`monitor interface <interface>`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/monitor-interface.html) | Live, refreshing traffic and error counters of an interface (`monitor interface traffic` for all interfaces). | operational |
+| ↺ | [`clear interfaces statistics <interface>`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/clear-interfaces-statistics.html) | Reset the counters of an interface, so you can see what increases from now on. | operational |
+| » | [`show lldp neighbors [interface <interface>]`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-lldp-neighbors.html) | LLDP neighbors per interface. Shows what the SRX is actually connected to. | operational |
 
 ## Details
 

@@ -68,10 +68,10 @@ Removes what this plan adds, in this order. Configuration the plan removes can o
 
 ```
 no radius dynamic-server client 10.0.1.50
-no radius server host 10.0.1.50 used-by cli
 no radius server host 10.0.1.51 used-by eapol
 no radius server host 10.0.1.50 used-by eapol
 ```
+- ▲ Not in the block above, check first: `no radius server host 10.0.1.50 used-by cli`: This server authenticates admin logins. If it is the last one and `radius enable` stays set, the next login depends on a working local user. Keep a second session open and test a local login first.
 
 ## Replace or remove SNMP communities, v3 users and trap receivers
 
@@ -251,10 +251,10 @@ Typical symptoms: replace tacacs server; migrate tacacs servers; remove tacacs c
 Removes what this plan adds, in this order. Configuration the plan removes can only be restored from the original lines: save `show running-config` before step 1.
 
 ```
-no username netops
 no tacacs protocol enable
 no tacacs authentication cli
-no tacacs server 10.0.1.71
-no tacacs server 10.0.1.70
 ```
 - ▲ Not in the block above, check first: `no ssh`: Turns the SSH server off. Run it from the console, not over SSH.
+- ▲ Not in the block above, check first: `no username netops`: Check whose account this is before you run it. Deleting the user you are logged in with, or the last account with rwa, locks you out of the switch.
+- ▲ Not in the block above, check first: `no tacacs server 10.0.1.71`: This server authenticates admin logins. With `tacacs authentication cli` still set and no server left, the next login depends on the local users — check `show cli password` first.
+- ▲ Not in the block above, check first: `no tacacs server 10.0.1.70`: This server authenticates admin logins. With `tacacs authentication cli` still set and no server left, the next login depends on the local users — check `show cli password` first.

@@ -16,7 +16,6 @@ commands:
       Junos uses POSIX regular expressions: `a|b` either term, `^` start, `$` end, `[0-9]` a range, `( )` a
       group. Quote the pattern when it contains spaces, operators or wildcards. Filters can be combined, as in the
       last example.
-    cisco: "| include"
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/topic-map/filtering-operational-command.html
 
   - cmd: <command> | except <pattern>
@@ -27,7 +26,6 @@ commands:
     example: |
       show interfaces terse | except down
       show configuration | display set | except "system syslog"
-    cisco: "| exclude"
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html
 
   - cmd: <command> | find <pattern>
@@ -38,8 +36,6 @@ commands:
     example: |
       show route | find 10.20.0.0
       show log messages | find "Oct 14"
-    rare: true
-    cisco: "| begin"
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html
 
   - cmd: <command> | count
@@ -50,8 +46,6 @@ commands:
     example: |
       show arp no-resolve | count
       show route | match "^10\." | count
-    rare: true
-    cisco: "| count"
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html
 
   - cmd: <command> | last <lines>
@@ -62,7 +56,6 @@ commands:
     example: |
       show log messages | last 30
     notes: If the number is smaller than one screen, Junos may show a full screen anyway.
-    rare: true
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html
 
   - cmd: <command> | no-more
@@ -72,7 +65,6 @@ commands:
     tags: [pipe, paging, more, output, capture]
     example: |
       show configuration | display set | no-more
-    cisco: terminal length 0
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html
 
   - cmd: <command> | save <file>
@@ -85,7 +77,6 @@ commands:
       show security flow session summary | save /var/tmp/sessions.txt
     notes: >
       `| tee <file>` shows the output and saves it at the same time.
-    rare: true
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html
 
   - cmd: <command> | refresh [<seconds>]
@@ -96,7 +87,6 @@ commands:
     example: |
       show security flow session summary | refresh 5
       show interfaces ge-0/0/0 extensive | match "bps" | refresh 2
-    rare: true
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html
 
   - cmd: show configuration | compare rollback <n>
@@ -110,5 +100,4 @@ commands:
     notes: >
       `show system commit` lists the commits with their rollback numbers, users and times.
     rare: true
-    cisco: show archive config differences
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html

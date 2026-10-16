@@ -2,7 +2,7 @@
 
 # Network Cheatsheet
 
-420 commands. Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem · ▲ caution · ↑ version added · ✕ removed
+420 commands. Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem · ▲ caution · ↑ version added
 
 ## Extreme Fabric Engine
 

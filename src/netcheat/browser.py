@@ -7,6 +7,8 @@ Runs in any terminal, also over SSH; copying uses the terminal's clipboard seque
 
 from __future__ import annotations
 
+import shutil
+import subprocess
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
@@ -236,9 +238,14 @@ class Browser(App[None]):
         return entry.with_values(self.values) if isinstance(entry, Flow) else None
 
     def _copy(self, text: str, entry: Entry, what: str = "") -> None:
+        """OSC 52 is write-only: the terminal never answers, so a copy into a terminal that ignores the
+        sequence (macOS Terminal.app, tmux without clipboard) cannot be detected. Say so instead of
+        claiming success, and try a local clipboard tool as well when there is one."""
         self.copy_to_clipboard(text)
+        local = _copy_locally(text)
         self.state.opened(entry_key(entry))
-        self.notify(f"Copied {what or text}", timeout=2)
+        confirmed = "Copied" if local else "Sent to the terminal clipboard:"
+        self.notify(f"{confirmed} {what or text}", timeout=2)
 
     def _show_detail(self) -> None:
         entry = self.highlighted
@@ -284,6 +291,19 @@ class Browser(App[None]):
             return search_concepts(self.library.concepts, terms) if terms else list(self.library.concepts)
         commands = [c for c in self.library.commands if self.scope.topic in (None, c.topic)]
         return search_commands(commands, terms, Filters(rare=self.scope.gems))
+
+
+def _copy_locally(text: str) -> bool:
+    """Put the text on the clipboard of the machine the terminal runs on, if a clipboard tool is there.
+    Over SSH there is none, which is what OSC 52 is for. True only if a tool accepted the text."""
+    for tool in (["pbcopy"], ["wl-copy"], ["xclip", "-selection", "clipboard"], ["xsel", "--clipboard", "--input"]):
+        if shutil.which(tool[0]) is None:
+            continue
+        try:
+            return subprocess.run(tool, input=text.encode(), timeout=2).returncode == 0
+        except (OSError, subprocess.SubprocessError):
+            return False
+    return False
 
 
 def _filtered(entries: list[Entry], terms: list[str]) -> list[Entry]:

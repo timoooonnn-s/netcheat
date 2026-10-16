@@ -8,7 +8,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [mlt, lag, port-channel, members, smlt]
-    cisco: show etherchannel summary
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_mlt.shtml
 
   - cmd: show smlt mlt
@@ -36,7 +35,6 @@ commands:
     mode: User EXEC
     tags: [vist, statistics, hello, smlt]
     notes: Clear them with `clear virtual-ist stats` and check whether hellos still arrive.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_virtual_ist_stat.shtml
 
   - cmd: show mlt stats [<mlt-id>] / show mlt error main [<mlt-id>]
@@ -51,7 +49,6 @@ commands:
     kind: show
     mode: Privileged EXEC
     tags: [mlt, utilization, load sharing, hashing, live]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/monitor_mlt_stats_interface_utilization.shtml
 
   - cmd: show lacp interface [gigabitethernet <ports> | mlt]
@@ -60,7 +57,6 @@ commands:
     mode: User EXEC
     tags: [lacp, lag, partner, actor, key, 802.3ad]
     notes: '`show lacp actor-oper interface` and `show lacp partner-oper interface` show both sides in detail. A port that does not aggregate usually has a key mismatch or a partner without LACP.'
-    cisco: show lacp neighbor / show etherchannel detail
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_lacp_interface.shtml
 
   - cmd: show interfaces gigabitEthernet statistics lacp [<ports>]
@@ -69,7 +65,6 @@ commands:
     mode: Privileged EXEC
     tags: [lacp, lacpdu, counters]
     notes: If the received count stays at 0, the partner sends no LACP.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/show_interfaces_gigabitethernet_statistics_lacp.shtml
 
   - cmd: mlt <id> enable name "<name>" / mlt <id> member <ports>
@@ -83,7 +78,6 @@ commands:
       mlt 10 encapsulation dot1q
       vlan mlt 100 10
     notes: MLT names cannot be only digits. For SMLT, configure the same MLT ID on both vIST peers.
-    cisco: interface port-channel / channel-group <n> mode on
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/mlt.shtml
 
   - cmd: lacp enable key <key> (interface mlt)
@@ -106,7 +100,6 @@ commands:
       Enable LACP globally too (`lacp enable` in Global Config). Once LACP is enabled you cannot add or
       remove ports by hand. VLANs added to an LACP MLT only reach the active ports, so add the VLAN to the
       inactive members as well.
-    cisco: channel-group <n> mode active
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/MLT_Interface_Configuration/lacp_on_an_mlt.shtml
 
   - cmd: lacp key <key> / lacp aggregation enable / lacp enable (interface)
@@ -185,7 +178,6 @@ commands:
     kind: config
     mode: Global Config
     tags: [vist, mac move, flapping, protection]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/sys_control_virtual_ist.shtml
 
   - cmd: clear lacp stats [port <ports>]

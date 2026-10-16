@@ -6,11 +6,9 @@ from dataclasses import replace
 from pathlib import Path
 
 import pytest
-import yaml
 
-from netcheat.add import append_command
 from netcheat.cli import _default_docs_dir, main
-from netcheat.loader import DataError, load_library
+from netcheat.loader import load_library
 from netcheat.markdown import HEADER
 
 
@@ -46,26 +44,7 @@ def test_change_workflow_marks_config_commands_and_cautions(capsys):
     assert "▲" in out
 
 
-def test_append_command_keeps_file_valid_and_reverts_on_error(tmp_path):
-    folder = tmp_path / "fabric-engine"
-    folder.mkdir()
-    path = folder / "mine.yaml"
-    original = "# my notes\ntitle: Mine\ncommands:\n  - cmd: show isis\n    desc: x\n    kind: show\n    mode: User EXEC\n"
-    path.write_text(original)
-    topic = load_library(tmp_path).topics[0]
-
-    updated = append_command(topic, {"cmd": "show isis spbm", "desc": "y", "kind": "show", "mode": "User EXEC"})
-    assert [c.cmd for c in updated.commands] == ["show isis", "show isis spbm"]
-    assert path.read_text().startswith("# my notes")
-    assert yaml.safe_load(path.read_text())["title"] == "Mine"
-
-    before = path.read_text()
-    with pytest.raises(DataError):
-        append_command(updated, {"cmd": "bad", "desc": "z", "kind": "nope", "mode": "User EXEC"})
-    assert path.read_text() == before
-
-
-@pytest.mark.parametrize("argv", [["isis", "-s", "9.x"], ["isis", "-n", "0"], ["isis", "-n", "-1"]])
+@pytest.mark.parametrize("argv", [["isis", "-n", "0"], ["isis", "-n", "-1"]])
 def test_invalid_option_values_are_rejected(argv):
     with pytest.raises(SystemExit) as exit_info:
         main(argv)
@@ -179,7 +158,7 @@ def test_undo_from_a_file(tmp_path, capsys):
     assert main(["undo", str(config)]) == 0
     out = capsys.readouterr().out
     assert out.index("no radius server host 10.0.0.5 used-by eapol") < out.index("no radius enable")
-    assert "spbm 1 nick-name 1.11.11" in out.split("No rule for these lines")[1]
+    assert "spbm 1 nick-name 1.11.11" in out.split("Not handled")[1]
 
 
 def test_undo_plain_prints_only_safe_commands(capsys, monkeypatch):
@@ -193,12 +172,6 @@ def test_undo_of_unknown_lines_returns_1(capsys, monkeypatch):
     assert main(["undo"]) == 1
 
 
-def test_release_hides_newer_commands(capsys, monkeypatch):
-    assert main(["clilog", "-R", "9.3"]) == 1  # clilog enable came with 9.4
-    monkeypatch.setenv("NCS_RELEASE", "9.4")
-    assert main(["clilog"]) == 0
-
-
 def test_opened_flows_and_concepts_become_recent(capsys):
     main(["radius-replace"])
     main(["nickname"])
@@ -206,3 +179,32 @@ def test_opened_flows_and_concepts_become_recent(capsys):
     main(["list", "recent"])
     out = capsys.readouterr().out
     assert out.index("Nickname") < out.index("radius-replace")
+
+
+def test_what_accepts_the_detail_flag_after_the_line(capsys):
+    """The line is a REMAINDER, so argparse never sees a trailing `-d`; it must not land inside the line."""
+    assert main(["what", "show", "isis", "adjacencies", "-d"]) == 0
+    out = capsys.readouterr().out
+    assert "only the beginning of the line matches" not in out
+    assert "Example" in out  # the flag took effect instead of being explained as part of the command
+
+
+def test_export_rejects_markdown_together_with_a_command_list(capsys):
+    assert main(["export", "radius-replace", "--md", "--commands"]) == 2
+    assert "--md" in capsys.readouterr().out
+
+
+def test_browse_without_a_terminal_fails_instead_of_hanging(capsys, monkeypatch):
+    """Textual with no tty never returns, so the browser has to refuse before it starts."""
+    monkeypatch.setattr("sys.stdin", io.StringIO(""))
+    assert main(["browse"]) == 2
+    assert "needs a terminal" in capsys.readouterr().out
+
+
+def test_export_text_carries_the_same_facts_as_markdown(capsys):
+    assert main(["export", "srx-unhealthy-or-failover"]) == 0
+    text = capsys.readouterr().out
+    assert main(["export", "srx-unhealthy-or-failover", "--md"]) == 0
+    markdown = capsys.readouterr().out
+    for fact in ("Juniper SRX", "srx-unhealthy-or-failover", "Typical symptoms"):
+        assert fact in text and fact in markdown

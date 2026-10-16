@@ -20,7 +20,6 @@ commands:
       unless you add `ignore-case`. Alternation (`a|b`) is standard regular expression syntax, but no Extreme
       document shows an example: keep the pattern in quotes and try it once on your release. Keywords can be
       shortened like any CLI word (`| inc`).
-    cisco: "| include"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommonusingcligrepfilters.shtml
 
   - cmd: <show command> | exclude <pattern> [field <n>] [ignore-case] [header <n>]
@@ -32,7 +31,6 @@ commands:
       show isis adjacencies | exclude UP
       show running-config | exclude "^#"
     notes: The second example drops the comment and section lines of the config, which makes it much shorter to read.
-    cisco: "| exclude"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommonusingcligrepfilters.shtml
 
   - cmd: <show command> | begin <pattern> [field <n>] [ignore-case] [header <n>]
@@ -46,8 +44,6 @@ commands:
     notes: >
       Everything after the first match is shown, not only that block. For one feature, `show running-config module
       <module>` is shorter. The config writes "GigabitEthernet", so add `ignore-case` when you type it in lowercase.
-    rare: true
-    cisco: "| begin"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommonusingcligrepfilters.shtml
 
   - cmd: <show command> | include <pattern> field <n> header <n>
@@ -76,8 +72,6 @@ commands:
       show vlan basic | count
       show vlan mac-address-entry 100 | count
     notes: The count includes the title, separator and column-name lines, so subtract them for the number of table rows.
-    rare: true
-    cisco: "| count"
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommonusingcligrepfilters.shtml
 
   - cmd: <show command> | head [<n>]
@@ -88,7 +82,6 @@ commands:
     example: |
       show running-config | head 40
       show vlan basic | head 9
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommonusingcligrepfilters.shtml
 
   - cmd: <show command> | tail [<n>] [from-line <n>] [header <n>]
@@ -99,7 +92,6 @@ commands:
     example: |
       show logging file | tail 20
       show vlan basic | tail from-line 15 header 6
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommonusingcligrepfilters.shtml
 
   - cmd: <show command> | no-more
@@ -110,7 +102,6 @@ commands:
     example: |
       show running-config | no-more
     notes: Like `terminal more disable`, but only for this command. Use it when you copy the output into a file or a ticket.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20User%20Guide/fe_9.4_ug_revacdev/content/documents/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_user_guide/vspcommonusingcligrepfilters.shtml
 
   - cmd: terminal more disable
@@ -121,5 +112,4 @@ commands:
     example: |
       terminal more disable
       terminal length 64
-    cisco: terminal length 0
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/terminal.shtml

@@ -42,7 +42,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [dvr, routes, default route]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_routes.shtml
 
   - cmd: show dvr database [vrf <vrf> | ipv4 <ip>]
@@ -50,7 +49,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [dvr, database, hosts, routes]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_database.shtml
 
   - cmd: show dvr backbone-entries
@@ -58,7 +56,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [dvr, backbone, entries]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_backbone_entries.shtml
 
   - cmd: show dvr l3vsn [vrf <vrf>]
@@ -89,7 +86,6 @@ commands:
       save config
       reset -y
     caution: Enabling the dvr-leaf-mode flag removes all non-DvR config such as platform VLAN IPs, CLIPs, routing protocols and VRFs. Save a backup first.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/boot_config_flags_dvr_leaf_mode.shtml
 
   - cmd: dvr gw-ipv4 <gateway-ip> / dvr enable
@@ -117,7 +113,6 @@ commands:
     mode: Global Config / VRF Router Config
     tags: [dvr, redistribute, direct, apply]
     notes: Like IS-IS redistribution, nothing happens until you run `dvr apply redistribute`. Check it with `show dvr redistribute`.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/dvr_redistribute_direct.shtml
 
   - cmd: dvr inject-default-route-disable
@@ -125,7 +120,6 @@ commands:
     kind: config
     mode: VRF Router Config
     tags: [dvr, default route, inject, leaf]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VRF_Router_Configuration/dvr_inject_default_route_disable.shtml
 
   - cmd: clear dvr host-entries [ipv4 <ip>] [l3isid <isid>]
@@ -133,7 +127,6 @@ commands:
     kind: clear
     mode: Privileged EXEC
     tags: [dvr, host, clear, stale]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Privileged_EXEC/clear_dvr_host_entries.shtml
 
   - cmd: ip anycast-gateway <gateway-ip> [vrid <1-255>] / ip anycast-gateway enable
@@ -150,7 +143,6 @@ commands:
       The gateway IP (and the vrid, which defines the gateway MAC) must match on every router of
       the same L2 VSN. `ip anycast-gateway one-ip <ip/len>` uses one address for VLAN IP and
       gateway. Since 9.2 the switch logs when a client spoofs the gateway IP on an access port.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VLAN_Interface_Configuration/ip_anycast_gateway.shtml
 
   - cmd: show ip anycast-gateway interfaces [vrf <vrf>] / show ip anycast-gateway i-sid [<isid>] [all-routers]
@@ -158,7 +150,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [anycast, gateway, i-sid, routers]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_anycast_gateway_interfaces.shtml
 
   - cmd: show dvr backbone-members [controller | non-dvr-beb]
@@ -166,7 +157,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [dvr, backbone, members, beb]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_backbone_members.shtml
 
   - cmd: show dvr redistribute [vrf <vrf>]
@@ -174,5 +164,4 @@ commands:
     kind: show
     mode: User EXEC
     tags: [dvr, redistribute, routes]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_dvr_redistribute.shtml

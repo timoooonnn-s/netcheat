@@ -40,7 +40,6 @@ commands:
     kind: config
     mode: Global Config
     tags: [onboarding, isid, zero touch, auto-sense]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/auto_sense_onboarding.shtml
 
   - cmd: auto-sense data i-sid <isid>
@@ -66,7 +65,6 @@ commands:
     mode: Global Config
     tags: [fa, ap, wap, wireless, management, auto-sense]
     notes: The same pattern exists for cameras (`auto-sense fa camera i-sid`) and OVS. FA proxies such as EXOS switches use `auto-sense fa proxy management i-sid <isid> c-vid <vid>`.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/auto_sense_fa_wap_type1_i_sid_1_15999999.shtml
 
   - cmd: auto-sense isis hello-auth type hmac-sha-256 key <key>
@@ -75,7 +73,6 @@ commands:
     mode: Global Config
     tags: [isis, authentication, auto-sense, nni, security]
     notes: Since 9.2, a neighbor without the key makes the port go to NNI-AUTH-FAIL. Since 9.3 this also affects onboarding of new switches, so check the release notes before you upgrade.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/auto_sense_isis_hello_auth_type_hmac_sha_256.shtml
 
   - cmd: auto-sense wait-interval <2-120>
@@ -84,7 +81,6 @@ commands:
     mode: Global Config / Interface Config
     tags: [auto-sense, wait, timer, lldp]
     notes: The default is 35 s. The range changed from 10-120 to 2-120 seconds in 9.3.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/auto_sense_wait_interval_for_a_port.shtml
 
   - cmd: auto-sense no-nni
@@ -94,7 +90,6 @@ commands:
     tags: [auto-sense, nni, security, access port, rogue switch]
     since: "9.3"
     notes: Protects access ports against someone plugging in a fabric switch and extending the fabric.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/auto-sense_no-nni.shtml
 
   - cmd: auto-sense auto-mlt enable
@@ -104,7 +99,6 @@ commands:
     tags: [auto-mlt, mlt, nni, auto-sense, aggregation]
     since: "9.3"
     notes: Check with `show auto-sense auto-mlt`. The ports then show the state NNI-MLT or NNI-MLT-ISIS-UP.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/auto-sense_auto-mlt_enable.shtml
 
   - cmd: auto-sense fa proxy-no-auth force-authentication
@@ -113,7 +107,6 @@ commands:
     mode: Global Config
     tags: [fa, authentication, proxy, security, auto-sense]
     since: "9.3"
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/autosense_fa_proxy-no-auth_force-authentication.shtml
 
   - cmd: no auto-sense guest-isid enable
@@ -123,7 +116,6 @@ commands:
     tags: [guest, isid, auto-sense, radius, onboarding]
     since: "9.4"
     notes: Applies to ports in the UNI, FA and VOICE states. It is disabled by default after a Zero Touch Deployment boot and enabled after a factorydefaults boot. Check with `show auto-sense guest-isid`.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/auto-sense_guest-isid_enable.shtml
 
   - cmd: auto-sense link-debounce {auto <ms> | on <ms> | off}
@@ -149,7 +141,6 @@ commands:
     mode: User EXEC
     tags: [fa, assignment, isid, vlan, rejected]
     notes: A rejected assignment usually means the I-SID is not allowed or a VLAN/I-SID conflict. Compare with the FA configuration on the client.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_fa_assignment.shtml
 
   - cmd: show fa agent / show fa interface / show fa statistics
@@ -157,7 +148,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [fa, agent, interface, statistics]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_fa_agent.shtml
 
   - cmd: fa enable
@@ -166,7 +156,6 @@ commands:
     mode: Global Config / Interface Config
     tags: [fa, enable, fabric attach]
     notes: Auto-sense ports handle FA by themselves. On an EAP-enabled port, FA requires Flex UNI.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/fa_enable_for_a_port.shtml
 
   - cmd: show endpoint-tracking bindings [summary]
@@ -174,7 +163,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [endpoint tracking, vm, bindings, isid]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_endpoint_tracking_bindings.shtml
 
   - cmd: service-probe enable
@@ -203,7 +191,6 @@ commands:
       Known pitfall (community): with NAC on, the Auto-sense AP port runs MHMV, so the switch sends every wireless
       client MAC behind the AP to RADIUS as NEAP. Either let ExtremeControl return Extreme-Dynamic-MHSA=1 for APs (the
       port then authenticates only the AP), or set the status to authorized so APs skip EAP.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/auto_sense_fa_wap_type1_eapol_status_authorized_auto.shtml
 
   - cmd: show fa zero-touch-client
@@ -211,5 +198,4 @@ commands:
     kind: show
     mode: User EXEC
     tags: [fa, zero touch, client, ap, camera]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_fa_zero_touch_client.shtml

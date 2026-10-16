@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Callable, Iterable, NamedTuple, Sequence, TypeVar
 
-from netcheat.models import Command, Concept, Flow, Library, SynonymGroup, version_key
+from netcheat.models import Command, Concept, Flow, Library, SynonymGroup
 
 T = TypeVar("T")
 WeightedFields = Callable[[T], "list[tuple[str, int]]"]
@@ -104,15 +104,14 @@ class Filters:
     topic: str | None = None
     kind: str | None = None
     rare: bool = False
-    since: str | None = None
 
     def accept(self, command: Command) -> bool:
         return (
             (self.platform is None or command.platform == self.platform)
-            and (self.topic is None or normalize(self.topic) in normalize(command.topic))
+            # The topic must match exactly: `-t system` is the Fabric Engine topic, never also srx-system.
+            and (self.topic is None or normalize(self.topic) == normalize(command.topic))
             and (self.kind is None or command.kind == self.kind)
             and (not self.rare or command.rare)
-            and (self.since is None or (bool(command.since) and version_key(command.since) >= version_key(self.since)))
         )
 
 
@@ -236,7 +235,7 @@ def _command_fields(command: Command) -> list[tuple[str, int]]:
         (" ".join(command.tags), 3),
         (command.desc, 2),
         (command.topic, 1),
-        (" ".join((command.notes, command.example, command.cisco)), 1),
+        (" ".join((command.notes, command.example)), 1),
     ]
 
 

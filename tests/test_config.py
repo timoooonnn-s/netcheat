@@ -36,10 +36,9 @@ def test_read_lines_skips_prompts_comments_and_pager_and_keeps_block_context():
 
 def test_undo_removes_in_reverse_order_once_per_object(library):
     result = undo(library, read_lines(SHOW_RUN))
-    assert result.commands == [
+    assert result.commands == [  # `used-by cli` is a login server: flagged, not in the block
         "no syslog host 1",
         "no snmp-server host 10.0.0.81 port 1162 v3 \"nms-v3\"",
-        "no radius server host 10.0.0.50 used-by cli",
         "no radius server host 10.0.0.50 used-by eapol",
         "no radius enable",
     ]
@@ -47,15 +46,57 @@ def test_undo_removes_in_reverse_order_once_per_object(library):
 
 def test_undo_reports_manual_steps_and_unhandled_lines(library):
     result = undo(library, read_lines(SHOW_RUN))
-    assert [r.line for r in result.flagged] == ['snmp-server community :: group "readgrp" secname "test"']
+    assert [r.line for r in result.flagged] == [
+        'snmp-server community :: group "readgrp" secname "test"',
+        "radius server host 10.0.0.50 key ****** used-by cli",
+    ]
     assert "community-by-index" in result.flagged[0].note
-    assert [line.text for line in result.unhandled] == ["interface gigabitEthernet 1/5", "eapol status auto"]
+    # A pasted show command is not configuration, but it is reported rather than dropped.
+    assert [line.text for line in result.unhandled] == [
+        "show running-config module radius",
+        "interface gigabitEthernet 1/5",
+        "eapol status auto",
+    ]
 
 
 def test_risky_removals_are_flagged_not_in_the_block(library):
     result = undo(library, read_lines("ssh\n"))
     assert result.commands == []
     assert result.flagged[0].remove == "no ssh"
+
+
+@pytest.mark.parametrize(
+    "line, removal",
+    [
+        ("username rwa level rwa", "no username rwa"),
+        ("username add netops level rwa enable", "no username netops"),
+        ("radius server host 10.0.0.50 key x used-by cli priority 1", "no radius server host 10.0.0.50 used-by cli"),
+        ("tacacs server host 10.0.0.70 key x", "no tacacs server 10.0.0.70"),
+        ("tacacs server secondary-host 10.0.0.71 key x", "no tacacs server 10.0.0.71"),
+    ],
+)
+def test_removals_that_can_lock_you_out_never_reach_the_paste_block(library, line, removal):
+    """Pasting the block must not be able to end your own session. These removals delete the account or
+    the server your login depends on, so each one needs a note, which keeps it out of `commands`."""
+    result = undo(library, read_lines(line + "\n"))
+    assert result.commands == []
+    assert [r.remove for r in result.flagged] == [removal]
+    assert result.flagged[0].note
+
+
+def test_read_lines_strips_junos_prompts_and_banners():
+    pasted = "{primary:node0}\nadmin@srx1> show interfaces terse\n[edit]\nadmin@srx1# show configuration\n"
+    assert read_lines(pasted) == [ConfigLine("show interfaces terse"), ConfigLine("show configuration")]
+
+
+def test_a_configuration_line_is_never_mistaken_for_a_prompt():
+    assert read_lines("snmp-server host 10.0.0.80 v2c readview\n") == [ConfigLine("snmp-server host 10.0.0.80 v2c readview")]
+
+
+def test_explain_finds_the_entry_behind_a_junos_prompt(library):
+    explanation = explain(library, read_lines("admin@srx1> show interfaces terse\n")[0])
+    assert explanation.found
+    assert explanation.commands[0].cmd == "show interfaces terse [<interface>]"
 
 
 @pytest.mark.parametrize(

@@ -16,8 +16,14 @@ from netcheat.models import Command, Flow, Library, UndoRule
 from netcheat.search import search_commands
 from netcheat.syntax import Match, compile_patterns, fill, match, tokens, try_compile
 
-_PROMPT = re.compile(r"^\S+?:\d+(\([^)]*\))?[#>]\s*")
-_SKIP = re.compile(r"^(#|!|--more--|preparing to display|config(ure)? terminal$|end$|enable$|exit$)", re.IGNORECASE)
+# Fabric Engine ("SW1:1#", "SW1:1(config)#") and Junos ("admin@srx1>", "admin@srx1#") prompts. Both forms
+# need a host part with no spaces followed by [#>], so a configuration line is never mistaken for a prompt.
+_PROMPT = re.compile(r"^(\S+?:\d+(\([^)]*\))?|[\w.-]+@[\w.-]+(:\S+)?)[#>]\s*")
+_SKIP = re.compile(
+    r"^(#|!|--more--|preparing to display|\{(primary|secondary|backup|hold|linecard|master|node)[^}]*\}$"
+    r"|config(ure)? terminal$|end$|enable$|exit$|\[edit[^\]]*\]$)",
+    re.IGNORECASE,
+)
 _BLOCK = re.compile(r"^(interface|router|route-map|i-sid|mgmt|logical-intf)\s", re.IGNORECASE)
 _KEYWORD = re.compile(r"^[a-z][a-z0-9-]*$", re.IGNORECASE)
 _NEGATION = re.compile(r"^(no|default)\s+(.*)$", re.IGNORECASE)
@@ -63,7 +69,7 @@ class Removal:
 @dataclass(frozen=True)
 class UndoResult:
     removals: list[Removal]  # in the order to run them
-    unhandled: list[ConfigLine]
+    unhandled: list[ConfigLine]  # no rule, including pasted show commands and lines inside a block
 
     @property
     def commands(self) -> list[str]:
@@ -81,15 +87,15 @@ def undo(library: Library, lines: Sequence[ConfigLine]) -> UndoResult:
 
     Removals run in reverse order of the configuration, because `show running-config` lists what a line
     depends on before the line itself. Duplicates (several lines of one syslog host, ...) are removed once.
-    Only global configuration is handled; lines inside an interface or router block are reported as unhandled.
+    Only global configuration is handled; lines inside an interface or router block, and pasted show
+    commands, are reported as unhandled rather than dropped, so nothing disappears without a word.
     """
     removals: list[Removal] = []
     unhandled: list[ConfigLine] = []
     seen: set[str] = set()
     for line in reversed(lines):
-        if line.text.lower().startswith("show "):
-            continue  # a pasted show command, not configuration
-        found = None if line.context else _best_undo(library.commands, line.text)
+        is_show = line.text.lower().startswith("show ")  # a pasted show command, not configuration
+        found = None if (line.context or is_show) else _best_undo(library.commands, line.text)
         if found is None:
             unhandled.append(line)
             continue

@@ -6,19 +6,19 @@ _Juniper SRX · 9 commands_
 
 Junos pipe options after any command (| match, | except, | find, | count, | last, | no-more, | save, | refresh, | compare). Patterns are regular expressions, and filters can be combined.
 
-Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem · ▲ caution · ↑ version added · ✕ removed
+Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem · ▲ caution · ↑ version added
 
 | | Command | What it does | Mode |
 |---|---|---|---|
-| » | [`<command> \| match <pattern>`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/topic-map/filtering-operational-command.html) | Show only the lines that match a regular expression. The Junos version of "\| include".<br>≈ Cisco: `\| include` | operational |
-| » | [`<command> \| except <pattern>`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) | Hide the lines that match. The Junos version of "\| exclude".<br>≈ Cisco: `\| exclude` | operational |
-| » | [`<command> \| find <pattern>`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) ◆ | Start the output at the first matching line. The Junos version of "\| begin".<br>≈ Cisco: `\| begin` | operational |
-| » | [`<command> \| count`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) ◆ | Count the output lines, e.g. sessions, routes or ARP entries.<br>≈ Cisco: `\| count` | operational |
-| » | [`<command> \| last <lines>`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) ◆ | Only the last lines of the output, e.g. the newest log messages. | operational |
-| » | [`<command> \| no-more`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) | Print the whole output at once, without paging. For copying into a file or ticket.<br>≈ Cisco: `terminal length 0` | operational |
-| ► | [`<command> \| save <file>`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) ◆ | Save the output to a file on the SRX (or a URL), e.g. before a change or for JTAC. | operational |
-| » | [`<command> \| refresh [<seconds>]`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) ◆ | Repeat the command every few seconds (default 1), like a live view. Stop with Ctrl-C. | operational |
-| » | [`show configuration \| compare rollback <n>`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) ◆ | What changed between the active config and an older commit (rollback 1 is the previous one).<br>≈ Cisco: `show archive config differences` | operational |
+| » | [`<command> \| match <pattern>`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/topic-map/filtering-operational-command.html) | Show only the lines that match a regular expression. The Junos version of "\| include". | operational |
+| » | [`<command> \| except <pattern>`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) | Hide the lines that match. The Junos version of "\| exclude". | operational |
+| » | [`<command> \| find <pattern>`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) | Start the output at the first matching line. The Junos version of "\| begin". | operational |
+| » | [`<command> \| count`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) | Count the output lines, e.g. sessions, routes or ARP entries. | operational |
+| » | [`<command> \| last <lines>`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) | Only the last lines of the output, e.g. the newest log messages. | operational |
+| » | [`<command> \| no-more`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) | Print the whole output at once, without paging. For copying into a file or ticket. | operational |
+| ► | [`<command> \| save <file>`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) | Save the output to a file on the SRX (or a URL), e.g. before a change or for JTAC. | operational |
+| » | [`<command> \| refresh [<seconds>]`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) | Repeat the command every few seconds (default 1), like a live view. Stop with Ctrl-C. | operational |
+| » | [`show configuration \| compare rollback <n>`](https://www.juniper.net/documentation/us/en/software/junos/cli/topics/ref/command/pipe.html) ◆ | What changed between the active config and an older commit (rollback 1 is the previous one). | operational |
 
 ## Details
 

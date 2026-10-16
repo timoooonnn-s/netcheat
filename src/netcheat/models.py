@@ -85,9 +85,7 @@ class Command:
     example: str = ""
     notes: str = ""
     caution: str = ""
-    cisco: str = ""
     since: str = ""
-    removed: str = ""
     rare: bool = False
     ref: str = ""
     undo: tuple[UndoRule, ...] = ()
@@ -98,14 +96,6 @@ class Command:
         _check_platform(self.platform)
         _check_list("tags", self.tags)
         _check_version("since", self.since)
-        _check_version("removed", self.removed)
-
-    def available_on(self, release: str) -> bool:
-        """True if the command exists on this Fabric Engine release (commands without versions always do)."""
-        current = version_key(release)
-        too_new = bool(self.since) and version_key(self.since) > current
-        gone = bool(self.removed) and version_key(self.removed) <= current
-        return not (too_new or gone)
 
 
 @dataclass(frozen=True)
@@ -234,7 +224,6 @@ class Library:
     flows: tuple[Flow, ...]
     concepts: tuple[Concept, ...]
     synonyms: tuple[SynonymGroup, ...] = ()
-    release: str = ""  # the Fabric Engine release the commands were filtered for, if any
 
     @cached_property
     def commands(self) -> tuple[Command, ...]:
@@ -257,11 +246,3 @@ class Library:
         """(platform display name, topics) in PLATFORMS order, skipping platforms without topics."""
         grouped = [(name, [topic for topic in self.topics if topic.platform == key]) for key, name in PLATFORMS.items()]
         return [(name, topics) for name, topics in grouped if topics]
-
-    def available_on(self, release: str) -> Library:
-        """Only the Fabric Engine commands that exist on `release`. Other platforms are kept as they are."""
-        topics = tuple(
-            replace(topic, commands=tuple(c for c in topic.commands if c.platform != "fabric-engine" or c.available_on(release)))
-            for topic in self.topics
-        )
-        return Library(topics, self.flows, self.concepts, self.synonyms, release)

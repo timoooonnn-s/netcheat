@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import random
 import sys
 from pathlib import Path
@@ -15,7 +14,7 @@ from rich.text import Text
 from netcheat import CREDIT, __version__
 from netcheat.completion import HIDDEN_COMMAND, SCRIPTS, candidates
 from netcheat.loader import DataError, load_library
-from netcheat.models import KINDS, PLATFORM_ALIASES, PLATFORMS, Concept, Entry, Flow, Library, entry_key, is_version
+from netcheat.models import KINDS, PLATFORM_ALIASES, PLATFORMS, Concept, Entry, Flow, Library, entry_key
 from netcheat.render import (
     command_block,
     concept_block,
@@ -46,7 +45,6 @@ examples:
   ncs undo < config.txt            the commands that remove pasted configuration
   ncs export radius-replace --md   a flow as a change plan with rollback, for a ticket
   ncs list flows                   list topics, flows, concepts, favourites or recent
-  NCS_RELEASE=9.3 ncs ...          hide Fabric Engine commands your release doesn't have
 """
 LIST_SECTIONS = ("topics", "flows", "concepts", "favourites", "recent")
 
@@ -65,8 +63,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     except DataError as err:
         console.print(Text(f"Data error: {err}", style="removed"))
         return 2
-    if getattr(args, "release", None):
-        library = library.available_on(args.release)
     return HANDLERS[args.command](args, library, console)
 
 
@@ -96,7 +92,7 @@ def cmd_search(args: argparse.Namespace, library: Library, console: Console) -> 
         console.print()
         _remember(concept)
 
-    filters = Filters(args.platform, args.topic, args.kind, args.rare, args.since)
+    filters = Filters(args.platform, args.topic, args.kind, args.rare)
     results = search_commands(library.commands, args.terms, filters)
     shown = results if args.limit is None else results[: args.limit]
 
@@ -127,14 +123,15 @@ def cmd_fix(args: argparse.Namespace, library: Library, console: Console) -> int
 def cmd_what(args: argparse.Namespace, library: Library, console: Console) -> int:
     from netcheat.config import explain, read_lines
 
+    words, detail = _split_detail_flag(args.line)
     try:
-        text = " ".join(args.line) if args.line else _read_input(None, console, "Paste the lines to explain")
+        text = " ".join(words) if words else _read_input(None, console, "Paste the lines to explain")
     except OSError as err:
         return _fail(console, str(err))
     lines = read_lines(text)
     explanations = [explain(library, line) for line in lines]
     for explanation in explanations:
-        print_explanation(console, explanation, detail=args.detail or len(lines) == 1)
+        print_explanation(console, explanation, detail=args.detail or detail or len(lines) == 1)
         console.print()
     if len(explanations) == 1 and explanations[0].commands:
         _remember(explanations[0].commands[0])
@@ -164,6 +161,8 @@ def cmd_export(args: argparse.Namespace, library: Library, console: Console) -> 
         return _fail(console, f"No flow {args.flow!r}." + (f" Did you mean: {', '.join(similar)}" if similar else " List them with: ncs list flows"))
     if args.step is not None and not 1 <= args.step <= len(flow.steps):
         return _fail(console, f"{flow.id} has steps 1 to {len(flow.steps)}")
+    if args.md and (args.commands or args.step is not None):
+        return _fail(console, "--md gives a whole document; drop it, or drop --commands/--step to get one")
     try:
         filled = flow.with_values(_checked_values(flow, args.set))
     except ValueError as err:
@@ -195,6 +194,8 @@ def cmd_list(args: argparse.Namespace, library: Library, console: Console) -> in
 def cmd_browse(args: argparse.Namespace, library: Library, console: Console) -> int:
     from netcheat.browser import run_browser  # imported here: Textual is only needed for this command
 
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        return _fail(console, "The browser needs a terminal. Piped or redirected, use: ncs <words>, ncs list")
     run_browser(library, args.terms)
     return 0
 
@@ -209,23 +210,12 @@ def cmd_tip(args: argparse.Namespace, library: Library, console: Console) -> int
     return 0
 
 
-def cmd_add(args: argparse.Namespace, library: Library, console: Console) -> int:
-    from netcheat.add import run_add
-
-    try:
-        topic = run_add(console, library)
-    except DataError as err:
-        console.print(Text(f"Not saved: {err}", style="removed"))
-        return 2
-    console.print(Text(f"Saved to {topic.path} ({len(topic.commands)} commands). Regenerate docs: ncs build-md", style="new"))
-    return 0
-
-
 def cmd_build_md(args: argparse.Namespace, library: Library, console: Console) -> int:
     from netcheat.markdown import build_markdown
 
-    written = build_markdown(library, args.out)
-    console.print(Text(f"Wrote {len(written)} Markdown files to {args.out}", style="new"))
+    out = args.out.resolve()  # resolved, so the message names the folder it actually wrote to
+    written = build_markdown(library, out)
+    console.print(Text(f"Wrote {len(written)} Markdown files to {out}", style="new"))
     return 0
 
 
@@ -243,7 +233,6 @@ HANDLERS: dict[str, Handler] = {
     "export": cmd_export,
     "list": cmd_list,
     "tip": cmd_tip,
-    "add": cmd_add,
     "build-md": cmd_build_md,
     "completion": cmd_completion,
 }
@@ -281,6 +270,13 @@ def _remember(entry: Entry) -> None:
     State.load().opened(entry_key(entry))
 
 
+def _split_detail_flag(words: list[str]) -> tuple[list[str], bool]:
+    """`ncs what <line>` takes the line as REMAINDER, so an unquoted `|` or `[...]` survives; argparse then
+    never sees a trailing `-d`. Pull it out by hand instead of letting it end up inside the line."""
+    flags = {"-d", "--detail"}
+    return [word for word in words if word not in flags], any(word in flags for word in words)
+
+
 def _read_input(path: Optional[str], console: Console, prompt: str) -> str:
     """The text of a file, or of stdin ('-' or no file). On a terminal, asks for a paste first."""
     if path and path != "-":
@@ -311,12 +307,6 @@ def _platform(value: str) -> str:
     return platform
 
 
-def _version(value: str) -> str:
-    if not is_version(value):
-        raise argparse.ArgumentTypeError(f"expected a version like 9.4 or 9.3.1, got {value!r}")
-    return value
-
-
 def _positive_int(value: str) -> int:
     if not value.isdigit() or int(value) < 1:
         raise argparse.ArgumentTypeError(f"expected a number of 1 or more, got {value!r}")
@@ -330,10 +320,11 @@ def _assignment(value: str) -> tuple[str, str]:
     return name.strip(), assigned.strip()
 
 
-def _default_docs_dir() -> Path:
-    """docs/cheatsheet of the checkout this code runs from (editable install), else of the current directory."""
+def _default_docs_dir() -> Optional[Path]:
+    """docs/cheatsheet of the checkout this code runs from, or None when it does not run from one
+    (a plain `pip install`): then there is nothing to regenerate and `-o` has to say where to write."""
     checkout = Path(__file__).resolve().parents[2]  # src/netcheat/cli.py -> repository root
-    return checkout / "docs" / "cheatsheet" if (checkout / "pyproject.toml").exists() else Path("docs/cheatsheet")
+    return checkout / "docs" / "cheatsheet" if (checkout / "pyproject.toml").exists() else None
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -346,36 +337,30 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__} · {CREDIT}")
     sub = parser.add_subparsers(dest="command", metavar="{" + ",".join(HANDLERS) + "}")
 
-    release = argparse.ArgumentParser(add_help=False)
-    release.add_argument(
-        "-R", "--release", type=_version, default=os.environ.get("NCS_RELEASE") or None, metavar="VERSION",
-        help="only Fabric Engine commands that exist on this release (default: $NCS_RELEASE)",
-    )
     values = argparse.ArgumentParser(add_help=False)
     values.add_argument("--set", type=_assignment, action="append", metavar="NAME=VALUE", help="your value for a {name} of a flow; repeatable")
 
-    search = sub.add_parser("search", parents=[release, values], help="search commands; an exact flow id or concept opens it (default command)")
+    search = sub.add_parser("search", parents=[values], help="search commands; an exact flow id or concept opens it (default command)")
     search.add_argument("terms", nargs="*", help="words to search for; all must match")
     search.add_argument("-p", "--platform", type=_platform, help="fe | srx")
-    search.add_argument("-t", "--topic", help="limit to a topic, e.g. spbm-isis (see: ncs list)")
+    search.add_argument("-t", "--topic", help="exactly one topic, e.g. spbm-isis (see: ncs list)")
     search.add_argument("-k", "--kind", choices=KINDS, help="type of command")
-    search.add_argument("-r", "--rare", action="store_true", help="only rarely used gems")
-    search.add_argument("-s", "--since", type=_version, metavar="VERSION", help="only commands added in this version or later")
+    search.add_argument("-r", "--rare", action="store_true", help="only the gems: commands you would not remember exist")
     search.add_argument("-d", "--detail", action="store_true", help="show examples, notes and references")
     search.add_argument("-n", "--limit", type=_positive_int, metavar="N", help="show at most N results")
 
-    browse = sub.add_parser("browse", parents=[release], help="full-screen browser (also: ncs without arguments)")
+    browse = sub.add_parser("browse", help="full-screen browser (also: ncs without arguments)")
     browse.add_argument("terms", nargs="*", help="optional words to start the filter with")
 
-    fix = sub.add_parser("fix", parents=[release], help="describe a problem in your own words, get a flow and commands")
+    fix = sub.add_parser("fix", help="describe a problem in your own words, get a flow and commands")
     fix.add_argument("problem", nargs="+", help="e.g. clients get no ip address (quotes are optional)")
     fix.add_argument("-p", "--platform", type=_platform, help="fe | srx")
 
-    what = sub.add_parser("what", parents=[release], help="explain a command or config line; several lines from stdin")
+    what = sub.add_parser("what", help="explain a command or config line; several lines from stdin")
     what.add_argument("-d", "--detail", action="store_true", help="full details also for several lines")
     what.add_argument("line", nargs=argparse.REMAINDER, help="the line, e.g. radius server host 10.0.0.5 used-by eapol")
 
-    undo = sub.add_parser("undo", parents=[release], help="the commands that remove pasted configuration")
+    undo = sub.add_parser("undo", help="the commands that remove pasted configuration")
     undo.add_argument("file", nargs="?", help="a file with config lines; default: stdin (paste, then Ctrl-D)")
     undo.add_argument("--plain", action="store_true", help="only the removal commands, for piping")
 
@@ -385,13 +370,16 @@ def _parser() -> argparse.ArgumentParser:
     export.add_argument("--step", type=_positive_int, metavar="N", help="only the commands of step N")
     export.add_argument("--commands", action="store_true", help="only the commands, one per line")
 
-    listing = sub.add_parser("list", parents=[release], help="list topics, flows, concepts, favourites or recent entries")
+    listing = sub.add_parser("list", help="list topics, flows, concepts, favourites or recent entries")
     listing.add_argument("section", nargs="?", choices=LIST_SECTIONS, default="topics")
 
-    sub.add_parser("tip", parents=[release], help="show a random rarely used command").add_argument("-p", "--platform", type=_platform)
-    sub.add_parser("add", help="add a command interactively")
+    sub.add_parser("tip", help="show a random gem").add_argument("-p", "--platform", type=_platform)
+    docs_dir = _default_docs_dir()
     build = sub.add_parser("build-md", help="regenerate the Markdown cheatsheet")
-    build.add_argument("-o", "--out", type=Path, default=_default_docs_dir(), help="default: docs/cheatsheet of this checkout")
+    build.add_argument(
+        "-o", "--out", type=Path, default=docs_dir, required=docs_dir is None,
+        help="default: docs/cheatsheet of this checkout" if docs_dir else "the folder to write to (required: not run from a checkout)",
+    )
     completion = sub.add_parser("completion", help="print the tab-completion script, e.g. eval \"$(ncs completion zsh)\"")
     completion.add_argument("shell", choices=sorted(SCRIPTS))
     return parser

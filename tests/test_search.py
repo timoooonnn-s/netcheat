@@ -38,9 +38,12 @@ def test_filters_restrict_results(library):
     assert results and all(c.platform == "junos-srx" and c.kind == "show" for c in results)
 
 
-def test_since_filter_only_returns_newer_commands(library):
-    results = search_commands(library.commands, [], Filters(since="9.4"))
-    assert results and all(c.since.startswith("9.4") for c in results)
+def test_topic_filter_matches_one_topic_exactly(library):
+    """`-t system` is the Fabric Engine topic, never also srx-system: a mixed list invites
+    pasting Junos syntax into a VOSS switch."""
+    results = search_commands(library.commands, [], Filters(topic="system"))
+    assert results and {c.topic for c in results} == {"system"}
+    assert search_commands(library.commands, [], Filters(topic="s")) == []
 
 
 def test_suggest_offers_close_spellings(library):

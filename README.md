@@ -1,13 +1,13 @@
 # netcheat
 
 `ncs` is a command cheatsheet for the terminal. It covers **Extreme Fabric Engine (VOSS)** in depth and the
-**Juniper SRX** troubleshooting basics: 420 commands with descriptions, examples, notes, Cisco equivalents and links to
-the official documentation, 14 troubleshooting flows, 4 change workflows and 33 short concept notes. It also reads
-configuration you paste: it explains a line (`ncs what`) and writes the commands that remove it (`ncs undo`).
-Everything works offline, in any terminal, also over SSH.
+**Juniper SRX** troubleshooting basics: 420 commands with descriptions, examples, notes and links to the official
+documentation, 14 troubleshooting flows, 4 change workflows and 33 short concept notes. It also reads configuration
+you paste: it explains a line (`ncs what`) and writes the commands that remove it (`ncs undo`). Everything works
+offline, in any terminal, also over SSH.
 
-It is an inventory of the commands you don't use every day: 207 of them are marked ◆ ("gem"), so you can look at
-them on purpose before you forget them.
+It is an inventory of the commands you don't use every day. 43 of them are marked ◆ ("gem"): the ones you would not
+remember *exist*, so you can look at them on purpose before you need them. `ncs list` prints the current counts.
 
 **[Quick start](#quick-start)**: install and the everyday how-tos.
 **[Reference](#reference)**: every command, option, key, file format and rule in detail.
@@ -24,7 +24,7 @@ pip install -e .
 ```
 
 Python 3.9 or newer. Keep the `-e` (editable install): a `git pull` then updates your cheatsheet immediately, and
-`ncs add` and `ncs build-md` write into this checkout. More: [Install details](#install-details).
+`ncs build-md` writes into this checkout. More: [Install details](#install-details).
 
 ### Turn on tab completion
 
@@ -110,20 +110,12 @@ You get the best-matching troubleshooting flow step by step, plus other flows wo
 background concepts. To open a flow yourself: `ncs list flows`, then `ncs vist-smlt-problem`.
 More: [Problem matching](#problem-matching-ncs-fix) and [Troubleshooting flows](#troubleshooting-flows).
 
-### How to only see commands your switches have
-
-```bash
-export NCS_RELEASE=9.4.1         # in ~/.zshrc or ~/.bashrc
-```
-
-Fabric Engine commands that came after that release are hidden everywhere. More: [Release filter](#release-filter).
-
 ### How to rediscover forgotten commands
 
 ```bash
 ncs tip                  # a random gem, with details
-ncs -r -t spbm-isis      # all gems of one topic
-ncs -s 9.4               # commands added in Fabric Engine 9.4 or later
+ncs -r                   # every gem
+ncs -r -t spbm-isis      # the gems of one topic
 ```
 
 ### How to understand a term
@@ -135,12 +127,14 @@ ncs list concepts        # all concepts
 
 ### How to add a command you use
 
+Open the topic file and append an entry under `commands:`:
+
 ```bash
-ncs add
+$EDITOR src/netcheat/data/fabric-engine/spbm-isis.yaml
+pip install -e ".[dev]" && pytest && ncs build-md
 ```
 
-It asks for the fields and appends the entry to a topic file. Then check and share it:
-`pip install -e ".[dev]" && pytest && ncs build-md`, then open a merge request.
+`pytest` tells you what is wrong, naming the file and the entry. Then open a merge request.
 More: [Adding and editing content](#adding-and-editing-content).
 
 ### How to read it without the CLI
@@ -168,7 +162,6 @@ Back to the [Quick start](#quick-start).
 - [Values in flows](#values-in-flows)
 - [Export a flow (ncs export)](#export-a-flow-ncs-export)
 - [Concepts](#concepts)
-- [Release filter](#release-filter)
 - [Topics](#topics)
 - [Tab completion](#tab-completion)
 - [Adding and editing content](#adding-and-editing-content)
@@ -181,8 +174,8 @@ Back to the [Quick start](#quick-start).
 - Requires Python 3.9 or newer. Dependencies (installed by pip): `rich`, `PyYAML` and `textual` (only used by the
   browser).
 - Editable install (`pip install -e .`): the tool reads its data straight from `src/netcheat/data/` in your checkout,
-  so `git pull` is enough to update. `ncs add` and `ncs build-md` write into the same checkout. With a normal
-  `pip install .` they would write into the installed package instead.
+  so `git pull` is enough to update, and `ncs build-md` writes back into it. After a plain `pip install .` the data
+  sits in the installed package, which an upgrade overwrites, and `ncs build-md` then needs `-o <dir>`.
 - Development extras: `pip install -e ".[dev]"` adds `pytest`.
 
 ### Commands overview
@@ -198,24 +191,20 @@ Back to the [Quick start](#quick-start).
 | `ncs export <flow>` | a flow as a plain-text or Markdown document, with rollback | `--md`, `--set`, `--step N`, `--commands` |
 | `ncs list [section]` | `topics` (default), `flows`, `concepts`, `favourites` or `recent` | |
 | `ncs tip` | a random gem with details | `-p fe\|srx` |
-| `ncs add` | add a command interactively | |
 | `ncs build-md` | regenerate the Markdown in `docs/cheatsheet/` | `-o <dir>` for another folder |
 | `ncs completion bash\|zsh` | print the tab-completion script | |
 | `ncs --version` / `ncs -h` | version and credit / help (`ncs <command> -h` for one command) | |
 
-Every lookup command (`search`, `browse`, `what`, `undo`, `fix`, `list`, `tip`) also takes `-R <release>`, see
-[Release filter](#release-filter). Platform values for `-p`: `fe` (also `voss`, `fabric-engine`) and `srx` (also
-`junos`, `junos-srx`).
+Platform values for `-p`: `fe` (also `voss`, `fabric-engine`) and `srx` (also `junos`, `junos-srx`).
 
 ### Search
 
 | Option | Meaning |
 |---|---|
 | `-p fe \| srx` | only one platform |
-| `-t <topic>` | only one topic, e.g. `spbm-isis` (see [Topics](#topics)) |
+| `-t <topic>` | exactly one topic, e.g. `spbm-isis` (see [Topics](#topics)) |
 | `-k show \| config \| action \| clear` | only one type of command |
 | `-r` | only rarely used gems |
-| `-s <version>` | only commands added in this Fabric Engine version or later, e.g. `-s 9.3` |
 | `-d` | details: examples, notes, cautions and the link to the official docs |
 | `-n <N>` | show at most N results |
 | `--set name=value` | when the words are a flow id: your values for the flow, see [Values in flows](#values-in-flows) |
@@ -227,9 +216,8 @@ How matching works:
 - Case, hyphens and punctuation are ignored: `isid` finds `i-sid`, `unicast-fib` finds `ip-unicast-fib`, and a pasted
   command such as `show isis adjacencies [verbose]` finds itself.
 - Every word is a prefix (`adj` finds `adjacencies`), and all words must match.
-- The command text counts most, then tags, the description, the topic and finally notes, examples and the Cisco
-  equivalent. A match of the whole phrase in the command ranks first; on ties, show commands and shorter commands
-  come first.
+- The command text counts most, then tags, the description, the topic and finally notes and examples. A match of the
+  whole phrase in the command ranks first; on ties, show commands and shorter commands come first.
 - One or two results are shown with details automatically. If nothing matches, `ncs` suggests close spellings.
 - Under the results, `ncs` points to matching flows and concepts (respecting `-p`).
 
@@ -238,19 +226,17 @@ How matching works:
 ```
 » show isis adjacencies [verbose]
   IS-IS neighbors on all NNIs. Every fabric link should show state UP.
-  spbm-isis · User EXEC · ≈ Cisco: show isis neighbors
+  spbm-isis · User EXEC
 ```
 
-The first line is the command, then what it does, then topic, CLI mode and the closest Cisco equivalent (if any).
+The first line is the command, then what it does, then its topic and the CLI mode it runs in.
 
 | Icon | Meaning |
 |---|---|
 | `»` `✎` `►` `↺` | show / config / action / clear command |
-| `◆` | rarely used gem, worth remembering |
+| `◆` | gem: a command you would not remember exists |
 | `▲` | caution: traffic impact or risky, read the note with `-d` |
 | `↑ 9.4` | added in this Fabric Engine release; older releases do not have it |
-| `✕ removed in 9.4` | no longer available from this release |
-| `≈ Cisco:` | the closest Cisco equivalent, as an orientation aid |
 | `↗` | link to the official documentation |
 | `☰` / `⇄` | troubleshooting flow / change workflow |
 | `◇` | concept |
@@ -286,9 +272,12 @@ also over SSH.
 
 Values set with `v` stay for the session and apply to every flow that uses the same name (e.g. `port`).
 
-Copying uses the OSC 52 terminal sequence, so it also works over SSH in most terminals (iTerm2, Windows Terminal,
-kitty, WezTerm, tmux with clipboard enabled), but not in macOS Terminal.app. Without it, use the plain CLI and copy
-from its output, e.g. `ncs export radius-replace --step 5`.
+Copying writes to a local clipboard tool when there is one (`pbcopy`, `wl-copy`, `xclip`, `xsel`) and always sends
+the OSC 52 terminal sequence, which carries the text over SSH in most terminals (iTerm2, Windows Terminal, kitty,
+WezTerm, tmux with clipboard enabled) but not in macOS Terminal.app. OSC 52 is write-only, so the terminal never
+confirms it: the message says **Copied** only when a local tool took the text, and **Sent to the terminal clipboard**
+otherwise — check your paste buffer before you trust it. If it did not arrive, copy from the plain CLI instead,
+e.g. `ncs export radius-replace --step 5`.
 
 ### Favourites and recent entries
 
@@ -346,7 +335,10 @@ snmp-server host 10.0.0.80 v2c readview
   command. A `|` inside a pattern (`"radius|snmp"`) stays part of the pattern. Quote a piped line for the shell:
   `ncs what 'show running-config | include radius'`.
 - Without a line, `ncs what` reads several lines from stdin (paste, then Ctrl-D, or pipe a file) and explains each
-  one briefly; `-d` gives full details for all of them. Prompts, comments and pager lines are skipped.
+  one briefly; `-d` gives full details for all of them. `-d` works before or after the line. Prompts (Fabric Engine
+  `SW1:1#` and Junos `admin@srx1>`, including the `{primary:node0}` and `[edit]` banners), comments and pager lines
+  are skipped, so output pasted from either platform works. To explain a line that itself contains `-d`, quote the
+  whole line.
 
 ### Remove configuration (ncs undo)
 
@@ -356,11 +348,13 @@ snmp-server host 10.0.0.80 v2c readview
    configuration, because `show running-config` lists what a line depends on before the line itself (servers before
    the global `enable`, hosts before communities). Lines of the same object (several `syslog host 1 ...` lines) give
    one removal.
-2. **Check before running**: removals that could hurt (e.g. `no ssh` ends your own SSH session) and manual steps,
-   each with a note. They are never in the block above. Example: a community line can't be removed from the
-   configuration alone, because the switch masks the string; the note says to look up its index.
-3. **No rule for these lines**: everything it does not know, including every line inside an `interface` or
-   `router` block. Nothing is dropped silently.
+2. **Check before running**: removals that could end your own session, and manual steps, each with a note. They are
+   never in the block above. This covers anything that takes away your way in — `no ssh`, deleting a local user
+   (`no username rwa`), or removing the RADIUS/TACACS+ server that authenticates admin logins — and steps the
+   configuration alone cannot express: a community line can't be removed by its string, because the switch masks
+   it, so the note says to look up its index.
+3. **Not handled**: everything else, listed verbatim — lines with no rule, every line inside an `interface` or
+   `router` block, and pasted show commands. Nothing is dropped silently.
 
 `--plain` prints only the block of removal commands, for piping. The tool never connects to a switch: review the
 output, paste it yourself, check the result, then save.
@@ -476,38 +470,32 @@ CLIP, vIST/SMLT, RSMLT, DvR, Anycast Gateway, Auto-sense, Fabric Attach, Zero To
 fail-open I-SIDs, CoA, MACsec, SLPP, CFM, Segmented VRF, IGMP querier, DHCP snooping/DAI/IP Source Guard, output
 filters, and for the SRX flow mode, the commit model, routing instances, chassis cluster and the Junos pipe.
 
-### Release filter
-
-`-R <release>` (or `--release`) on any lookup command, or `NCS_RELEASE=<release>` in your shell profile, hides the
-Fabric Engine commands that do not exist on that release: commands added later (`since`) and commands removed in or
-before it (`removed`). Juniper commands are not affected. `ncs list` shows the release in its summary line. The
-option wins over the environment variable, so `ncs isid -R 9.4.2` checks a newer release once.
-
 ### Topics
 
-Use the id with `-t`. `ncs list` shows the current counts.
+Use the id with `-t`; it matches exactly, so `-t system` is the Fabric Engine topic and never
+also `srx-system`. `ncs list` prints these with their current command counts.
 
-| Topic id | Platform | Title | Commands |
-|---|---|---|---|
-| `auto-sense-fa` | Extreme Fabric Engine | Auto-sense, Fabric Attach and Zero Touch | 22 |
-| `dvr-anycast` | Extreme Fabric Engine | DvR and Anycast Gateway | 18 |
-| `edge-security` | Extreme Fabric Engine | Edge Security and Storm Control | 11 |
-| `l2vsn-isid` | Extreme Fabric Engine | L2 VSN and I-SID Services | 15 |
-| `l3vsn-routing` | Extreme Fabric Engine | L3 VSN, VRF and Routing | 33 |
-| `macsec` | Extreme Fabric Engine | MACsec | 13 |
-| `mgmt-access` | Extreme Fabric Engine | Management Access (RADIUS, TACACS+, Users, SSH) | 20 |
-| `mgmt-services` | Extreme Fabric Engine | Management Services (SNMP, Syslog, NTP, DNS) | 25 |
-| `mlt-smlt-vist` | Extreme Fabric Engine | MLT, SMLT, vIST and LACP | 18 |
-| `multicast` | Extreme Fabric Engine | IP Multicast and IGMP | 14 |
-| `nac-eap-radius` | Extreme Fabric Engine | NAC, EAP/NEAP and RADIUS | 25 |
-| `output-filters` | Extreme Fabric Engine | Output Filters and Paging | 9 |
-| `ports` | Extreme Fabric Engine | Ports, VLANs and Loop Protection | 48 |
-| `qos-monitoring` | Extreme Fabric Engine | QoS, Filters and Traffic Monitoring | 7 |
-| `spbm-isis` | Extreme Fabric Engine | SPBM, IS-IS and Fabric OAM | 40 |
-| `system` | Extreme Fabric Engine | System, CLI and Files | 50 |
-| `srx-output-filters` | Juniper SRX | Juniper SRX Output Filters | 9 |
-| `srx-routing` | Juniper SRX | Juniper SRX Routing, Interfaces and Traffic | 27 |
-| `srx-system` | Juniper SRX | Juniper SRX System Health and Chassis Cluster | 16 |
+| Topic id | Platform | Title |
+|---|---|---|
+| `auto-sense-fa` | Extreme Fabric Engine | Auto-sense, Fabric Attach and Zero Touch |
+| `dvr-anycast` | Extreme Fabric Engine | DvR and Anycast Gateway |
+| `edge-security` | Extreme Fabric Engine | Edge Security and Storm Control |
+| `l2vsn-isid` | Extreme Fabric Engine | L2 VSN and I-SID Services |
+| `l3vsn-routing` | Extreme Fabric Engine | L3 VSN, VRF and Routing |
+| `macsec` | Extreme Fabric Engine | MACsec |
+| `mgmt-access` | Extreme Fabric Engine | Management Access (RADIUS, TACACS+, Users, SSH) |
+| `mgmt-services` | Extreme Fabric Engine | Management Services (SNMP, Syslog, NTP, DNS) |
+| `mlt-smlt-vist` | Extreme Fabric Engine | MLT, SMLT, vIST and LACP |
+| `multicast` | Extreme Fabric Engine | IP Multicast and IGMP |
+| `nac-eap-radius` | Extreme Fabric Engine | NAC, EAP/NEAP and RADIUS |
+| `output-filters` | Extreme Fabric Engine | Output Filters and Paging |
+| `ports` | Extreme Fabric Engine | Ports, VLANs and Loop Protection |
+| `qos-monitoring` | Extreme Fabric Engine | QoS, Filters and Traffic Monitoring |
+| `spbm-isis` | Extreme Fabric Engine | SPBM, IS-IS and Fabric OAM |
+| `system` | Extreme Fabric Engine | System, CLI and Files |
+| `srx-output-filters` | Juniper SRX | Juniper SRX Output Filters |
+| `srx-routing` | Juniper SRX | Juniper SRX Routing, Interfaces and Traffic |
+| `srx-system` | Juniper SRX | Juniper SRX System Health and Chassis Cluster |
 
 ### Tab completion
 
@@ -538,8 +526,10 @@ concepts.yaml                concept explanations
 synonyms.yaml                words that mean the same thing, for ncs fix
 ```
 
-`ncs add` asks for the fields and appends a command to a topic file (it keeps comments and layout, and restores the
-file if the result does not load). You can also edit the files by hand.
+Edit them with your editor and run `pytest`: the loader and the data tests name the file and the entry for
+anything that is wrong. There is no interactive "add a command" mode, on purpose — it could not ask for the
+fields that make an entry worth having (`ref`, `caution`, the `undo` rules), so everything it wrote failed the
+tests anyway.
 
 **A command** (in a topic file, under `commands:`):
 
@@ -554,10 +544,8 @@ file if the result does not load). You can also edit the files by hand.
     notes: >                   # background and pitfalls
       Look up a nickname from another output and get the switch name.
     caution: ...               # traffic impact or risk, shows ▲
-    cisco: ...                 # the closest Cisco equivalent
-    since: "9.3"               # the release that introduced the command (quoted!)
-    removed: "9.4"             # the release that removed it
-    rare: true                 # marks a gem ◆
+    since: "9.3"               # the release that introduced the command (quoted!), shows ↑ 9.3
+    rare: true                 # marks a gem ◆ — see the rule below
     undo:                      # how ncs undo removes this configuration (config commands only)
       - match: "syslog host <id> ..."     # the line as show running-config prints it
         remove: "no syslog host <id>"     # filled from the <names> captured by match
@@ -568,6 +556,12 @@ file if the result does not load). You can also edit the files by hand.
 The `cmd` syntax is also what `ncs what` matches lines against: `<value>`, `[optional]` (options in any order),
 `{a | b}`, two related commands as `a / b`, and annotations in round brackets, such as `(interface)`, which are
 ignored.
+
+**When to set `rare: true`.** Only for a command you would not remember *exists*. Not for "a command of a feature
+I rarely use": if you are already working on MACsec you will find the MACsec commands by topic. The flag earns its
+keep only while the set stays small enough to read in one sitting, so a test fails if more than a fifth of the
+commands carry it. It once sat on 207 of 420, which marked nothing; it is on 43 now. When in doubt, leave it off —
+search and `-t` will still find the command.
 
 **Undo rules:** `match` uses the same notation plus `...` for "any values here". Write it for the line as `show
 running-config` prints it, keep only what identifies the object, and put `...` where keys, options and their order can
@@ -608,14 +602,16 @@ e.g. `- [ap, access point, wap, wifi, wireless, fa]`. Avoid very general words (
 
 Rules:
 
-- Keep `commands:` as the last key of a topic file, because `ncs add` appends to it.
+- Keep `commands:` as the last key of a topic file, so new entries go at the end.
 - Quote version numbers (`"9.4"`) and words YAML reads specially (`null`, `yes`, `no`, `on`, `off`). Whole numbers
   such as model numbers (`tags: [5520]`) or VLAN ids (`values: {vlan: 100}`) are fine without quotes.
 - Mistakes stop the tool with the file and the entry, e.g.
   `Data error: ports.yaml #12 (speed ...): unknown field(s): colour`.
 - The tests check, among other things, that no command appears twice per platform and CLI mode, that every concept
   reference exists, that every Fabric Engine command links to the official docs, that every undo rule wins for its
-  own line, and that `ncs fix` still finds the right flow for a set of example problems.
+  own line, that a removal which could lock you out carries a `note`, that gems stay under a fifth of the commands,
+  that the counts in this README match the data, and that `ncs fix` still finds the right flow for a set of example
+  problems.
 
 After a change, run the checks, regenerate the Markdown and open a merge request:
 
@@ -635,11 +631,10 @@ in that folder are left alone. Flows appear there with their default values fill
 |---|---|
 | 0 | success |
 | 1 | nothing matched or found (search, `what`, `undo`, `fix`, `tip`) |
-| 2 | invalid option or input (unknown flow or value, missing file), data error (the message names the file and entry), or `ncs add` did not save |
+| 2 | invalid option or input (unknown flow or value, missing file, no terminal for the browser), or a data error (the message names the file and entry) |
 
 | Variable | Effect |
 |---|---|
-| `NCS_RELEASE=<release>` | default for `-R`, see [Release filter](#release-filter) |
 | `NETCHEAT_STATE=<file>` | where favourites and recent entries are stored |
 | `NETCHEAT_DATA=<dir>` | read the data from another folder with the same layout, e.g. to try out changes without touching the checkout |
 

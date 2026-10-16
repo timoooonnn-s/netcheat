@@ -104,6 +104,4 @@ def _tokens(texts: Iterable[str]) -> list[str]:
 VALUE_COMPLETERS: dict[str, Callable[[Loader], list[str]]] = {
     "platform": lambda load: [*PLATFORM_ALIASES, *PLATFORMS],
     "topic": lambda load: [topic.slug for topic in load().topics],
-    "since": lambda load: sorted({c.since for c in load().commands if c.since}),
-    "release": lambda load: sorted({v for c in load().commands for v in (c.since, c.removed) if v}),
 }

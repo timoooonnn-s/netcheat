@@ -23,7 +23,7 @@ if TYPE_CHECKING:  # only for annotations: config imports search, which this mod
     from netcheat.search import Diagnosis
 
 KIND_ICONS = {"show": "»", "config": "✎", "action": "►", "clear": "↺"}
-RARE, CAUTION, CISCO, NEW, REMOVED, LINK, CONCEPT, FAVOURITE, RECENT = "◆", "▲", "≈", "↑", "✕", "↗", "◇", "★", "◷"
+RARE, CAUTION, NEW, LINK, CONCEPT, FAVOURITE, RECENT = "◆", "▲", "↑", "↗", "◇", "★", "◷"
 FLOW_ICONS = {"troubleshoot": "☰", "change": "⇄"}
 ACTION_VERBS = ("clear", "reset", "save", "copy", "ping", "traceroute", "l2 ", "monitor", "tdr-test", "flight-recorder", "request", "isis apply")
 
@@ -88,8 +88,6 @@ def command_title(command: Command) -> Text:
         title.append(f"  {RARE}", "rare")
     if command.since:
         title.append(f"  {NEW} {command.since}", "new")
-    if command.removed:
-        title.append(f"  {REMOVED} removed in {command.removed}", "removed")
     if command.caution:
         title.append(f"  {CAUTION}", "caution")
     return title
@@ -104,19 +102,8 @@ def entry_title(entry: Entry) -> Text:
     return Text.assemble((f"{CONCEPT} ", "label"), entry.term)
 
 
-def entry_block(entry: Entry) -> RenderableType:
-    """The full detail view of any entry."""
-    if isinstance(entry, Command):
-        return command_block(entry, detail=True)
-    if isinstance(entry, Flow):
-        return flow_block(entry.with_values())
-    return concept_block(entry)
-
-
 def command_block(command: Command, detail: bool) -> RenderableType:
     meta = Text(f"{command.topic} · {command.mode}", style="meta")
-    if command.cisco:
-        meta.append(f" · {CISCO} Cisco: {command.cisco}")
     body: list[RenderableType] = [Text(command.desc), meta]
 
     if detail:
@@ -234,7 +221,7 @@ def print_undo(console: Console, result: UndoResult) -> None:
             console.print(Indent(Text(removal.note, style="caution"), 4))
     if result.unhandled:
         console.print()
-        console.print(Text("No rule for these lines, remove them by hand:", style="label"))
+        console.print(Text("Not handled (no rule, inside a block, or not configuration):", style="label"))
         for line in result.unhandled:
             where = f"   (in {line.context})" if line.context else ""
             console.print(Text.assemble("  ", line.text, (where, "meta")), soft_wrap=True)
@@ -308,10 +295,9 @@ def print_topics(console: Console, library: Library) -> None:
             gems = sum(command.rare for command in topic.commands)
             table.add_row(Text(topic.slug, style="cmd"), topic.title, str(len(topic.commands)), str(gems))
     console.print(table)
-    release = f" (Fabric Engine {library.release})" if library.release else ""
     console.print(
         Text(
-            f"{len(library.commands)} commands{release} · {len(library.flows_of('troubleshoot'))} troubleshooting flows · "
+            f"{len(library.commands)} commands · {len(library.flows_of('troubleshoot'))} troubleshooting flows · "
             f"{len(library.flows_of('change'))} change workflows · {len(library.concepts)} concepts",
             style="meta",
         )

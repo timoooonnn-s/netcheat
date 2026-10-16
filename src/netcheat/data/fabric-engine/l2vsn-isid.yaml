@@ -33,7 +33,6 @@ commands:
       `config` lists the I-SIDs configured locally and `discover` the ones learned from remote BEBs.
       If a remote site is missing for an I-SID, check its config there; typical causes are a typo
       in the I-SID or a VLAN without a mapping.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_spbm_i_sid.shtml
 
   - cmd: show vlan remote-mac-table <vid>
@@ -50,7 +49,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [mac, i-sid, elan, tuni, fdb]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_i_sid_mac_address_entry.shtml
 
   - cmd: show isis spbm multicast-fib i-sid <isid>
@@ -58,7 +56,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [multicast, fib, bum, flooding, i-sid]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_isis_spbm_multicast_fib.shtml
 
   - cmd: vlan i-sid <vid> <isid>
@@ -124,7 +121,6 @@ commands:
     tags: [flex uni, s-uni, elan, port]
     since: "9.2"
     notes: The port variant first appears in the 9.2 command reference (the MLT variant, `flex-uni` in MLT Interface Config, is older). Since 9.2 an EAP-enabled port can also be a Flex UNI with an untagged S-UNI.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/flex_uni_enable_port.shtml
 
   - cmd: i-sid <isid> elan-transparent
@@ -137,7 +133,6 @@ commands:
         port 1/20
         exit
     notes: Typical uses are a customer handoff or a link that has to be carried transparently. Check it with `show i-sid elan-transparent`.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/Global_Configuration/i_sid.shtml
 
   - cmd: show interfaces gigabitEthernet i-sid <ports>

@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from netcheat.config import rollback
 from netcheat.markdown import ROLLBACK_NOTE, flow_markdown
-from netcheat.models import Flow, Library
-
-FORMATS = ("text", "md")
+from netcheat.models import PLATFORMS, Flow, Library
 
 
 def export_flow(library: Library, flow: Flow, fmt: str = "text") -> str:
@@ -15,10 +13,15 @@ def export_flow(library: Library, flow: Flow, fmt: str = "text") -> str:
 
 
 def flow_text(flow: Flow, library: Library) -> str:
-    """Plain text that survives any ticket system: no markup, commands indented on their own lines."""
-    lines = [flow.title, "=" * len(flow.title), "", flow.summary, ""]
+    """Plain text that survives any ticket system: no markup, commands indented on their own lines.
+
+    Carries the same facts as `flow_markdown`, so a ticket does not depend on which format was exported.
+    """
+    lines = [flow.title, "=" * len(flow.title), "", f"{PLATFORMS[flow.platform]} · id: {flow.id}", "", flow.summary, ""]
     if flow.values:
         lines += ["Values: " + ", ".join(f"{name}={value}" for name, value in flow.values.items()), ""]
+    if flow.symptoms:
+        lines += ["Typical symptoms: " + "; ".join(flow.symptoms) + ".", ""]
     for number, step in enumerate(flow.steps, 1):
         lines.append(f"{number}. {step.title}")
         lines += [f"     {cmd}" for cmd in step.cmds]

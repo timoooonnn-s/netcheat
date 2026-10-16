@@ -49,7 +49,6 @@ commands:
     tags: [dai, arp inspection, arp spoofing, security]
     notes: Needs DHCP snooping globally. Not possible on private VLANs (E-Tree), SPBM B-VLANs or MLT members. Mark uplinks with `ip arp-inspection trusted` on the port (default untrusted).
     caution: Clients with static IPs fail ARP unless you add static bindings (`ip dhcp-snooping binding`).
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/VLAN_Interface_Configuration/ip_arp_inspection_enable.shtml
 
   - cmd: show ip arp-inspection [vlan <vid>]
@@ -57,7 +56,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [dai, arp inspection, security]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_arp_inspection.shtml
 
   - cmd: ip source verify enable
@@ -69,7 +67,6 @@ commands:
       Requirements are DHCP snooping globally and on the VLAN, DAI on the same VLAN, and the port untrusted for both.
       Not possible on MLT/SMLT/LAG ports, brouter ports or private VLAN members. When the 10 addresses are used up, all
       further traffic from that port is dropped. Check the allowed addresses with `show ip source binding`.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/ip_source_verify.shtml
 
   - cmd: show ip source binding [<ip>] [interface gigabitEthernet <ports>]
@@ -77,7 +74,6 @@ commands:
     kind: show
     mode: User EXEC
     tags: [ipsg, ip source guard, binding]
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/User_EXEC/show_ip_source_binding.shtml
 
   - cmd: spoof-detect port <ports> enable
@@ -99,7 +95,6 @@ commands:
         rate-limit broadcast 500
         rate-limit multicast 1000
     notes: Disabled by default. The official best practice is to rate-limit broadcast and multicast on access ports together with SLPP. Check the current limits with `show interfaces gigabitEthernet rate-limit`.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/rate_limit.shtml
 
   - cmd: rate-limit action shutdown [<60-3600>] / rate-limit action threshold <drops>
@@ -109,5 +104,4 @@ commands:
     tags: [storm control, shutdown, rate limit, broadcast storm]
     since: "9.3"
     notes: Without a time the port stays down; with 60-3600 seconds it comes back on its own. Set the polling interval globally with `rate-limit poll-interval <3-300>` and check it with `show rate-limit`. Not on 7830 Series and 5320-16P-2MXT-2X.
-    rare: true
     ref: https://documentation.extremenetworks.com/Fabric%20Engine%20v9.4%20Command%20References/Switch_Operating_Systems/VOSS_and_Fabric_Engine/fabric_engine_cli_commands_reference/GigabitEthernet_Interface_Configuration/rate-limit_action_shutdown.shtml

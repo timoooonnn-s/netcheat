@@ -1,6 +1,7 @@
 """Integrity checks for the shipped data files. They run on every change, so hand edits stay valid."""
 
 from collections import Counter
+from pathlib import Path
 
 import pytest
 
@@ -63,3 +64,38 @@ def test_every_undo_rule_wins_for_its_own_line(library):
 
 def test_change_workflows_have_example_values(library):
     assert all(flow.values for flow in library.flows_of("change"))
+
+
+def test_gems_stay_a_small_share_of_the_commands(library):
+    """`rare` marks a command you would not remember exists. A marker on half the corpus marks nothing,
+    so keep it under a fifth: `ncs tip` and `-r` are only useful while the set is small."""
+    gems = [c for c in library.commands if c.rare]
+    assert gems, "no gems left at all"
+    assert len(gems) <= len(library.commands) // 5, f"{len(gems)} of {len(library.commands)} commands marked rare"
+
+
+def test_every_removal_that_can_lock_you_out_carries_a_note(library):
+    """An undo rule whose removal deletes the login account or the server that authenticates admin logins
+    must carry a `note`, because a note is what keeps it out of the paste-ready block of `ncs undo`."""
+    risky = ("no username", "no tacacs server", "no radius server host <ip> used-by cli")
+    missing = [
+        rule.match
+        for command in library.commands
+        for rule in command.undo
+        if rule.remove.startswith(risky) and not rule.note
+    ]
+    assert missing == []
+
+
+def test_readme_counts_match_the_data(library):
+    """The README's intro states the size of the cheatsheet. Keep it true automatically, so the numbers
+    the reader uses to judge the tool cannot quietly drift away from the data."""
+    readme = (Path(__file__).resolve().parents[1] / "README.md").read_text(encoding="utf-8")
+    counts = {
+        f"{len(library.commands)} commands": "commands",
+        f"{len(library.flows_of('troubleshoot'))} troubleshooting flows": "troubleshooting flows",
+        f"{len(library.flows_of('change'))} change workflows": "change workflows",
+        f"{len(library.concepts)} short concept notes": "concepts",
+        f"{sum(c.rare for c in library.commands)} of them are marked": "gems",
+    }
+    assert [what for phrase, what in counts.items() if phrase not in readme] == []

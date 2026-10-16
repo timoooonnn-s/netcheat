@@ -8,7 +8,6 @@ commands:
     kind: show
     mode: operational
     tags: [version, junos, model, release, inventory]
-    cisco: show version
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-version.html
 
   - cmd: show system uptime
@@ -24,7 +23,6 @@ commands:
     kind: show
     mode: operational
     tags: [hardware, inventory, serial, sfp, transceiver, rma]
-    cisco: show inventory
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-hardware.html
 
   - cmd: show chassis alarms / show system alarms
@@ -40,7 +38,6 @@ commands:
     kind: show
     mode: operational
     tags: [environment, temperature, fan, power, psu, health]
-    cisco: show environment
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-environment.html
 
   - cmd: show chassis routing-engine
@@ -49,7 +46,6 @@ commands:
     mode: operational
     tags: [cpu, memory, routing engine, load, health]
     notes: This is the control plane. Forwarding load (SPU or flow CPU) is shown by `show security monitoring`.
-    cisco: show processes cpu
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-routing-engine.html
 
   - cmd: show system processes extensive
@@ -58,7 +54,6 @@ commands:
     mode: operational
     tags: [processes, cpu, memory, top, daemon]
     example: show system processes extensive | no-more
-    rare: true
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-system-processes.html
 
   - cmd: show security monitoring
@@ -67,7 +62,6 @@ commands:
     mode: operational
     tags: [spu, flow cpu, sessions, capacity, performance, data plane]
     notes: High flow CPU or a session table near its maximum explains drops even when routing and policies are correct.
-    rare: true
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-security-monitoring.html
 
   - cmd: show security flow session summary
@@ -76,7 +70,6 @@ commands:
     mode: operational
     tags: [sessions, summary, capacity, flow, failed sessions]
     notes: Many failed sessions point to policy or resource problems; filters such as `destination-prefix <ip>` also work with summary.
-    rare: true
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-security-flow-session.html
 
   - cmd: show system storage
@@ -102,7 +95,6 @@ commands:
     mode: operational
     tags: [jtac, support, rsi, case, tech-support]
     notes: Run it before a reboot, while the problem is still there, and attach the file together with /var/log to the case.
-    cisco: show tech-support
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/request-support-information.html
 
   - cmd: show chassis cluster status [redundancy-group <n>]
@@ -130,7 +122,6 @@ commands:
     mode: operational
     tags: [chassis cluster, heartbeat, probes, sync, ha]
     notes: Increasing errors or missed heartbeats on the control link precede failovers.
-    rare: true
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-cluster-statistics.html
 
   - cmd: show chassis cluster information
@@ -139,5 +130,4 @@ commands:
     mode: operational
     tags: [chassis cluster, events, failover history, health, ha]
     notes: The first place to look when you want to know why a failover happened.
-    rare: true
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-cluster-information.html
