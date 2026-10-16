@@ -133,3 +133,77 @@ def test_number_copies_a_flow_step_with_values():
         assert app.clipboard.splitlines()[0] == "no radius server host 192.0.2.9 used-by eapol"
 
     drive(steps)
+
+
+def test_p_cycles_the_platform_filter():
+    async def steps(app, pilot):
+        items = app.query_one("#items", OptionList)
+        assert items.option_count == len(app.library.commands)
+        await pilot.press("p")
+        assert app.platform == "fabric-engine"
+        assert items.option_count == sum(1 for c in app.library.commands if c.platform == "fabric-engine")
+        assert "Fabric Engine only" in items.border_title
+        await pilot.press("p")
+        assert app.platform == "junos-srx"
+        assert items.option_count == sum(1 for c in app.library.commands if c.platform == "junos-srx")
+        await pilot.press("p")
+        assert app.platform is None and items.option_count == len(app.library.commands)
+
+    drive(steps)
+
+
+def test_k_cycles_the_kind_filter():
+    async def steps(app, pilot):
+        items = app.query_one("#items", OptionList)
+        await pilot.press("k")
+        assert app.kind == "show"
+        assert items.option_count == sum(1 for c in app.library.commands if c.kind == "show")
+        assert "show" in items.border_title
+
+    drive(steps)
+
+
+def test_a_starting_platform_also_filters_flows_and_concepts():
+    """`-p srx` / $NCS_PLATFORM must hold for every area of the tree, not only the command lists."""
+
+    async def steps(app, pilot):
+        app.scope = Scope("concepts")
+        app._refresh_items()
+        assert app.query_one("#items", OptionList).option_count == sum(
+            1 for c in app.library.concepts if c.platform == "junos-srx"
+        )
+
+    asyncio.run(_run(steps, platform="junos-srx"))
+
+
+async def _run(steps, **kwargs):
+    app = Browser(load_library(), **kwargs)
+    async with app.run_test(size=(140, 40)) as pilot:
+        await steps(app, pilot)
+    return app
+
+
+def test_question_mark_opens_the_keys_overlay():
+    async def steps(app, pilot):
+        await pilot.press("question_mark")
+        assert any(type(screen).__name__ == "KeysScreen" for screen in app.screen_stack)
+        await pilot.press("escape")
+        assert all(type(screen).__name__ != "KeysScreen" for screen in app.screen_stack)
+
+    drive(steps)
+
+
+def test_a_flow_shows_the_caution_of_its_step_commands():
+    """`cli password rwa read-write-all` carries a caution of its own; the flow must show it."""
+
+    async def steps(app, pilot):
+        app.scope = Scope("change")
+        app._refresh_items()
+        flow = next(e for e in app.entries if e.id == "admin-login-change")
+        app.query_one("#items", OptionList).highlighted = app.entries.index(flow)
+        await pilot.pause()
+        shown = Console(width=200, record=True, file=io.StringIO())
+        shown.print(app.query_one("#detail", Static).content)
+        assert "finding in every audit" in shown.export_text()
+
+    drive(steps)

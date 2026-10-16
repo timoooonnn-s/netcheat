@@ -27,7 +27,7 @@ Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem 
 | ► | `ping <ip> source <ip> [routing-instance <ri>] [rapid count <n>] [size <bytes> do-not-fragment]` | Ping with a source address, in a routing instance, fast or with DF bit for MTU tests. | operational |
 | ► | `traceroute <ip> [source <ip>] [routing-instance <ri>] [no-resolve]` | Traceroute from the SRX. | operational |
 | ► | `monitor traffic interface <interface> no-resolve matching "host <ip>"` | Live packet capture of traffic to/from the Routing Engine on an interface (tcpdump-like). | operational |
-| » | `show log messages \| last 50` | The latest system log entries. | operational |
+| » | `show log messages \| last <n>` | The latest system log entries. | operational |
 | » | `show configuration <section> \| display set` ◆ | Show the config (or part of it) as set commands. The easiest format to copy and compare. | operational |
 | ✎ | `show \| compare / commit check / commit confirmed <minutes>` ▲ | In configuration mode, review the diff, check the syntax, then commit with an automatic rollback if you don't confirm. | configuration |
 | ✎ | `set routing-options static route <prefix> next-hop <ip>` | Add a static route (configuration mode). In a routing instance prefix it with `set routing-instances <ri>`. | configuration |
@@ -99,7 +99,7 @@ ping 10.20.30.40 size 1472 do-not-fragment
 This only shows traffic to or from the SRX itself (control plane), not transit traffic. For transit traffic use `security flow traceoptions` or packet capture.
 
 
-### `show log messages | last 50`
+### `show log messages | last <n>`
 
 ```
 show log messages | last 50
@@ -117,6 +117,8 @@ show configuration protocols bgp | display set
 
 ### `show | compare / commit check / commit confirmed <minutes>`
 
+Get there: `configure`
+
 ```
 configure
 set routing-options static route 10.50.0.0/16 next-hop 10.255.0.2
@@ -132,6 +134,8 @@ After `commit confirmed 5`, run a plain `commit` (or `commit check`) within 5 mi
 
 
 ### `set routing-options static route <prefix> next-hop <ip>`
+
+Get there: `configure`
 
 ```
 set routing-options static route 0.0.0.0/0 next-hop 203.0.113.1

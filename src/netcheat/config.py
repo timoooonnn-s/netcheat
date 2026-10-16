@@ -114,6 +114,21 @@ def rollback(library: Library, flow: Flow) -> UndoResult:
     return undo(library, [ConfigLine(cmd) for cmd in added])
 
 
+def entries_for(library: Library, commands: Iterable[str]) -> dict[str, Command]:
+    """The cheatsheet entry each of these command lines is an instance of, for the lines where the syntax
+    matches exactly. Used to carry an entry's `caution` into the flow that uses the command, so a change
+    plan warns about `cli password rwa ...`, `no ssh` or `no eapol enable` without the flow author
+    repeating the warning. Resolution is `explain`'s, so an output filter after the command and a `no`
+    form both find the entry they belong to; a merely partial match is left out, to attribute nothing wrong.
+    """
+    found: dict[str, Command] = {}
+    for cmd in commands:
+        explanation = explain(library, ConfigLine(cmd))
+        if explanation.exact and explanation.commands:
+            found[cmd] = explanation.commands[0]
+    return found
+
+
 def removal_for(library: Library, line: str) -> Optional[str]:
     """The removal command for a single configuration line, if a rule knows it."""
     found = _best_undo(library.commands, line)
@@ -151,7 +166,17 @@ class Explanation:
 
 def explain(library: Library, line: ConfigLine) -> Explanation:
     """Which cheatsheet entries describe a command or configuration line. Output filters after the command
-    ("show running-config | include radius") are explained one by one."""
+    ("show running-config | include radius") are explained one by one.
+
+    A few entries carry the pipe in their own `cmd`, because the switch documents command and filter as one
+    thing ("show log messages | last 50", "show configuration <section> | display set"). Those are tried
+    against the whole line first, and only exactly, so a line that merely ends in a filter still gets split.
+    """
+    if "|" in tokens(line.text):
+        whole_line, _ = _entries_for(library.commands, line.text, partials=(False,))
+        if whole_line:  # a show command with its filter: nothing to split, and nothing to remove
+            return Explanation(line, whole_line, True, "", None, [], [])
+
     text, *pipes = _split_pipes(line.text)
     commands, exact = _entries_for(library.commands, text)
     negation = ""
@@ -199,9 +224,12 @@ def _filter_patterns(command: Command) -> tuple:
     return try_compile(is_filter.group(1)) if is_filter else ()
 
 
-def _entries_for(commands: Sequence[Command], text: str) -> tuple[list[Command], bool]:
-    """Entries whose syntax matches the whole text; else those matching its beginning (`partial`)."""
-    for partial in (False, True):
+def _entries_for(
+    commands: Sequence[Command], text: str, partials: tuple[bool, ...] = (False, True)
+) -> tuple[list[Command], bool]:
+    """Entries whose syntax matches the whole text; else those matching its beginning (`partial`).
+    `partials` narrows which of the two passes to run."""
+    for partial in partials:
         ranked = []
         for position, command in enumerate(commands):
             found = match(_patterns(command), text, partial=partial, abbreviations=True)

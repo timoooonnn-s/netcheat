@@ -145,6 +145,10 @@ class _Parser:
             self.pos += 1
             if symbol in ("[", "{"):
                 nodes.append(self._choice(symbol))
+            elif symbol == "|" and not closing:
+                # Outside a {a | b} choice a pipe is the switch's own output filter, so it is a literal
+                # keyword: "show log messages | last 50", "show configuration <section> | display set".
+                nodes.append(Word("|"))
             elif symbol in ("]", "}", "|"):
                 raise SyntaxParseError(f"unexpected {symbol!r} in {self.text!r}")
             elif symbol == "...":

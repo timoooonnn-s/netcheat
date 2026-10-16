@@ -99,3 +99,47 @@ def test_readme_counts_match_the_data(library):
         f"{sum(c.rare for c in library.commands)} of them are marked": "gems",
     }
     assert [what for phrase, what in counts.items() if phrase not in readme] == []
+
+
+def test_every_cli_mode_in_the_data_has_a_path(library):
+    """A command's detail view says how to reach its CLI mode. A new mode value must get a path, or the
+    command silently loses the one line that explains why a correct command is rejected."""
+    from netcheat.models import mode_path
+
+    missing = sorted({c.mode for c in library.commands if not mode_path(c.mode)[0] and c.mode not in NO_PATH_NEEDED})
+    assert missing == []
+
+
+NO_PATH_NEEDED = {"User EXEC", "operational", "any"}  # a login lands there already
+
+
+def test_flow_step_commands_resolve_to_an_entry(library):
+    """A step command should be an instance of a real entry, so the flow can carry that entry's caution.
+    A step that resolves to nothing is usually a typo or a missing entry; these are the known exceptions."""
+    from netcheat.config import entries_for
+
+    known_gaps = {
+        # `no` forms with no positive entry to fall back on
+        "no boot config flags telnetd",
+        "no ip name-server secondary",
+        "no snmp-server community-by-index second",
+        "reset -cancel",  # the `reset -in` entry mentions it in its notes, but has no entry of its own
+        # show variants whose options are not in the documented syntax
+        "show interfaces gigabitEthernet statistics verbose 1/5",
+        "show ip isis redistribute vrf CORP",
+        "show khi performance pthread sort cpu",
+        "show spanning-tree bpduguard 1/5",
+    }
+    steps = {cmd for flow in library.flows for step in flow.with_values().steps for cmd in step.cmds}
+    unresolved = sorted(steps - set(entries_for(library, steps)) - known_gaps)
+    assert unresolved == []
+
+
+def test_concept_back_links_reach_the_commands(library):
+    """Every `see:` reference resolves to a command, so the reverse index is never empty for it."""
+    linked = {ref for concept in library.concepts for ref in concept.see}
+    assert linked
+    for command in library.commands:
+        for term in library.concepts_for(command):
+            assert command.cmd in next(c for c in library.concepts if c.term == term).see
+    assert sum(1 for c in library.commands if library.concepts_for(c)) == len(linked)

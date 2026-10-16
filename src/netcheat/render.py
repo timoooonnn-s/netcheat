@@ -7,7 +7,7 @@ be parsed as rich markup.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence
 
 from rich.console import Console, ConsoleOptions, Group, RenderableType, RenderResult
 from rich.segment import Segment
@@ -16,7 +16,7 @@ from rich.text import Text
 from rich.theme import Theme
 
 from netcheat import CREDIT
-from netcheat.models import FLOW_KINDS, Command, Concept, Entry, Flow, Library
+from netcheat.models import FLOW_KINDS, Command, Concept, Entry, Flow, Library, mode_path
 
 if TYPE_CHECKING:  # only for annotations: config imports search, which this module must not load eagerly
     from netcheat.config import Explanation, UndoResult
@@ -102,24 +102,38 @@ def entry_title(entry: Entry) -> Text:
     return Text.assemble((f"{CONCEPT} ", "label"), entry.term)
 
 
-def command_block(command: Command, detail: bool) -> RenderableType:
+def command_block(command: Command, detail: bool, library: Optional[Library] = None) -> RenderableType:
+    """One entry. With a `library`, the detail view also names the concepts that explain this command."""
     meta = Text(f"{command.topic} · {command.mode}", style="meta")
     body: list[RenderableType] = [Text(command.desc), meta]
 
     if detail:
+        steps, also = mode_path(command.mode)
+        if steps:
+            path = Text.assemble(("Get there: ", "meta"), (" → ".join(steps), "cmd"))
+            if also:
+                path.append(f"   (also in {', '.join(also)})", "meta")
+            body.append(path)
         if command.example:
             body += [Text("Example", style="label"), Indent(Text(command.example))]
         if command.notes:
             body += [Text("Notes", style="label"), Indent(Text(command.notes))]
         if command.caution:
             body.append(Text(f"{CAUTION} {command.caution}", style="caution"))
+        background = library.concepts_for(command) if library else ()
+        if background:
+            body.append(Text.assemble((f"{CONCEPT} Background: ", "meta"), (" · ".join(background), "cmd")))
         if command.ref:
             body.append(Text(f"{LINK} {command.ref}", style="meta"))
     return Group(command_title(command), Indent(Group(*body)))
 
 
-def flow_block(flow: Flow, values_hint: str = "--set name=value") -> RenderableType:
-    """A flow with its values filled in (Flow.with_values). `values_hint` says how to change the values."""
+def flow_block(
+    flow: Flow, values_hint: str = "--set name=value", entries: Optional[Mapping[str, Command]] = None
+) -> RenderableType:
+    """A flow with its values filled in (Flow.with_values). `values_hint` says how to change the values.
+    `entries` maps a step command to its cheatsheet entry (config.entries_for), so the flow shows the
+    warning that belongs to the command instead of relying on the flow author to repeat it."""
     parts: list[RenderableType] = [
         Text.assemble((f"{FLOW_ICONS[flow.kind]} ", "label"), (flow.title, "cmd"), (f"  {flow.id}", "meta")),
         Indent(Text(flow.summary)),
@@ -133,7 +147,13 @@ def flow_block(flow: Flow, values_hint: str = "--set name=value") -> RenderableT
         lines: list[RenderableType] = []
         for cmd in step.cmds:
             kind = step_kind(cmd)
-            lines.append(Text.assemble((f"{KIND_ICONS[kind]} ", f"kind.{kind}"), (cmd, "cmd")))
+            entry = (entries or {}).get(cmd)
+            title_line = Text.assemble((f"{KIND_ICONS[kind]} ", f"kind.{kind}"), (cmd, "cmd"))
+            if entry is not None and entry.caution:
+                title_line.append(f"  {CAUTION}", "caution")
+            lines.append(title_line)
+            if entry is not None and entry.caution and entry.caution != step.caution:
+                lines.append(Indent(Text(f"{CAUTION} {entry.caution}", style="caution"), 2))
         if step.look_for:
             lines.append(Text.assemble(("Look for: ", "meta"), step.look_for))
         if step.caution:
@@ -160,6 +180,7 @@ def concept_block(concept: Concept) -> RenderableType:
 
 def print_search(
     console: Console,
+    library: Library,
     commands: Sequence[Command],
     flows: Sequence[Flow],
     concepts: Sequence[Concept],
@@ -167,10 +188,11 @@ def print_search(
     detail: bool,
     total: int,
     suggestions: Sequence[str] = (),
+    in_prose: int = 0,
 ) -> None:
     if commands:
         for command in commands:
-            console.print(command_block(command, detail))
+            console.print(command_block(command, detail, library))
             console.print()
         count = f"{len(commands)} of {total}" if total > len(commands) else str(total)
         console.print(Text(f"{count} command(s)", style="meta"))
@@ -179,6 +201,9 @@ def print_search(
         console.print("No matching commands.", style="meta")
         if suggestions:
             console.print(Text.assemble(("Did you mean: ", "meta"), (", ".join(dict.fromkeys(suggestions)), "label")))
+    if in_prose:
+        plural = "command mentions" if in_prose == 1 else "commands mention"
+        console.print(Text(f"{in_prose} more {plural} this in its notes or example: add --notes", style="meta"))
     for kind, name in FLOW_KINDS.items():
         ids = [flow.id for flow in flows if flow.kind == kind]
         if ids:
@@ -187,12 +212,14 @@ def print_search(
         _print_related(console, CONCEPT, "Concepts", [concept.term for concept in concepts], "ncs <term>")
 
 
-def print_diagnosis(console: Console, diagnosis: Diagnosis) -> None:
+def print_diagnosis(
+    console: Console, library: Library, diagnosis: Diagnosis, entries: Optional[Mapping[str, Command]] = None
+) -> None:
     console.print(Text.assemble(("Understood: ", "meta"), (" · ".join(diagnosis.understood), "label")))
     console.print()
     if diagnosis.flows:
         best, *others = diagnosis.flows
-        console.print(flow_block(best.with_values()))
+        console.print(flow_block(best.with_values(), entries=entries))
         if others:
             console.print()
             _print_related(console, FLOW_ICONS[best.kind], "Also check", [flow.id for flow in others], "ncs <id>")
@@ -201,7 +228,7 @@ def print_diagnosis(console: Console, diagnosis: Diagnosis) -> None:
         console.print(Text("Helpful commands", style="label"))
         console.print()
         for command in diagnosis.commands:
-            console.print(command_block(command, detail=False))
+            console.print(command_block(command, detail=False, library=library))
             console.print()
     if diagnosis.concepts:
         _print_related(console, CONCEPT, "Background", [c.term for c in diagnosis.concepts], "ncs <term>")
@@ -232,7 +259,7 @@ def print_undo(console: Console, result: UndoResult) -> None:
     console.print(Text("Review before pasting, and save only after checking the result.", style="meta"))
 
 
-def print_explanation(console: Console, explanation: Explanation, detail: bool) -> None:
+def print_explanation(console: Console, library: Library, explanation: Explanation, detail: bool) -> None:
     line = explanation.line
     head = Text.assemble((f"{line.text}", "label"))
     if line.context:
@@ -244,7 +271,7 @@ def print_explanation(console: Console, explanation: Explanation, detail: bool) 
     if explanation.commands and not explanation.exact:
         console.print(Indent(Text("Closest entry (only the beginning of the line matches):", style="meta")))
     for command in explanation.commands:
-        console.print(Indent(command_block(command, detail)))
+        console.print(Indent(command_block(command, detail, library)))
     if not explanation.commands:
         console.print(Indent(Text("No entry matches this command.", style="meta")))
         if explanation.related:
@@ -256,7 +283,7 @@ def print_explanation(console: Console, explanation: Explanation, detail: bool) 
         if not filters:
             console.print(Indent(Text("No output filter matches this part.", style="meta"), 4))
         for command in filters:
-            console.print(Indent(command_block(command, detail=False), 4))
+            console.print(Indent(command_block(command, detail=False, library=library), 4))
     if explanation.remove:
         console.print(Indent(Text.assemble(("Remove with: ", "meta"), (explanation.remove, "cmd"))))
 

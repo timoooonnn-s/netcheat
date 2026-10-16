@@ -48,12 +48,16 @@ The type is 1 for local and 2 for dynamic (learned from another node). Shows the
 
 ### `dvr controller <domain-id>`
 
+Get there: `enable` → `configure terminal`
+
 Prerequisites are IP shortcuts (`spbm 1 ip enable`) and the dvr-leaf-mode boot flag disabled. A controller belongs to exactly one domain.
 
 > ▲ **Caution:** Removing DvR from a controller deletes the domain and everything learned dynamically.
 
 
 ### `boot config flags dvr-leaf-mode / dvr leaf <domain-id>`
+
+Get there: `enable` → `configure terminal`
 
 ```
 save config
@@ -67,6 +71,8 @@ reset -y
 
 
 ### `dvr gw-ipv4 <gateway-ip> / dvr enable`
+
+Get there: `enable` → `configure terminal` → `interface vlan <vid>`
 
 ```
 vlan create 200 type port-mstprstp 0
@@ -83,10 +89,24 @@ The VLAN must have an I-SID. Use the same gateway IP on all controllers of the d
 
 ### `dvr redistribute direct enable / dvr apply redistribute [vrf <vrf>]`
 
+Get there: `enable` → `configure terminal` (also in VRF Router Config)
+
 Like IS-IS redistribution, nothing happens until you run `dvr apply redistribute`. Check it with `show dvr redistribute`.
 
 
+### `dvr inject-default-route-disable`
+
+Get there: `enable` → `configure terminal` → `router vrf <vrf>`
+
+
+### `clear dvr host-entries [ipv4 <ip>] [l3isid <isid>]`
+
+Get there: `enable`
+
+
 ### `ip anycast-gateway <gateway-ip> [vrid <1-255>] / ip anycast-gateway enable`
+
+Get there: `enable` → `configure terminal` → `interface vlan <vid>`
 
 ```
 interface vlan 300

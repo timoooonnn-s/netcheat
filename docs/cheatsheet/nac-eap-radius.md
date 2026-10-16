@@ -48,6 +48,11 @@ show eapol sessions neap 1/5 verbose
 The first check when a client says "no network". Is the MAC there, is it authenticated, and which VLAN/I-SID did ExtremeControl assign?
 
 
+### `show eapol summary [<ports>] [verbose]`
+
+Get there: `enable`
+
+
 ### `show eapol system`
 
 The global setting is disabled by default, even on Auto-sense ports. Without `eapol enable`, no port authenticates.
@@ -60,6 +65,8 @@ Many timeouts usually mean a client without an 802.1X supplicant. Is NEAP (MAC a
 
 ### `clear eapol {eap | non-eap} [<ports>] [<mac>]`
 
+Get there: `enable`
+
 ```
 clear eapol non-eap 1/5 00:11:22:33:44:55
 clear eapol eap 1/5
@@ -68,7 +75,14 @@ clear eapol eap 1/5
 Use it after a policy change in ExtremeControl, if the client still has the old VLAN/I-SID. From ExtremeControl itself, the same happens through CoA (dynamic-server).
 
 
+### `eapol enable`
+
+Get there: `enable` → `configure terminal`
+
+
 ### `radius server host <ip> key <secret> used-by eapol [acct-enable] [priority <1-10>]`
+
+Get there: `enable` → `configure terminal`
 
 ```
 radius enable
@@ -81,6 +95,8 @@ Add both NAC engines with different priorities. `used-by cli` is a separate entr
 
 
 ### `radius dynamic-server client <nac-ip> secret <secret> enable`
+
+Get there: `enable` → `configure terminal`
 
 ```
 radius dynamic-server client 10.0.0.50 secret <secret> enable
@@ -98,10 +114,14 @@ If timeouts increase, check the reachability and route to the NAC, and whether t
 
 ### `radius reachability mode {status-server | use-radius}`
 
+Get there: `enable` → `configure terminal`
+
 status-server is the standard method (RFC 5997). use-radius sends dummy requests and needs `radius reachability username/password`. The keep-alive timer (default 180 s) and unreachable timer (default 60 s) set the check intervals.
 
 
 ### `eapol status auto`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 ```
 interface gigabitEthernet 1/5
@@ -116,34 +136,58 @@ Auto-sense ports in the UNI state get exactly this kind of config in the backgro
 
 ### `eapol multihost eap-oper-mode {mhmv | mhsa}`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 MHMV is the usual mode for phone plus PC or several devices per port with ExtremeControl.
 
 
 ### `eapol multihost radius-non-eap-enable`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 Since 9.3, with NEAP fallback, a client whose EAP fails is tried with NEAP after about 4 s on the same port. The password format of the MAC request is set globally with `eapol multihost non-eap-pwd-fmt`.
 
 
 ### `eapol multihost mac-max <n> / eap-mac-max <n> / non-eap-mac-max <n>`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 The total mac-max of 1 is a classic cause of a "phone works, PC behind it doesn't" problem on manually configured ports. Since 9.2, Auto-sense ports default to 4 MACs (`auto-sense eapol multihost mac-max`).
 
 
 ### `eapol port <ports> guest-isid <isid>`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 On Auto-sense ports the onboarding I-SID is used as the guest I-SID automatically, unless you disable that with `no auto-sense guest-isid enable` (9.4+).
 
 
 ### `eapol port <ports> fail-open-isid <isid>`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 This only works when RADIUS reachability is configured, because the switch must detect that the servers are down.
 
 
 ### `eapol voice lldp-auth`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 The Auto-sense counterpart is the global `auto-sense eapol voice lldp-auth`.
+
+
+### `eapol traffic-control {in | in-out}`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 
 ### `nodealias enable`
 
+Get there: `enable` → `configure terminal` (also in Interface Config)
+
 Since 9.2, the switch can send the client IP to ExtremeControl in RADIUS accounting (Framed-IP-Address); this needs EAP and Node Alias enabled globally and on the port. View the data with `show nodealias client-info [mac <mac>]`.
+
+
+### `clear radius statistics`
+
+Get there: `enable`

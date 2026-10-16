@@ -30,7 +30,14 @@ Drops in one queue mean that traffic class runs out of buffer. Reset with `clear
 Pair it with `show khi cpp port-statistics` to see which port and packet type sends the load.
 
 
+### `clear qos cosq-stats [interface <ports> | cpu-port]`
+
+Get there: `enable`
+
+
 ### `show filter acl statistics [<acl-id>] [all]`
+
+Get there: `enable`
 
 If a counter stays at 0, check the ACL is attached to the port or VLAN and the ACE is enabled. Counting can be switched off per ACE (an EDM option since 9.2). Show the filter itself with `show filter acl config [<acl-id>]`.
 

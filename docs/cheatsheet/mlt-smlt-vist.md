@@ -46,6 +46,11 @@ The vIST runs through the fabric, so it is up as long as there is SPBM connectiv
 Clear them with `clear virtual-ist stats` and check whether hellos still arrive.
 
 
+### `monitor mlt stats interface utilization [<mlt-id>]`
+
+Get there: `enable`
+
+
 ### `show lacp interface [gigabitethernet <ports> | mlt]`
 
 `show lacp actor-oper interface` and `show lacp partner-oper interface` show both sides in detail. A port that does not aggregate usually has a key mismatch or a partner without LACP.
@@ -53,10 +58,14 @@ Clear them with `clear virtual-ist stats` and check whether hellos still arrive.
 
 ### `show interfaces gigabitEthernet statistics lacp [<ports>]`
 
+Get there: `enable`
+
 If the received count stays at 0, the partner sends no LACP.
 
 
 ### `mlt <id> enable name "<name>" / mlt <id> member <ports>`
+
+Get there: `enable` → `configure terminal`
 
 ```
 mlt 10 enable name "SRV-ESX01"
@@ -69,6 +78,8 @@ MLT names cannot be only digits. For SMLT, configure the same MLT ID on both vIS
 
 
 ### `lacp enable key <key> (interface mlt)`
+
+Get there: `enable` → `configure terminal` → `interface mlt <mlt-id>`
 
 ```
 mlt 20 enable name "SW-ACCESS-12"
@@ -87,15 +98,21 @@ The recipe: port key, port aggregation enable, port lacp enable, then an MLT wit
 
 ### `lacp key <key> / lacp aggregation enable / lacp enable (interface)`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 Further options are `lacp mode active|passive` and `lacp timeout-time short|long`. The timeout must match the partner.
 
 
 ### `lacp smlt-sys-id <mac>`
 
+Get there: `enable` → `configure terminal`
+
 Without a common system ID, the downstream device sees two different partners and only bundles the links to one peer.
 
 
 ### `spbm 1 smlt-peer-system-id <peer-system-id>`
+
+Get there: `enable` → `configure terminal` → `router isis`
 
 ```
 no router isis enable
@@ -113,6 +130,8 @@ IS-IS must be disabled for this. If you use manual system-ids, also set the virt
 
 ### `virtual-ist peer-ip <peer-ip> vlan <vist-vlan>`
 
+Get there: `enable` → `configure terminal`
+
 ```
 vlan create 4000 name "VIST" type port-mstprstp 0
 vlan i-sid 4000 15999000
@@ -127,6 +146,8 @@ The vIST VLAN needs an I-SID that is used nowhere else in the fabric, and a subn
 
 ### `smlt (interface mlt)`
 
+Get there: `enable` → `configure terminal` → `interface mlt <mlt-id>`
+
 ```
 interface mlt 10
   smlt
@@ -134,3 +155,18 @@ interface mlt 10
 ```
 
 Every VLAN on an SMLT must have an I-SID, and the same VLAN/I-SID must exist on the peer, even if nothing is connected there.
+
+
+### `clear mac-address-table remote`
+
+Get there: `enable`
+
+
+### `sys control virtual-ist mac-move-protection`
+
+Get there: `enable` → `configure terminal`
+
+
+### `clear lacp stats [port <ports>]`
+
+Get there: `enable`

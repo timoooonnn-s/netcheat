@@ -21,7 +21,7 @@ Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem 
 | » | [`show security flow session summary`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-security-flow-session.html) | Session counts (valid, pending, invalidated, failed) and the maximum the box supports. | operational |
 | » | [`show system storage`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-system-storage.html) ◆ | Free disk space per file system. A full /var stops logging and can break commits. | operational |
 | » | [`show system core-dumps`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-system-core-dumps.html) ◆ | Core files of crashed processes. Their presence (and the date) shows whether something crashed. | operational |
-| ► | [`request support information \| save /var/tmp/rsi-<date>.txt`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/request-support-information.html) | Collect the full support information (RSI) into a file for a JTAC case. | operational |
+| ► | [`request support information \| save <file>`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/request-support-information.html) | Collect the full support information (RSI) into a file for a JTAC case. | operational |
 | » | [`show chassis cluster status [redundancy-group <n>]`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-cluster-status.html) | Which node is primary or secondary per redundancy group, priorities and failover state. | operational |
 | » | [`show chassis cluster interfaces`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-cluster-interfaces.html) | The control and fabric links between the nodes, and the reth interfaces with their redundancy groups. | operational |
 | » | [`show chassis cluster statistics`](https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-chassis-cluster-statistics.html) | Heartbeat and synchronization counters on the control and fabric links (RTOs, probes). | operational |
@@ -66,7 +66,7 @@ Many failed sessions point to policy or resource problems; filters such as `dest
 `request system storage cleanup dry-run` lists what a cleanup would delete (old logs, core files, images) without deleting anything.
 
 
-### `request support information | save /var/tmp/rsi-<date>.txt`
+### `request support information | save <file>`
 
 Run it before a reboot, while the problem is still there, and attach the file together with /var/log to the case.
 

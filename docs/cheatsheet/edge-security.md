@@ -31,6 +31,8 @@ A client that has no binding is dropped by DAI and IP Source Guard. Typical caus
 
 ### `ip dhcp-snooping enable`
 
+Get there: `enable` → `configure terminal` (also in VLAN Interface Config)
+
 ```
 ip dhcp-snooping enable
 interface vlan 100
@@ -45,10 +47,14 @@ interface gigabitEthernet 1/49
 
 ### `ip dhcp-snooping {trusted | untrusted}`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 > ▲ **Caution:** Untrusted uplinks drop the DHCP offers from the server, so clients get no address.
 
 
 ### `ip arp-inspection enable`
+
+Get there: `enable` → `configure terminal` → `interface vlan <vid>`
 
 Needs DHCP snooping globally. Not possible on private VLANs (E-Tree), SPBM B-VLANs or MLT members. Mark uplinks with `ip arp-inspection trusted` on the port (default untrusted).
 
@@ -57,15 +63,21 @@ Needs DHCP snooping globally. Not possible on private VLANs (E-Tree), SPBM B-VLA
 
 ### `ip source verify enable`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 Requirements are DHCP snooping globally and on the VLAN, DAI on the same VLAN, and the port untrusted for both. Not possible on MLT/SMLT/LAG ports, brouter ports or private VLAN members. When the 10 addresses are used up, all further traffic from that port is dropped. Check the allowed addresses with `show ip source binding`.
 
 
 ### `spoof-detect port <ports> enable`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 After a detection the switch sends a gratuitous ARP with the correct MAC. With SMLT, enable it on both peers. `auto-recover-port port <ports> enable` brings the port back automatically.
 
 
 ### `rate-limit {broadcast | multicast | unknown-unicast} <pps>`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 ```
 interface gigabitEthernet 1/1-1/48
@@ -77,5 +89,7 @@ Disabled by default. The official best practice is to rate-limit broadcast and m
 
 
 ### `rate-limit action shutdown [<60-3600>] / rate-limit action threshold <drops>`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 Without a time the port stays down; with 60-3600 seconds it comes back on its own. Set the polling interval globally with `rate-limit poll-interval <3-300>` and check it with `show rate-limit`. Not on 7830 Series and 5320-16P-2MXT-2X.

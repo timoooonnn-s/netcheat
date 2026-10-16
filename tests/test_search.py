@@ -1,7 +1,16 @@
 import pytest
 
 from netcheat.loader import load_library
-from netcheat.search import Filters, normalize, search_commands, search_concepts, search_flows, suggest, words
+from netcheat.search import (
+    Filters,
+    normalize,
+    prose_only_matches,
+    search_commands,
+    search_concepts,
+    search_flows,
+    suggest,
+    words,
+)
 
 
 @pytest.fixture(scope="module")
@@ -66,3 +75,41 @@ def test_punctuation_only_query_matches_nothing(library):
 
 def test_flow_search_uses_symptoms(library):
     assert search_flows(library.flows, ["radius", "reject"])[0].id == "nac-auth-failure"
+
+
+def test_a_word_only_in_the_notes_is_not_a_result(library):
+    """`ncs radius` used to return `show i-sid`, because its notes mention RADIUS in passing. Only what a
+    command is about counts: its syntax, tags and description."""
+    results = search_commands(library.commands, ["radius"])
+    assert results
+    for command in results:
+        haystack = " ".join((command.cmd, " ".join(command.tags), command.desc)).lower()
+        assert "radius" in haystack, f"{command.cmd} matched on prose only"
+    assert not any(c.cmd == "show i-sid [<isid>]" for c in results)
+
+
+def test_the_topic_name_is_not_a_relevance_signal(library):
+    """Searching a word that appears in a topic slug must not return that whole topic: `-t` is the filter."""
+    results = search_commands(library.commands, ["radius"])
+    assert not any(c.cmd.startswith("show nodealias") for c in results)
+    assert all(c.topic == "nac-eap-radius" for c in library.commands if c.cmd.startswith("show nodealias"))
+
+
+def test_prose_search_is_available_on_request(library):
+    """The capability is not lost, just off by default, and the search says how many it is holding back."""
+    plain = search_commands(library.commands, ["radius"])
+    with_prose = search_commands(library.commands, ["radius"], in_prose=True)
+    assert len(with_prose) > len(plain)
+    assert set(plain) < set(with_prose)
+    assert prose_only_matches(library.commands, ["radius"])
+
+
+def test_short_query_words_must_match_a_whole_word(library):
+    """A two-letter word is not an abbreviation of everything: `ip` must not pull in every ipfix keyword."""
+    assert all("ipfix" not in c.cmd for c in search_commands(library.commands, ["ip"]) if "ipfix" not in c.desc.lower())
+    assert search_commands(library.commands, ["adj"]), "three letters still match as a prefix"
+
+
+def test_the_command_the_query_names_ranks_first(library):
+    assert search_commands(library.commands, ["radius"])[0].cmd == "show radius"
+    assert search_commands(library.commands, ["isis", "adjacencies"])[0].cmd == "show isis adjacencies [verbose]"

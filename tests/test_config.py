@@ -159,3 +159,16 @@ def test_filters_follow_the_platform_of_the_command(library):
     junos = explain(library, ConfigLine("show arp no-resolve | count")).filters[0][1]
     assert [c.platform for c in fabric] == ["fabric-engine"]
     assert [c.platform for c in junos] == ["junos-srx"]
+
+
+def test_a_filter_entry_wins_the_whole_line_but_a_filtered_command_still_splits(library):
+    """`show log messages | last 50` is one entry, so the whole line matches it. A plain show command that
+    merely ends in a filter must still be split, so the filter gets explained on its own."""
+    own = explain(library, ConfigLine("show log messages | last 50"))
+    assert own.commands and own.commands[0].cmd == "show log messages | last <n>"
+    assert own.filters == []
+
+    filtered = explain(library, ConfigLine("show running-config | include radius"))
+    assert filtered.commands[0].cmd == "show running-config [module <module>]"
+    assert [pipe for pipe, _ in filtered.filters] == ["include radius"]
+    assert all(entries for _, entries in filtered.filters)

@@ -8,7 +8,7 @@ from typing import Sequence
 
 from netcheat import CREDIT
 from netcheat.config import rollback
-from netcheat.models import FLOW_KINDS, PLATFORMS, Command, Flow, Library, Topic
+from netcheat.models import FLOW_KINDS, PLATFORMS, Command, Flow, Library, Topic, mode_path
 from netcheat.render import CAUTION, KIND_ICONS, NEW, RARE, step_kind
 
 _CODE_SPAN = re.compile(r"(`[^`]*`)")
@@ -66,11 +66,15 @@ def topic_page(topic: Topic) -> str:
     lines += [f"Legend: {LEGEND}", "", "| | Command | What it does | Mode |", "|---|---|---|---|"]
     lines += [_table_row(command) for command in topic.commands]
 
-    detailed = [command for command in topic.commands if command.example or command.notes or command.caution]
+    detailed = [c for c in topic.commands if c.example or c.notes or c.caution or mode_path(c.mode)[0]]
     if detailed:
         lines += ["", "## Details"]
         for command in detailed:
             lines += ["", f"### `{command.cmd}`", ""]
+            steps, also = mode_path(command.mode)
+            if steps:
+                path = " → ".join(f"`{step}`" for step in steps)
+                lines += [f"Get there: {path}" + (f" (also in {', '.join(also)})" if also else ""), ""]
             if command.example:
                 lines += ["```", command.example, "```", ""]
             if command.notes:

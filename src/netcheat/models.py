@@ -16,6 +16,38 @@ PLATFORMS = {
 }
 PLATFORM_ALIASES = {"fe": "fabric-engine", "voss": "fabric-engine", "srx": "junos-srx", "junos": "junos-srx"}
 KINDS = ("show", "config", "action", "clear")
+
+# How to reach each CLI mode from a fresh login: the commands to type before the entry's own command.
+# "Wrong mode" is the usual reason a correct command is rejected, and the mode name alone does not say
+# how to get there. The sub-mode commands are the ones this cheatsheet's own examples use.
+MODE_PATHS: Mapping[str, tuple[str, ...]] = {
+    "User EXEC": (),
+    "Privileged EXEC": ("enable",),
+    "Global Config": ("enable", "configure terminal"),
+    "Interface Config": ("enable", "configure terminal", "interface gigabitEthernet <ports>"),
+    "VLAN Interface Config": ("enable", "configure terminal", "interface vlan <vid>"),
+    "MLT Interface Config": ("enable", "configure terminal", "interface mlt <mlt-id>"),
+    "IS-IS Router Config": ("enable", "configure terminal", "router isis"),
+    "VRF Router Config": ("enable", "configure terminal", "router vrf <vrf>"),
+    "ELAN I-SID Config": ("enable", "configure terminal", "i-sid <isid> elan"),
+    "MKA Keychain Config": ("enable", "configure terminal", "macsec mka keychain <name>"),
+    "operational": (),  # Junos: where a login lands
+    "configuration": ("configure",),
+    "any": (),
+}
+
+
+def mode_path(mode: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """(commands to get into the mode, the other modes the command also works in).
+
+    A `mode` of "A / B" means either mode will do, so the path of the first one is shown and the rest are
+    named. An unknown mode gives no path rather than a guessed one.
+    """
+    names = tuple(part.strip() for part in mode.split(" / "))
+    for index, name in enumerate(names):
+        if MODE_PATHS.get(name):
+            return MODE_PATHS[name], names[:index] + names[index + 1:]
+    return (), ()
 FLOW_KINDS = {
     "troubleshoot": "Troubleshooting flows",
     "change": "Change workflows",
@@ -235,6 +267,19 @@ class Library:
 
     def find(self, key: str) -> Optional[Entry]:
         return self._by_key.get(key)
+
+    @cached_property
+    def _concepts_by_command(self) -> dict[str, tuple[str, ...]]:
+        index: dict[str, list[str]] = {}
+        for concept in self.concepts:
+            for cmd in concept.see:
+                index.setdefault(cmd, []).append(concept.term)
+        return {cmd: tuple(terms) for cmd, terms in index.items()}
+
+    def concepts_for(self, command: Command) -> tuple[str, ...]:
+        """The concepts that name this command under `see`. The data only links concept -> command, so
+        without this a command never says which background note explains it."""
+        return self._concepts_by_command.get(command.cmd, ())
 
     def flow(self, flow_id: str) -> Optional[Flow]:
         return next((flow for flow in self.flows if flow.id == flow_id), None)

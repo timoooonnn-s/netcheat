@@ -54,6 +54,8 @@ show running-config | include snmp
 
 ### `snmp-server community <string> [group <group>] index <index> secname <secname>`
 
+Get there: `enable` → `configure terminal`
+
 ```
 snmp-server community ExtremeRead group readgrp index first secname readview
 snmp-server community ExtremeWrite group v1v2grp index second secname initialview
@@ -63,6 +65,8 @@ Out of the box the switch has `public` (read, secname readview) and `private` (w
 
 
 ### `no snmp-server community <string>`
+
+Get there: `enable` → `configure terminal`
 
 ```
 no snmp-server community public
@@ -77,6 +81,8 @@ Communities are stored outside the running config (Extreme KB 000115014): after 
 
 ### `snmp-server user <user> [group <group>] {sha | md5} [aes | des]`
 
+Get there: `enable` → `configure terminal`
+
 ```
 snmp-server user nms-v3 group nms-grp sha aes
 snmp-server user nms-v3 sha aes read-view v3read notify-view v3read
@@ -86,6 +92,8 @@ Privacy (aes/des) needs authentication (sha/md5). Without `group`, give the view
 
 
 ### `no snmp-server user <user>`
+
+Get there: `enable` → `configure terminal`
 
 ```
 show snmp-server user
@@ -97,6 +105,8 @@ For users of a remote engine (informs) the 9.4 reference shows `no snmp-server u
 
 ### `snmp-server group <group> "" {auth-priv | auth-no-priv | no-auth-no-priv} [read-view <view>] [write-view <view>] [notify-view <view>]`
 
+Get there: `enable` → `configure terminal`
+
 ```
 snmp-server group nms-grp "" auth-priv read-view v3read notify-view v3read
 no snmp-server group nms-grp ""
@@ -106,6 +116,8 @@ Remove with `no snmp-server group <group> [<context>]`, using the name and conte
 
 
 ### `snmp-server view <view> <oid>`
+
+Get there: `enable` → `configure terminal`
 
 ```
 snmp-server view v3read 1.3.6.1
@@ -117,6 +129,8 @@ Removal needs the view name and the subtree, exactly as in `show snmp-server vie
 
 ### `snmp-server host <ip> [port <port>] {v2c <secname> | v3 {authPriv | authNoPriv | noAuthNoPriv} <user>} [inform] [filter <profile>]`
 
+Get there: `enable` → `configure terminal`
+
 ```
 snmp-server host 10.0.0.80 v2c readview
 snmp-server host 10.0.0.81 v3 authPriv nms-v3
@@ -126,6 +140,8 @@ Check with `show snmp-server host`. Restrict which traps go out with `filter` an
 
 
 ### `no snmp-server host <ip> [port <port>] {v2c | v3} <name>`
+
+Get there: `enable` → `configure terminal`
 
 ```
 show snmp-server host
@@ -139,6 +155,8 @@ An entry is identified by IP + port + version + name, so copy them from `show sn
 
 ### `snmp-server notify-filter <profile> <oid>`
 
+Get there: `enable` → `configure terminal`
+
 ```
 snmp-server notify-filter only-link +1.3.6.1.6.3.1.1.5
 no snmp-server notify-filter only-link +1.3.6.1.6.3.1.1.5
@@ -149,6 +167,8 @@ Removal needs the profile and the OID, as in `show snmp-server notify-filter`. D
 
 ### `snmp-server {name | contact | location} <text>`
 
+Get there: `enable` → `configure terminal`
+
 ```
 snmp-server location "Building A, Room 1.12, Rack 3"
 snmp-server contact "netops@example.com"
@@ -158,6 +178,8 @@ no snmp-server contact
 
 ### `snmp-server authentication-trap enable`
 
+Get there: `enable` → `configure terminal`
+
 ```
 snmp-server authentication-trap enable
 no snmp-server authentication-trap
@@ -165,6 +187,8 @@ no snmp-server authentication-trap
 
 
 ### `boot config flags block-snmp`
+
+Get there: `enable` → `configure terminal`
 
 ```
 boot config flags block-snmp
@@ -176,6 +200,8 @@ no boot config flags block-snmp
 
 ### `syslog enable`
 
+Get there: `enable` → `configure terminal`
+
 ```
 syslog enable
 no syslog enable
@@ -183,6 +209,8 @@ no syslog enable
 
 
 ### `syslog host <1-10> address <ip>`
+
+Get there: `enable` → `configure terminal`
 
 ```
 syslog host 1 address 10.0.0.60
@@ -196,6 +224,8 @@ Default max is 5 hosts, raise it with `syslog max-hosts <1-10>`. Check with `sho
 
 ### `no syslog host <1-10>`
 
+Get there: `enable` → `configure terminal`
+
 ```
 show syslog host
 no syslog host 2
@@ -206,6 +236,8 @@ no syslog host 2
 
 ### `ntp`
 
+Get there: `enable` → `configure terminal`
+
 ```
 ntp
 no ntp
@@ -213,6 +245,8 @@ no ntp
 
 
 ### `ntp authentication-key <1-65534> <secret> [type {md5 | sha1}]`
+
+Get there: `enable` → `configure terminal`
 
 ```
 ntp authentication-key 1 <secret> type sha1
@@ -223,6 +257,8 @@ Remove the servers that use a key before the key itself. `show ntp key` lists th
 
 
 ### `ntp server <ip | fqdn> [auth-enable authentication-key <key-id>] enable`
+
+Get there: `enable` → `configure terminal`
 
 ```
 ntp server 10.0.0.10 enable
@@ -236,6 +272,8 @@ Up to 20 servers. Check with `show ntp server` and `show ntp statistics`.
 
 ### `no ntp server <ip | fqdn>`
 
+Get there: `enable` → `configure terminal`
+
 ```
 show ntp server
 no ntp server 10.0.0.10
@@ -247,6 +285,8 @@ Remove the servers that use an authentication key before you delete the key with
 
 ### `ip name-server {primary | secondary | tertiary} <ip>`
 
+Get there: `enable` → `configure terminal`
+
 ```
 ip name-server primary 10.0.0.53
 ip name-server secondary 10.0.0.54
@@ -257,6 +297,8 @@ Servers learned by DHCP are removed with `no ip name-server primary-dynamic` (se
 
 
 ### `ip domain-name <name>`
+
+Get there: `enable` → `configure terminal`
 
 ```
 ip domain-name example.local

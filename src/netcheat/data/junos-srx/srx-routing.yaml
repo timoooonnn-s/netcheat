@@ -122,7 +122,7 @@ commands:
     tags: [capture, tcpdump, sniff, debug]
     notes: This only shows traffic to or from the SRX itself (control plane), not transit traffic. For transit traffic use `security flow traceoptions` or packet capture.
 
-  - cmd: show log messages | last 50
+  - cmd: show log messages | last <n>
     desc: The latest system log entries.
     kind: show
     mode: operational

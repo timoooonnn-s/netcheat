@@ -81,6 +81,8 @@ The first thing to check before and after an upgrade.
 
 ### `show running-config [module <module>]`
 
+Get there: `enable`
+
 ```
 show running-config module isis
 show running-config module i-sid
@@ -92,10 +94,14 @@ A module is much faster to read than the full config. Some features have no modu
 
 ### `show running-config verbose`
 
+Get there: `enable`
+
 Use it when a default value is the suspect, e.g. timers or MTU.
 
 
 ### `save config [file <name>] [backup <name>]`
+
+Get there: `enable`
 
 ```
 save config
@@ -107,6 +113,8 @@ Before a risky change, save a named copy. You can then compare with `more` or ro
 
 ### `copy <source> <destination> [-y]`
 
+Get there: `enable`
+
 ```
 copy /intflash/config.cfg /intflash/config_backup.cfg
 copy /intflash/config.cfg 192.0.2.10:sw-core-01.cfg
@@ -114,6 +122,8 @@ copy /intflash/config.cfg 192.0.2.10:sw-core-01.cfg
 
 
 ### `dir [-l] [-r] [<path>]`
+
+Get there: `enable`
 
 ```
 dir
@@ -123,12 +133,16 @@ dir /intflash/release/
 
 ### `more <file>`
 
+Get there: `enable`
+
 ```
 more /intflash/config.cfg
 ```
 
 
 ### `grep <pattern> <file>`
+
+Get there: `enable`
 
 ```
 grep "i-sid" /intflash/config.cfg
@@ -137,10 +151,19 @@ grep "i-sid" /intflash/config.cfg
 
 ### `show boot config flags`
 
+Get there: `enable`
+
 Many features (MACsec, DvR leaf, VRF scaling) only work with the right boot flag set. A changed flag only takes effect after save config and a reboot.
 
 
+### `show boot config choice`
+
+Get there: `enable`
+
+
 ### `boot config choice primary config-file <file>`
+
+Get there: `enable` → `configure terminal`
 
 ```
 boot config choice primary config-file /intflash/pre-change_2026-10-12.cfg
@@ -151,6 +174,8 @@ Together with a named backup file, this gives you a clean rollback path.
 
 ### `software add <file>.voss`
 
+Get there: `enable`
+
 ```
 software add 5520.9.4.2.0.voss
 show software
@@ -160,6 +185,8 @@ Upload the image first, by USB or by SFTP (needs boot flag sshd) / FTP (needs ft
 
 
 ### `software activate <release>`
+
+Get there: `enable`
 
 ```
 show software
@@ -173,10 +200,14 @@ reset -y
 
 ### `software commit`
 
+Get there: `enable`
+
 By default `sys software auto-commit` is enabled, so the switch commits on its own when the timer (`sys software commit-time`, default 10 minutes) expires. Commit manually to end the timer early. For a real safety net, disable auto-commit before the upgrade: if the new release breaks management access and nobody commits, the switch reboots into the previous release.
 
 
 ### `no sys software auto-commit enable`
+
+Get there: `enable` → `configure terminal`
 
 ```
 no sys software auto-commit enable
@@ -186,7 +217,14 @@ sys software commit-time 20
 > ▲ **Caution:** With auto-commit off, a forgotten `software commit` reboots the switch into the old release.
 
 
+### `software remove <release>`
+
+Get there: `enable`
+
+
 ### `reset -in <[d:][hh:]mm>`
+
+Get there: `enable`
 
 ```
 reset -in 15
@@ -200,6 +238,8 @@ VOSS has no "commit confirmed". If you lock yourself out, the switch reboots aft
 
 
 ### `reset -y`
+
+Get there: `enable`
 
 > ▲ **Caution:** Traffic impact. Unsaved changes are lost.
 
@@ -241,6 +281,8 @@ show io resources filter
 
 ### `show fulltech [khi] [file <file>]`
 
+Get there: `enable`
+
 ```
 show fulltech file /intflash/fulltech_2026-10-12.txt
 ```
@@ -250,10 +292,14 @@ Since 9.2 it is only available in Privileged EXEC. Pipe filters such as include 
 
 ### `flight-recorder all 1`
 
+Get there: `enable`
+
 Run it right after a crash or a strange event, before you reboot. The files go to /intflash.
 
 
 ### `show pluggable-optical-modules {basic | detail} [<port>]`
+
+Get there: `enable`
 
 ```
 show pluggable-optical-modules basic
@@ -282,6 +328,11 @@ ssh SW-ACCESS-12 -l admin
 Handy for jumping across the fabric to a switch whose management IP you don't know. Not possible to a boundary node from an IS-IS remote area.
 
 
+### `delete /intflash/.ssh/known_hosts`
+
+Get there: `enable`
+
+
 ### `ping <ip> [vrf <vrf>] [source <ip>] [count <n>] [datasize <bytes>] [-s]`
 
 ```
@@ -296,6 +347,8 @@ Without `vrf`, the ping uses the GRT. `-s` pings continuously at the `-I` interv
 
 ### `traceroute <ip> [vrf <vrf>] [source <ip>]`
 
+Get there: `enable`
+
 ```
 traceroute 10.10.20.1 vrf CORP
 ```
@@ -303,7 +356,14 @@ traceroute 10.10.20.1 vrf CORP
 Inside the fabric, `l2 traceroute` shows the SPB hops. IP traceroute only shows the routed hops.
 
 
+### `show history`
+
+Get there: `enable`
+
+
 ### `sys name <hostname>`
+
+Get there: `enable` → `configure terminal`
 
 ```
 sys name SW-CORE-01
@@ -313,6 +373,8 @@ Set the IS-IS hostname separately with `sys-name` in IS-IS Router Config.
 
 
 ### `clilog enable`
+
+Get there: `enable` → `configure terminal`
 
 Up to 9.3 the command was just `clilog`. Use `copy clilog <file>` to export the log.
 
@@ -332,6 +394,8 @@ The default is 1950 bytes, which already covers the 22 bytes of SPB MAC-in-MAC o
 
 ### `monitor ports statistics <ports> interface utilization`
 
+Get there: `enable`
+
 ```
 monitor ports statistics 1/1-1/4 interface utilization
 ```
@@ -340,6 +404,8 @@ Set the refresh interval and duration with `monitor-statistics interval <sec>` a
 
 
 ### `monitor ports error <ports> main`
+
+Get there: `enable`
 
 ```
 monitor ports error 1/12 main

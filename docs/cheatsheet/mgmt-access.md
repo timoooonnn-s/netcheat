@@ -40,6 +40,8 @@ The servers themselves are in `show radius-server`. Every server entry is one ro
 
 ### `radius enable`
 
+Get there: `enable` → `configure terminal`
+
 ```
 radius enable
 radius accounting enable
@@ -54,6 +56,8 @@ no radius enable
 
 ### `radius accounting enable`
 
+Get there: `enable` → `configure terminal`
+
 ```
 radius accounting enable
 no radius accounting enable
@@ -61,6 +65,8 @@ no radius accounting enable
 
 
 ### `radius server host <ip> key <secret> used-by cli [priority <1-10>] [timeout <1-180>]`
+
+Get there: `enable` → `configure terminal`
 
 ```
 radius server host 10.0.0.50 key <secret> used-by cli priority 1
@@ -75,6 +81,8 @@ radius enable
 
 ### `no radius server host <ip> used-by {cli | eapol | web | snmp | endpoint-tracking}`
 
+Get there: `enable` → `configure terminal`
+
 ```
 show radius-server
 no radius server host 10.0.0.50 used-by eapol
@@ -87,6 +95,8 @@ There is no command that removes all RADIUS servers at once, and `no radius enab
 
 ### `no radius dynamic-server client <nac-ip>`
 
+Get there: `enable` → `configure terminal`
+
 ```
 show radius dynamic-server
 no radius dynamic-server client 10.0.0.50
@@ -98,6 +108,8 @@ To only stop the client and keep the entry, use `no radius dynamic-server client
 
 ### `radius cli-profile`
 
+Get there: `enable` → `configure terminal`
+
 ```
 radius cli-profile
 no radius cli-profile
@@ -105,6 +117,8 @@ no radius cli-profile
 
 
 ### `tacacs server host <ip> key <secret> [port <1-65535>] [timeout <10-30>] [single-connection]`
+
+Get there: `enable` → `configure terminal`
 
 ```
 tacacs server host 10.0.0.70 key <secret>
@@ -120,6 +134,8 @@ Only a primary and a secondary server exist. In the 8.9 User Guide, TACACS+ fall
 
 ### `no tacacs server <ip>`
 
+Get there: `enable` → `configure terminal`
+
 ```
 show tacacs
 no tacacs server 10.0.0.70
@@ -131,6 +147,8 @@ Created with `tacacs server host` or `tacacs server secondary-host`, but removed
 
 ### `tacacs protocol enable`
 
+Get there: `enable` → `configure terminal`
+
 ```
 tacacs protocol enable
 no tacacs protocol enable
@@ -139,6 +157,8 @@ no tacacs protocol enable
 
 ### `tacacs authentication {cli | web | all}`
 
+Get there: `enable` → `configure terminal`
+
 ```
 tacacs authentication all
 no tacacs authentication web
@@ -146,6 +166,8 @@ no tacacs authentication web
 
 
 ### `tacacs accounting enable cli / tacacs authorization enable`
+
+Get there: `enable` → `configure terminal`
 
 ```
 tacacs accounting enable cli
@@ -162,6 +184,8 @@ With command authorization on and the server lost, a TACACS+ user can only run `
 
 ### `username add <name> level {ro | rw | rwa} enable`
 
+Get there: `enable` → `configure terminal`
+
 ```
 username add netops level rwa enable
 username netops level rw
@@ -172,6 +196,8 @@ Change the level later with `username <name> level <l1 | l2 | l3 | ro | rw | rwa
 
 
 ### `cli password <login> {read-only | read-write | read-write-all | layer1 | layer2 | layer3}`
+
+Get there: `enable` → `configure terminal`
 
 ```
 cli password rwa read-write-all
@@ -184,6 +210,8 @@ Out of the box each level has login and password equal to its name (rwa/rwa, rw/
 
 ### `ssh`
 
+Get there: `enable` → `configure terminal`
+
 ```
 ssh
 no ssh pass-auth
@@ -195,6 +223,8 @@ no ssh pass-auth
 
 
 ### `banner motd <text> / login-message <text>`
+
+Get there: `enable` → `configure terminal`
 
 ```
 banner motd "Authorized access only"

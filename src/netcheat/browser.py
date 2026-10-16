@@ -17,11 +17,13 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, VerticalScroll
 from textual.screen import ModalScreen
+from rich.table import Table
 from textual.widgets import Footer, Header, Input, OptionList, Static, Tree
 from textual.widgets.option_list import Option
 
 from netcheat import CREDIT
-from netcheat.models import FLOW_KINDS, Command, Concept, Entry, Flow, Library, entry_key
+from netcheat.config import entries_for
+from netcheat.models import FLOW_KINDS, KINDS, PLATFORMS, Command, Concept, Entry, Flow, Library, entry_key
 from netcheat.render import (
     CONCEPT,
     FAVOURITE,
@@ -38,6 +40,7 @@ from netcheat.search import Filters, search_commands, search_concepts, search_fl
 from netcheat.state import State
 
 PERSONAL = {"favourites": f"{FAVOURITE} Favourites", "recent": f"{RECENT} Recent"}
+_SHORT = {"fabric-engine": "Fabric Engine only", "junos-srx": "SRX only"}  # for the list title
 
 
 @dataclass(frozen=True)
@@ -48,6 +51,29 @@ class Scope:
     kind: str
     topic: Optional[str] = None
     gems: bool = False
+
+
+class KeysScreen(ModalScreen[None]):
+    """Every key with what it does. The footer only has room for a few of them."""
+
+    CSS = "KeysScreen { align: center middle; } #keys { width: 60; border: tall $accent; padding: 1 2; }"
+    BINDINGS = [Binding("escape", "dismiss", "Close"), Binding("question_mark", "dismiss", "Close")]
+
+    def __init__(self, bindings: Sequence[Binding]) -> None:
+        super().__init__()
+        self.bindings = bindings
+
+    def compose(self) -> ComposeResult:
+        table = Table.grid(padding=(0, 2))
+        table.add_column(justify="right")
+        table.add_column()
+        for binding in self.bindings:
+            table.add_row(Text(binding.key_display or binding.key, style="bold"), binding.description)
+        table.add_row(Text("arrows", style="bold"), "move; the list follows the tree on the left")
+        table.add_row(Text("enter", style="bold"), "into the list, or remember an entry as recent")
+        panel = Static(table, id="keys")
+        panel.border_title = "Keys (Esc to close)"
+        yield panel
 
 
 class ValuesScreen(ModalScreen[Optional[str]]):
@@ -84,22 +110,33 @@ class Browser(App[None]):
     BINDINGS = [
         Binding("slash", "focus_filter", "Filter"),
         Binding("escape", "leave_filter", "Leave filter", show=False),
+        Binding("p", "cycle_platform", "Platform"),
+        Binding("k", "cycle_kind", "Kind"),
         Binding("g", "toggle_gems", "Gems only"),
         Binding("f", "toggle_favourite", "Star"),
         Binding("c", "copy", "Copy"),
         Binding("1", "copy_step(1)", "Copy step", key_display="1-9"),
         *(Binding(str(n), f"copy_step({n})", show=False) for n in range(2, 10)),
         Binding("v", "edit_values", "Values"),
+        Binding("question_mark", "help_keys", "Keys"),
         Binding("q", "quit", "Quit"),
     ]
 
-    def __init__(self, library: Library, terms: Sequence[str] = (), state: Optional[State] = None) -> None:
+    def __init__(
+        self,
+        library: Library,
+        terms: Sequence[str] = (),
+        platform: Optional[str] = None,
+        state: Optional[State] = None,
+    ) -> None:
         super().__init__()
         self.library = library
         self.initial_filter = " ".join(terms)
         self.state = state or State.load()
         self.values: dict[str, str] = {}  # flow values set in this session, shared by all flows that use the name
         self.scope = Scope("commands")
+        self.platform = platform  # None = both; p cycles, -p / $NCS_PLATFORM set the start
+        self.kind: Optional[str] = None  # None = every kind; k cycles through KINDS
         self.entries: list[Entry] = []  # the current list
         self._listed: dict[str, Entry] = {}  # the same entries by option id (entry_key)
 
@@ -179,6 +216,23 @@ class Browser(App[None]):
             self.scope = Scope("commands", self.scope.topic, not self.scope.gems)
             self._refresh_items()
 
+    def action_cycle_platform(self) -> None:
+        """Both platforms -> Fabric Engine only -> SRX only -> both. The same filter as `-p` on the CLI."""
+        order = [None, *PLATFORMS]
+        self.platform = order[(order.index(self.platform) + 1) % len(order)]
+        self.notify(f"Platform: {PLATFORMS[self.platform] if self.platform else 'both'}", timeout=2)
+        self._refresh_items()
+
+    def action_cycle_kind(self) -> None:
+        """Every kind -> show -> config -> action -> clear -> every kind. The same filter as `-k`."""
+        order: list[Optional[str]] = [None, *KINDS]
+        self.kind = order[(order.index(self.kind) + 1) % len(order)]
+        self.notify(f"Kind: {self.kind or 'all'}", timeout=2)
+        self._refresh_items()
+
+    def action_help_keys(self) -> None:
+        self.push_screen(KeysScreen(self.BINDINGS))
+
     def action_toggle_favourite(self) -> None:
         entry = self.highlighted
         if entry is None:
@@ -252,9 +306,10 @@ class Browser(App[None]):
         if entry is None:
             return
         if isinstance(entry, Command):
-            detail = command_block(entry, detail=True)
+            detail = command_block(entry, detail=True, library=self.library)
         elif isinstance(entry, Flow):
-            detail = flow_block(entry.with_values(self.values), values_hint="v; copy a step with its number")
+            filled = entry.with_values(self.values)
+            detail = flow_block(filled, "v; copy a step with its number", entries_for(self.library, filled.commands()))
         else:
             detail = concept_block(entry)
         self.query_one("#detail", Static).update(detail)
@@ -271,7 +326,8 @@ class Browser(App[None]):
         items = self.query_one("#items", OptionList)
         items.set_options(Option(self._label(entry), id=key) for key, entry in self._listed.items())
         noun = "flows" if self.scope.kind in FLOW_KINDS else "entries" if self.scope.kind in PERSONAL else self.scope.kind
-        items.border_title = f"{len(self.entries)} {noun}" + (f" {RARE} gems only" if self.scope.gems else "")
+        active = [f"{RARE} gems only" if self.scope.gems else "", self.kind or "", _SHORT.get(self.platform, "")]
+        items.border_title = " · ".join([f"{len(self.entries)} {noun}", *(part for part in active if part)])
         if self.entries:
             items.highlighted = list(self._listed).index(keep) if keep in self._listed else 0
             self._show_detail()
@@ -279,18 +335,23 @@ class Browser(App[None]):
             empty = "Star entries with f." if self.scope.kind == "favourites" else "Nothing matches. Change the filter or pick another topic."
             self.query_one("#detail", Static).update(Text(empty, style="dim"))
 
+    def _on_platform(self, entry: Entry) -> bool:
+        return self.platform in (None, entry.platform)
+
     def _matching_entries(self, terms: list[str]) -> list[Entry]:
         kind = self.scope.kind
         if kind in PERSONAL:
             keys = self.state.favourites if kind == "favourites" else self.state.recent
-            return _filtered([e for e in map(self.library.find, keys) if e is not None], terms)
+            entries = [e for e in map(self.library.find, keys) if e is not None]
+            return _filtered([e for e in entries if self._on_platform(e)], terms)
         if kind in FLOW_KINDS:
-            flows = self.library.flows_of(kind)
+            flows = [f for f in self.library.flows_of(kind) if self._on_platform(f)]
             return search_flows(flows, terms) if terms else flows
         if kind == "concepts":
-            return search_concepts(self.library.concepts, terms) if terms else list(self.library.concepts)
+            concepts = [c for c in self.library.concepts if self._on_platform(c)]
+            return search_concepts(concepts, terms) if terms else concepts
         commands = [c for c in self.library.commands if self.scope.topic in (None, c.topic)]
-        return search_commands(commands, terms, Filters(rare=self.scope.gems))
+        return search_commands(commands, terms, Filters(self.platform, kind=self.kind, rare=self.scope.gems))
 
 
 def _copy_locally(text: str) -> bool:
@@ -318,5 +379,5 @@ def _filtered(entries: list[Entry], terms: list[str]) -> list[Entry]:
     return [entry for entry in entries if entry_key(entry) in matching]
 
 
-def run_browser(library: Library, terms: Sequence[str] = ()) -> None:
-    Browser(library, terms).run()
+def run_browser(library: Library, terms: Sequence[str] = (), platform: Optional[str] = None) -> None:
+    Browser(library, terms, platform).run()

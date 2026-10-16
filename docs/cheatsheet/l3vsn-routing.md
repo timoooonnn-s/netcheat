@@ -89,6 +89,8 @@ For a Segmented VRF (9.4+), the output also shows the trusted, unrestricted and 
 
 ### `ip vrf <vrf> vrfid <1-511>`
 
+Get there: `enable` → `configure terminal`
+
 ```
 ip vrf CORP vrfid 10
 ```
@@ -97,6 +99,8 @@ The VRF ID is only locally significant. Across the fabric only the L3 VSN I-SID 
 
 
 ### `router vrf <vrf>`
+
+Get there: `enable` → `configure terminal`
 
 ```
 router vrf CORP
@@ -114,10 +118,14 @@ This is the complete L3 VSN setup. The I-SID must be the same on every BEB of th
 
 ### `ipvpn / i-sid <isid> / ipvpn enable`
 
+Get there: `enable` → `configure terminal` → `router vrf <vrf>`
+
 Keep L3 VSN I-SIDs in a separate number range from L2 VSN I-SIDs, e.g. 3xxxx, so they are easy to recognize.
 
 
 ### `isis redistribute direct [route-map <map>] [enable]`
+
+Get there: `enable` → `configure terminal` → `router vrf <vrf>`
 
 Takes effect only after `isis apply redistribute direct vrf <vrf>`. Secondary subnets are always redistributed unless a route-map filters them.
 
@@ -134,6 +142,8 @@ Check the result with `show ip isis redistribute vrf <vrf>`.
 
 ### `isis accept i-sid <isid> enable`
 
+Get there: `enable` → `configure terminal` → `router vrf <vrf>`
+
 ```
 router vrf GUEST
   isis accept i-sid 30099 enable
@@ -148,6 +158,8 @@ Use it for shared services (DNS, DHCP, firewall in its own VRF). With `ip isid-l
 
 ### `interface vlan <vid>`
 
+Get there: `enable` → `configure terminal`
+
 ```
 interface vlan 100
   vrf CORP
@@ -161,10 +173,14 @@ Assign the VRF first, then the IP address.
 
 ### `vrf <vrf> [trusted | unrestricted | untrusted]`
 
+Get there: `enable` → `configure terminal` → `interface vlan <vid>`
+
 The segment keywords exist only from 9.4 (Segmented VRF). Without a keyword, the VLAN joins the trusted segment.
 
 
 ### `ip address <ip/len> [secondary] [dvr-one-ip]`
+
+Get there: `enable` → `configure terminal` → `interface vlan <vid>`
 
 ```
 ip address 10.10.100.1/24
@@ -174,6 +190,8 @@ ip address 10.10.100.1/24
 
 
 ### `ip route <prefix/len> <next-hop | discard> weight <1-65535> [enable]`
+
+Get there: `enable` → `configure terminal` (also in VRF Router Config)
 
 ```
 ip route 0.0.0.0/0 10.255.0.1 weight 10
@@ -186,10 +204,14 @@ Advertise static routes into the fabric with `isis redistribute static`, then `i
 
 ### `ip ecmp / ip ecmp max-path <1-8>`
 
+Get there: `enable` → `configure terminal` (also in VRF Router Config)
+
 Check with `show ip ecmp max-path [vrf <vrf>]`. Disabling ECMP removes all ECMP routes.
 
 
 ### `ip dhcp-relay fwd-path <server-ip>`
+
+Get there: `enable` → `configure terminal` → `interface vlan <vid>`
 
 ```
 interface vlan 100
@@ -213,6 +235,8 @@ In SMLT designs, `ip vrrp <vrid> backup-master enable` makes both peers forward.
 
 ### `ip vrrp address <vrid> <vip> / ip vrrp <vrid> enable`
 
+Get there: `enable` → `configure terminal` → `interface vlan <vid>`
+
 ```
 interface vlan 100
   ip vrrp address 100 10.10.100.1
@@ -225,6 +249,8 @@ backup-master (both SMLT peers forward for the virtual IP) is only supported on 
 
 
 ### `ip rsmlt [holdup-timer <0-9999>]`
+
+Get there: `enable` → `configure terminal` → `interface vlan <vid>`
 
 The holddown timer defaults to 60 s; set it longer than your routing convergence. A holdup timer of 9999 means "forever", which is common in L3 edge designs.
 
@@ -240,6 +266,8 @@ The holddown timer defaults to 60 s; set it longer than your routing convergence
 
 
 ### `segmented`
+
+Get there: `enable` → `configure terminal` → `router vrf <vrf>`
 
 Clients in an untrusted VLAN only reach the unrestricted segment (for example the firewall), trusted clients reach trusted and unrestricted. IP VPN must be disabled when you enable it; re-enable IP VPN afterwards. The new segments get the suffixes -unr and -unt. Existing interfaces become trusted. With an L3 VSN it requires a Premier or subscription license. Not supported on the 7830 or on models that support only one VRF.
 

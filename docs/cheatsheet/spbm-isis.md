@@ -115,6 +115,8 @@ A duplicate nickname or system-id makes the switch drop IS-IS. Fix the duplicate
 
 ### `router isis`
 
+Get there: `enable` → `configure terminal`
+
 ```
 vlan create 4051 name "BVLAN-1" type spbm-bvlan
 vlan create 4052 name "BVLAN-2" type spbm-bvlan
@@ -135,20 +137,38 @@ The official order for bringing up a fabric node by hand: create the B-VLANs, en
 
 ### `spbm 1 nick-name <x.xx.xx>`
 
+Get there: `enable` → `configure terminal` → `router isis`
+
 > ▲ **Caution:** Changing it on a live switch briefly disrupts the fabric services of that node.
 
 
 ### `spbm 1 b-vid <bvid1>-<bvid2> primary <bvid1>`
+
+Get there: `enable` → `configure terminal` → `router isis`
 
 The B-VLAN IDs and the primary B-VLAN must be the same on every node, otherwise no adjacency forms. Create the B-VLANs with `vlan create <id> type spbm-bvlan`.
 
 
 ### `system-id <xxxx.xxxx.xxxx>`
 
+Get there: `enable` → `configure terminal` → `router isis`
+
 > ▲ **Caution:** Needs `no router isis enable` first, so the switch drops out of the fabric.
 
 
+### `manual-area <area>`
+
+Get there: `enable` → `configure terminal` → `router isis`
+
+
+### `sys-name <name>`
+
+Get there: `enable` → `configure terminal` → `router isis`
+
+
 ### `isis spbm 1 l1-metric <1-16777215 | auto>`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 ```
 interface gigabitEthernet 1/49
@@ -159,6 +179,8 @@ The default `auto` derives the cost from the port speed. Raise the metric on a l
 
 
 ### `isis / isis spbm 1 / isis enable`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 ```
 interface gigabitEthernet 1/49
@@ -173,10 +195,14 @@ The same three commands work on an MLT (`interface mlt <id>`). A manual NNI is n
 
 ### `isis hello-auth type hmac-sha-256 key <key>`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 Auto-sense ports use the global `auto-sense isis hello-auth type ...` instead. Since 9.2 an Auto-sense port with a key mismatch goes to the NNI-AUTH-FAIL state.
 
 
 ### `overload`
+
+Get there: `enable` → `configure terminal` → `router isis`
 
 Drain a core or BCB node before maintenance; remove it with `no overload`. Services that end on this switch (BEB) still work.
 
@@ -185,10 +211,14 @@ Drain a core or BCB node before maintenance; remove it with `no overload`. Servi
 
 ### `spbm 1 ip enable`
 
+Get there: `enable` → `configure terminal` → `router isis`
+
 Pair it with `ip-source-address <clip>` and `redistribute direct` in IS-IS Router Config to advertise GRT routes.
 
 
 ### `redistribute direct [route-map <map>] / isis apply redistribute direct`
+
+Get there: `enable` → `configure terminal` → `router isis`
 
 ```
 router isis
@@ -202,6 +232,8 @@ The redistribution only takes effect after `isis apply redistribute <protocol> [
 
 
 ### `cfm spbm enable`
+
+Get there: `enable` → `configure terminal`
 
 ```
 cfm spbm mepid 101
@@ -250,6 +282,8 @@ l2 tracetree 4051 20100
 
 
 ### `spbm nick-name server`
+
+Get there: `enable` → `configure terminal`
 
 Set the range with `spbm nick-name server prefix <x.x0.00>`. Clients without a static nickname get one automatically. Configure at least two servers for redundancy.
 

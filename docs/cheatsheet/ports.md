@@ -63,6 +63,8 @@ Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem 
 
 ### `show interfaces gigabitEthernet name [<ports>]`
 
+Get there: `enable`
+
 ```
 show interfaces gigabitEthernet name
 show interfaces gigabitEthernet name 1/1-1/12
@@ -71,12 +73,31 @@ show interfaces gigabitEthernet name 1/1-1/12
 The quickest overview of which ports are up. Port lists accept 1/5, 1/1-1/12, 1/1,1/5 and 1/all.
 
 
+### `show interfaces gigabitEthernet [<ports>]`
+
+Get there: `enable`
+
+
+### `show interfaces gigabitEthernet l1-config [<ports>]`
+
+Get there: `enable`
+
+
 ### `show interfaces gigabitEthernet vlan [<ports>]`
+
+Get there: `enable`
 
 Use it when a client lands in the wrong VLAN or tagged frames get dropped.
 
 
+### `show interfaces gigabitEthernet config [<ports>]`
+
+Get there: `enable`
+
+
 ### `show interfaces gigabitEthernet statistics [<ports>]`
+
+Get there: `enable`
 
 ```
 show interfaces gigabitEthernet statistics verbose 1/12
@@ -87,6 +108,8 @@ Add `verbose` for the detailed counters.
 
 ### `show interfaces gigabitEthernet error [verbose] [<ports>]`
 
+Get there: `enable`
+
 Clear the counters with `clear-stats port <port>`, then check again to see if errors still increase. Rising CRC errors usually mean a cable, connector or optic problem.
 
 
@@ -95,6 +118,11 @@ Clear the counters with `clear-stats port <port>`, then check again to see if er
 ```
 clear-stats port 1/12
 ```
+
+
+### `show interfaces gigabitEthernet fdb-entry <ports>`
+
+Get there: `enable`
 
 
 ### `show vlan mac-address-entry [<vid> | mac <mac> | port <ports>]`
@@ -110,12 +138,16 @@ MACs learned across the fabric show the remote BEB (B-MAC/nickname) as the desti
 
 ### `clear mac-address-table port <ports> address <mac> [interface vlan <vid>]`
 
+Get there: `enable`
+
 ```
 clear mac-address-table port 1/5 address 00:11:22:33:44:55
 ```
 
 
 ### `interface gigabitEthernet <ports>`
+
+Get there: `enable` → `configure terminal`
 
 ```
 interface gigabitEthernet 1/5
@@ -125,6 +157,8 @@ interface gigabitEthernet 1/1-1/24,1/48
 
 ### `name "<description>"`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 ```
 name "AP-2OG-R201"
 ```
@@ -132,10 +166,14 @@ name "AP-2OG-R201"
 
 ### `no shutdown`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 > ▲ **Caution:** `shutdown` on an uplink or NNI cuts off everything behind it.
 
 
 ### `speed <10|100|1000|2500|5000|10000|25000>`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 ```
 no auto-negotiate enable
@@ -149,6 +187,8 @@ The available speeds depend on the port hardware. A forced speed must match on b
 
 ### `encapsulation dot1q`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 ```
 interface gigabitEthernet 1/48
 encapsulation dot1q
@@ -157,7 +197,19 @@ untag-port-default-vlan enable
 ```
 
 
+### `default-vlan-id <vid>`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
+
+### `untag-port-default-vlan enable`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
+
 ### `default all [-y | auto-sense]`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 ```
 interface gigabitEthernet 1/5
@@ -171,6 +223,8 @@ The `auto-sense` option was added in 9.3. In 9.2 you had to run `auto-sense enab
 
 ### `vlan create <vid> name "<name>" type port-mstprstp 0`
 
+Get there: `enable` → `configure terminal`
+
 ```
 vlan create 100 name "CLIENTS" type port-mstprstp 0
 ```
@@ -179,6 +233,8 @@ VLAN names cannot be only digits. With the vrf-scaling and spbm-config-mode boot
 
 
 ### `vlan members add <vid> <ports> [portmember]`
+
+Get there: `enable` → `configure terminal`
 
 ```
 vlan members add 100 1/1-1/24
@@ -190,12 +246,16 @@ On an access port, also remove the port from VLAN 1. Otherwise it stays a member
 
 ### `vlan mlt <vid> <mlt-id>`
 
+Get there: `enable` → `configure terminal`
+
 ```
 vlan mlt 100 10
 ```
 
 
 ### `vlan delete <vid>`
+
+Get there: `enable` → `configure terminal`
 
 > ▲ **Caution:** Also removes the VLAN's I-SID mapping and IP interface.
 
@@ -210,6 +270,8 @@ show vlan members port 1/5
 
 ### `show lldp neighbor [summary | detail] [port <ports>]`
 
+Get there: `enable`
+
 ```
 show lldp neighbor summary
 show lldp neighbor detail port 1/5
@@ -218,12 +280,36 @@ show lldp neighbor detail port 1/5
 Since 9.2 `detail` also shows the chassis ID type and chassis ID.
 
 
+### `show lldp neighbor port <ports> med`
+
+Get there: `enable`
+
+
 ### `lldp cdp dual-mode-enable`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 Up to 9.3, `lldp cdp enable` switches the port to CDP only, so CDP and LLDP could not run together.
 
 
+### `show poe-port-status`
+
+Get there: `enable`
+
+
+### `show poe-power-measurement <ports>`
+
+Get there: `enable`
+
+
+### `show poe-main-status`
+
+Get there: `enable`
+
+
 ### `poe poe-shutdown`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 ```
 interface gigabitEthernet 1/5
@@ -232,6 +318,11 @@ no poe poe-shutdown
 ```
 
 A remote power-cycle of a hung AP, phone or camera without touching the switch port state.
+
+
+### `poe poe-priority <critical | high | low>`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 
 ### `tdr-test port <ports>`
@@ -243,6 +334,8 @@ Not supported on all platforms. The link drops briefly during the test.
 
 ### `link-debounce <0-300000>`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 ```
 link-debounce 1000
 ```
@@ -251,6 +344,8 @@ Since 9.4 this cannot be used on Auto-sense ports; use the global `auto-sense li
 
 
 ### `mirror-by-port <id> in-port <src-ports> out-port <dst-port> mode <rx | tx | both> enable`
+
+Get there: `enable` → `configure terminal`
 
 ```
 mirror-by-port 1 in-port 1/5 out-port 1/48 mode both enable
@@ -262,6 +357,8 @@ Use `monitor-mlt <id>` instead of `out-port` to mirror to an MLT. Remove the mir
 
 
 ### `slpp enable`
+
+Get there: `enable` → `configure terminal`
 
 ```
 slpp enable
@@ -281,20 +378,38 @@ SLPP sends test packets per VLAN, and a port that receives them back is shut dow
 
 ### `slpp-guard enable [timeout <0 | 10-65535>]`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 Protects against loops built through downstream switches (for example ERS or EXOS stacks). Use it on access switches' access ports, never on NNI uplinks (community guidance). On DvR and Anycast Gateway VLANs, SLPP Guard also recognizes the gateway keep-alive packets, so it detects loops there without SLPP-TX on the VLAN. Check it with `show slpp-guard`.
 
 
 ### `spanning-tree bpduguard enable [timeout <0-65535>]`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 The timeout (seconds) re-enables the port automatically; 0 means it stays down. Check it with `show spanning-tree bpduguard`.
 
 
+### `spanning-tree mstp restricted-role enable`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
+
+### `spanning-tree mstp restricted-tcn enable`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
+
 ### `vlacp enable`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 VLACP must also be enabled globally (`vlacp enable` in Global Config). Check it with `show vlacp interface gigabitethernet <ports>`.
 
 
 ### `mac-security limit-learning max-addrs <1-64000>`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 ```
 mac-security limit-learning max-addrs 10
@@ -304,10 +419,14 @@ mac-security limit-learning enable
 
 ### `auto-recover-port port <ports> enable`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 Without it, a port that SLPP shut down stays down until someone runs `no shutdown`. Only use it when the loop source is under control, otherwise the port flaps in and out.
 
 
 ### `link-flap-detect auto-port-down / link-flap-detect frequency <n> interval <sec>`
+
+Get there: `enable` → `configure terminal`
 
 ```
 link-flap-detect frequency 10

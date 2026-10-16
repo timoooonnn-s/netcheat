@@ -37,6 +37,8 @@ Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem 
 
 ### `show interfaces gigabitEthernet auto-sense [<ports>]`
 
+Get there: `enable`
+
 ```
 show interfaces gigabitEthernet auto-sense
 show interfaces gigabitEthernet auto-sense 1/5
@@ -47,15 +49,26 @@ This is the most important Auto-sense command. The dynamic config of a state is 
 
 ### `auto-sense enable`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 `no auto-sense enable convert-to-config` turns Auto-sense off but keeps the current dynamic config as normal config, which is handy to "freeze" a port. Since 9.3, `default all auto-sense` resets a port and re-enables Auto-sense in one step.
 
 
+### `auto-sense onboarding i-sid <isid>`
+
+Get there: `enable` → `configure terminal`
+
+
 ### `auto-sense data i-sid <isid>`
+
+Get there: `enable` → `configure terminal` (also in Interface Config)
 
 Set per port, it overrides the global value. With NAC, ExtremeControl usually assigns the I-SID instead.
 
 
 ### `auto-sense voice i-sid <isid> {c-vid <vid> | untagged}`
+
+Get there: `enable` → `configure terminal`
 
 ```
 auto-sense voice i-sid 20500 c-vid 500
@@ -66,35 +79,54 @@ Add `auto-sense eapol voice lldp-auth` if phones should be authorized through LL
 
 ### `auto-sense fa wap-type1 i-sid <isid>`
 
+Get there: `enable` → `configure terminal`
+
 The same pattern exists for cameras (`auto-sense fa camera i-sid`) and OVS. FA proxies such as EXOS switches use `auto-sense fa proxy management i-sid <isid> c-vid <vid>`.
 
 
 ### `auto-sense isis hello-auth type hmac-sha-256 key <key>`
+
+Get there: `enable` → `configure terminal`
 
 Since 9.2, a neighbor without the key makes the port go to NNI-AUTH-FAIL. Since 9.3 this also affects onboarding of new switches, so check the release notes before you upgrade.
 
 
 ### `auto-sense wait-interval <2-120>`
 
+Get there: `enable` → `configure terminal` (also in Interface Config)
+
 The default is 35 s. The range changed from 10-120 to 2-120 seconds in 9.3.
 
 
 ### `auto-sense no-nni`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 Protects access ports against someone plugging in a fabric switch and extending the fabric.
 
 
 ### `auto-sense auto-mlt enable`
 
+Get there: `enable` → `configure terminal`
+
 Check with `show auto-sense auto-mlt`. The ports then show the state NNI-MLT or NNI-MLT-ISIS-UP.
 
 
+### `auto-sense fa proxy-no-auth force-authentication`
+
+Get there: `enable` → `configure terminal`
+
+
 ### `no auto-sense guest-isid enable`
+
+Get there: `enable` → `configure terminal`
 
 Applies to ports in the UNI, FA and VOICE states. It is disabled by default after a Zero Touch Deployment boot and enabled after a factorydefaults boot. Check with `show auto-sense guest-isid`.
 
 
 ### `auto-sense link-debounce {auto <ms> | on <ms> | off}`
+
+Get there: `enable` → `configure terminal`
 
 Since 9.4 the interface-level `link-debounce` cannot be used on Auto-sense ports. The default timer is 3000 ms. Check with `show auto-sense link-debounce`.
 
@@ -106,10 +138,14 @@ A rejected assignment usually means the I-SID is not allowed or a VLAN/I-SID con
 
 ### `fa enable`
 
+Get there: `enable` → `configure terminal` (also in Interface Config)
+
 Auto-sense ports handle FA by themselves. On an EAP-enabled port, FA requires Flex UNI.
 
 
 ### `service-probe enable`
+
+Get there: `enable` → `configure terminal`
 
 ```
 service-probe vlan 100
@@ -124,5 +160,7 @@ Since 9.4 you can also test name resolution with `service-probe query dns` (prim
 
 
 ### `auto-sense fa wap-type1 eapol status {authorized | auto}`
+
+Get there: `enable` → `configure terminal`
 
 Known pitfall (community): with NAC on, the Auto-sense AP port runs MHMV, so the switch sends every wireless client MAC behind the AP to RADIUS as NEAP. Either let ExtremeControl return Extreme-Dynamic-MHSA=1 for APs (the port then authenticates only the AP), or set the status to authorized so APs skip EAP.

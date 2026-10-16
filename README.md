@@ -110,6 +110,16 @@ You get the best-matching troubleshooting flow step by step, plus other flows wo
 background concepts. To open a flow yourself: `ncs list flows`, then `ncs vist-smlt-problem`.
 More: [Problem matching](#problem-matching-ncs-fix) and [Troubleshooting flows](#troubleshooting-flows).
 
+### How to see only one platform
+
+```bash
+export NCS_PLATFORM=fe           # in ~/.zshrc or ~/.bashrc; srx for Juniper
+```
+
+Everything that lists commands then stays on that platform, so Junos entries stop turning up while you work on
+Extreme. `-p` overrides it for one command (`ncs isid -p srx`), and `p` cycles it in the browser.
+More: [Platforms](#platforms).
+
 ### How to rediscover forgotten commands
 
 ```bash
@@ -162,6 +172,7 @@ Back to the [Quick start](#quick-start).
 - [Values in flows](#values-in-flows)
 - [Export a flow (ncs export)](#export-a-flow-ncs-export)
 - [Concepts](#concepts)
+- [Platforms](#platforms)
 - [Topics](#topics)
 - [Tab completion](#tab-completion)
 - [Adding and editing content](#adding-and-editing-content)
@@ -177,6 +188,10 @@ Back to the [Quick start](#quick-start).
   so `git pull` is enough to update, and `ncs build-md` writes back into it. After a plain `pip install .` the data
   sits in the installed package, which an upgrade overwrites, and `ncs build-md` then needs `-o <dir>`.
 - Development extras: `pip install -e ".[dev]"` adds `pytest`.
+- If you ever ran a plain `pip install .` in the checkout, delete the `build/` folder it left behind before
+  installing again: setuptools otherwise falls back to copying the package into `site-packages`, and `git pull`
+  stops changing what `ncs` shows. `rm -rf build && pip install -e .` fixes it, and
+  `pytest tests/test_cli.py -k build_md_default` says which of the two you have.
 
 ### Commands overview
 
@@ -195,7 +210,8 @@ Back to the [Quick start](#quick-start).
 | `ncs completion bash\|zsh` | print the tab-completion script | |
 | `ncs --version` / `ncs -h` | version and credit / help (`ncs <command> -h` for one command) | |
 
-Platform values for `-p`: `fe` (also `voss`, `fabric-engine`) and `srx` (also `junos`, `junos-srx`).
+`search`, `browse`, `fix` and `tip` take `-p <platform>`, which defaults to `$NCS_PLATFORM`, see
+[Platforms](#platforms).
 
 ### Search
 
@@ -204,8 +220,9 @@ Platform values for `-p`: `fe` (also `voss`, `fabric-engine`) and `srx` (also `j
 | `-p fe \| srx` | only one platform |
 | `-t <topic>` | exactly one topic, e.g. `spbm-isis` (see [Topics](#topics)) |
 | `-k show \| config \| action \| clear` | only one type of command |
-| `-r` | only rarely used gems |
-| `-d` | details: examples, notes, cautions and the link to the official docs |
+| `-r` | only the gems |
+| `-d` | details: how to reach the CLI mode, examples, notes, cautions, background concepts and the link to the official docs |
+| `--notes` | also search `notes` and `example`, not only what a command is about |
 | `-n <N>` | show at most N results |
 | `--set name=value` | when the words are a flow id: your values for the flow, see [Values in flows](#values-in-flows) |
 
@@ -215,9 +232,16 @@ How matching works:
   one of its other names (`ncs nickname`, `ncs virtual ist`), the concept is shown first, then the matching commands.
 - Case, hyphens and punctuation are ignored: `isid` finds `i-sid`, `unicast-fib` finds `ip-unicast-fib`, and a pasted
   command such as `show isis adjacencies [verbose]` finds itself.
-- Every word is a prefix (`adj` finds `adjacencies`), and all words must match.
-- The command text counts most, then tags, the description, the topic and finally notes and examples. A match of the
-  whole phrase in the command ranks first; on ties, show commands and shorter commands come first.
+- All words must match. A word of three letters or more also matches as a prefix (`adj` finds `adjacencies`); a
+  shorter one has to match a whole word, so `ip` does not drag in every `ipfix` and `ipv6` command.
+- **Only what a command is about counts:** its syntax, its `tags` and its `desc`. The syntax counts most, then tags,
+  then the description. `notes` and `example` are prose that mentions other features in passing, so a word found
+  only there is not a result — `ncs radius` does not return `show i-sid` because its notes happen to say RADIUS.
+  When such commands exist the search says how many, and `--notes` includes them.
+- The topic is **not** a relevance signal. It is a filter (`-t`), so `ncs radius` no longer returns every command of
+  the `nac-eap-radius` topic.
+- A match of the whole phrase in the command ranks first, and higher again when the command leads with it
+  (`radius enable` before `eapol multihost radius-non-eap-enable`); on ties, show commands and shorter ones first.
 - One or two results are shown with details automatically. If nothing matches, `ncs` suggests close spellings.
 - Under the results, `ncs` points to matching flows and concepts (respecting `-p`).
 
@@ -229,7 +253,21 @@ How matching works:
   spbm-isis · User EXEC
 ```
 
-The first line is the command, then what it does, then its topic and the CLI mode it runs in.
+The first line is the command, then what it does, then its topic and the CLI mode it runs in. With `-d` (and in the
+browser) two more lines can appear:
+
+```
+✓ isis accept i-sid <isid> enable  ◆  ▲
+  Import routes of another L3 VSN into this VRF. This is inter-VRF route leaking in the fabric.
+  l3vsn-routing · VRF Router Config
+  Get there: enable → configure terminal → router vrf <vrf>
+  ◇ Background: L3 VSN
+```
+
+- **Get there** is how to reach the CLI mode from a fresh login. "Wrong mode" is the usual reason a correct command
+  is rejected, and the mode name alone does not say how to get into it. Commands you can run straight after logging
+  in (User EXEC, Junos operational) have no such line.
+- **Background** names the [concepts](#concepts) that explain this command; open one with `ncs <term>`.
 
 | Icon | Meaning |
 |---|---|
@@ -239,7 +277,7 @@ The first line is the command, then what it does, then its topic and the CLI mod
 | `↑ 9.4` | added in this Fabric Engine release; older releases do not have it |
 | `↗` | link to the official documentation |
 | `☰` / `⇄` | troubleshooting flow / change workflow |
-| `◇` | concept |
+| `◇` | concept, and the background concepts of a command |
 | `★` / `◷` | favourite / recent entry |
 
 Command syntax follows the Extreme docs: `<value>` is a placeholder, `[...]` is optional, `{a | b}` is a choice.
@@ -263,14 +301,18 @@ also over SSH.
 | Enter | on the left: jump into the list; in the list: remember the entry as recent; in the filter: back to the list |
 | `/` | focus the filter and type words (same rules as [Search](#search)) |
 | Esc | leave the filter |
+| `p` | cycle the platform filter: both → Fabric Engine only → SRX only (see [Platforms](#platforms)) |
+| `k` | cycle the kind filter: all → show → config → action → clear |
 | `g` | toggle "gems only" (command lists) |
 | `f` | star or unstar the highlighted entry (see [Favourites](#favourites-and-recent-entries)) |
 | `c` | copy the highlighted command (for a flow its id, for a concept its term) |
 | `1` to `9` | on a flow: copy all commands of that step, with your values filled in |
 | `v` | on a flow: edit its values as `name=value name=value`, Enter applies (see [Values in flows](#values-in-flows)) |
+| `?` | all keys in one overlay (Esc closes it) |
 | `q` | quit |
 
-Values set with `v` stay for the session and apply to every flow that uses the same name (e.g. `port`).
+The title above the middle list names the filters that are on, e.g. `51 commands · config · Fabric Engine only`.
+`p` applies to every area of the tree, flows and concepts included. Values set with `v` stay for the session and apply to every flow that uses the same name (e.g. `port`).
 
 Copying writes to a local clipboard tool when there is one (`pbcopy`, `wl-copy`, `xclip`, `xsel`) and always sends
 the OSC 52 terminal sequence, which carries the text over SSH in most terminals (iTerm2, Windows Terminal, kitty,
@@ -310,7 +352,10 @@ A pipe after a show command filters its output on the switch. The topics `output
 - Junos documents `a|b` (either term) and filters in a row. Extreme documents neither, so try
   `| include "radius|snmp"` and `| include x | count` once on your release before relying on them.
 
-`ncs what` explains a whole piped line, e.g. `ncs what 'show runn | inc "radius|snmp" | count'`.
+`ncs what` explains a whole piped line, e.g. `ncs what 'show runn | inc "radius|snmp" | count'`. A few entries carry
+the pipe in their own syntax, because the switch documents command and filter as one thing
+(`show log messages | last <n>`, `show configuration <section> | display set`); those match as a whole and are not
+split.
 
 ### Explain a line (ncs what)
 
@@ -399,6 +444,11 @@ to the `symptoms` of the right flow (see [Adding and editing content](#adding-an
 `ncs list flows` lists all flows; `ncs <id>` opens one. Search words also find flows by title, tags, symptoms and
 summary. Each flow is an ordered list of steps with example commands and what to look for.
 
+A step command is matched against the cheatsheet, so a step also shows ▲ and the caution **of the command itself**,
+not only the one the flow author wrote. That is how `cli password rwa read-write-all` in `admin-login-change` warns
+about default logins, and `no radius enable` warns that it stops all EAP/NEAP authentication. This works in
+`ncs <id>`, `ncs fix`, the browser, `ncs export` and the generated Markdown.
+
 | Flow id | For |
 |---|---|
 | `client-no-connectivity` | a client has no network or gets no IP |
@@ -470,6 +520,22 @@ CLIP, vIST/SMLT, RSMLT, DvR, Anycast Gateway, Auto-sense, Fabric Attach, Zero To
 fail-open I-SIDs, CoA, MACsec, SLPP, CFM, Segmented VRF, IGMP querier, DHCP snooping/DAI/IP Source Guard, output
 filters, and for the SRX flow mode, the commit model, routing instances, chassis cluster and the Junos pipe.
 
+### Platforms
+
+The cheatsheet holds both platforms, and most days you only want one.
+
+| Where | How |
+|---|---|
+| shell profile | `export NCS_PLATFORM=fe` (or `srx`) — the default for `-p` on `search`, `browse`, `fix` and `tip` |
+| one command | `-p fe` / `-p srx`, which overrides the variable |
+| browser | `p` cycles both → Fabric Engine only → SRX only |
+
+Accepted values: `fe` (also `voss`, `fabric-engine`) and `srx` (also `junos`, `junos-srx`). An unusable value in
+`$NCS_PLATFORM` is reported like a mistyped option instead of being ignored.
+
+`ncs undo`, `ncs what` and `ncs export` are not filtered: they work from a line or a flow that names its own
+platform.
+
 ### Topics
 
 Use the id with `-t`; it matches exactly, so `-t system` is the Fabric Engine topic and never
@@ -537,8 +603,8 @@ tests anyway.
   - cmd: show isis spbm nick-name [home | remote]   # required: the command, with <placeholders> and [optional] parts
     desc: Every fabric node with nickname, system-id and hostname.   # required
     kind: show                 # required: show | config | action | clear
-    mode: User EXEC            # required: CLI mode (Fabric Engine) or operational / configuration (Junos)
-    tags: [nickname, fabric, inventory]   # extra search words
+    mode: User EXEC            # required: CLI mode; must be one netcheat knows, see below
+    tags: [nickname, fabric, inventory]   # extra search words that make the entry findable
     example: |                 # real-world example lines
       show isis spbm nick-name | include SW-ACCESS
     notes: >                   # background and pitfalls
@@ -556,6 +622,15 @@ tests anyway.
 The `cmd` syntax is also what `ncs what` matches lines against: `<value>`, `[optional]` (options in any order),
 `{a | b}`, two related commands as `a / b`, and annotations in round brackets, such as `(interface)`, which are
 ignored.
+
+**`mode` is a fixed set.** The detail view turns it into the commands that get you there, so a value has to be one
+of: `User EXEC`, `Privileged EXEC`, `Global Config`, `Interface Config`, `VLAN Interface Config`,
+`MLT Interface Config`, `IS-IS Router Config`, `VRF Router Config`, `ELAN I-SID Config`, `MKA Keychain Config`,
+`any`, or for Junos `operational` and `configuration`. Write `A / B` when either mode will do. A test fails on a
+value with no path, so a new mode means adding it to `MODE_PATHS` in `models.py` as well.
+
+**`tags` carry the search.** Since a word found only in `notes` or `example` is not a result (see
+[Search](#search)), anything an entry should be findable by belongs in `tags` or `desc`.
 
 **When to set `rare: true`.** Only for a command you would not remember *exists*. Not for "a command of a feature
 I rarely use": if you are already working on MACsec you will find the MACsec commands by topic. The flag earns its
@@ -595,7 +670,9 @@ must be used. Inside `[...]` lists, a `{name}` needs the whole item quoted. A ch
 exactly the same fields; the file decides the kind.
 
 **A concept** (in `concepts.yaml`, under `concepts:`): `term`, `text` and `platform` are required; `aka` (other
-names) and `see` (related commands, each the exact `cmd` text of an existing command) are optional.
+names) and `see` (related commands, each the exact `cmd` text of an existing command) are optional. `see` is also
+read backwards: a command names the concepts that list it as its **Background**, so adding a `see` entry improves
+both pages.
 
 **A synonym group** (in `synonyms.yaml`, under `groups:`): a list of words and phrases that mean the same thing,
 e.g. `- [ap, access point, wap, wifi, wireless, fa]`. Avoid very general words (they would match almost every problem).
@@ -609,9 +686,10 @@ Rules:
   `Data error: ports.yaml #12 (speed ...): unknown field(s): colour`.
 - The tests check, among other things, that no command appears twice per platform and CLI mode, that every concept
   reference exists, that every Fabric Engine command links to the official docs, that every undo rule wins for its
-  own line, that a removal which could lock you out carries a `note`, that gems stay under a fifth of the commands,
-  that the counts in this README match the data, and that `ncs fix` still finds the right flow for a set of example
-  problems.
+  own line, that a removal which could lock you out carries a `note`, that every `cmd` compiles as a pattern, that
+  every `mode` has a path, that flow step commands resolve to an entry, that gems stay under a fifth of the
+  commands, that the counts in this README match the data, and that `ncs fix` still finds the right flow for a set
+  of example problems.
 
 After a change, run the checks, regenerate the Markdown and open a merge request:
 
@@ -635,6 +713,7 @@ in that folder are left alone. Flows appear there with their default values fill
 
 | Variable | Effect |
 |---|---|
+| `NCS_PLATFORM=<fe\|srx>` | default for `-p`, see [Platforms](#platforms) |
 | `NETCHEAT_STATE=<file>` | where favourites and recent entries are stored |
 | `NETCHEAT_DATA=<dir>` | read the data from another folder with the same layout, e.g. to try out changes without touching the checkout |
 

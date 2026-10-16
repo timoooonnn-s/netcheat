@@ -36,6 +36,10 @@ STOPWORDS = frozenset(
 
 MAX_FLOWS, MAX_COMMANDS, MAX_CONCEPTS = 4, 6, 3  # what `ncs fix` shows: the best flow plus 3 alternatives
 
+# A query word of this length or more also matches as a word prefix ("adj" finds "adjacencies"); shorter
+# ones must match a whole word, so "ip" does not pull in every command with an ipfix or ipv6 keyword.
+PREFIX_MIN = 3
+
 
 def normalize(text: str) -> str:
     return _SEPARATORS.sub("", text.lower())
@@ -78,8 +82,8 @@ class Query:
     prefix_min: int = 1
 
     @classmethod
-    def from_terms(cls, terms: Sequence[str]) -> Query:
-        return cls(tuple((needle,) for needle in needles(terms)))
+    def from_terms(cls, terms: Sequence[str], prefix_min: int = 1) -> Query:
+        return cls(tuple((needle,) for needle in needles(terms)), prefix_min=prefix_min)
 
     def score(self, weighted_fields: list[tuple[str, int]]) -> Score:
         """How many groups match, and the sum of the best field weight per group.
@@ -123,27 +127,43 @@ class Diagnosis:
     concepts: list[Concept]
 
 
-def search_commands(commands: Iterable[Command], terms: Sequence[str], filters: Filters = Filters()) -> list[Command]:
+def search_commands(
+    commands: Iterable[Command], terms: Sequence[str], filters: Filters = Filters(), in_prose: bool = False
+) -> list[Command]:
+    """Commands matching every query word, best first.
+
+    Only what a command *is about* counts: its syntax, its tags and its description. `notes` and `example`
+    are prose that mentions other features in passing, so a word found only there does not make a result
+    (`ncs radius` must not return `show i-sid` because its notes happen to say RADIUS). `in_prose` searches
+    them too, for when you remember a sentence rather than a command.
+    """
     candidates = [command for command in commands if filters.accept(command)]
     if not terms:
         return candidates
     phrase = normalize(" ".join(terms))
     scored = _scored(
         candidates,
-        Query.from_terms(terms),
-        _command_fields,
-        bonus=lambda command: 10 * (phrase in normalize(command.cmd)),
+        Query.from_terms(terms, PREFIX_MIN),
+        _command_prose_fields if in_prose else _command_fields,
+        bonus=lambda command: _phrase_bonus(phrase, command.cmd),
         tiebreak=_command_tiebreak,
     )
     return [command for _, command in scored]
 
 
+def prose_only_matches(commands: Iterable[Command], terms: Sequence[str], filters: Filters = Filters()) -> list[Command]:
+    """Commands that only `in_prose` would find, so the search can say they exist without listing them."""
+    candidates = list(commands)
+    found = set(search_commands(candidates, terms, filters))
+    return [command for command in search_commands(candidates, terms, filters, in_prose=True) if command not in found]
+
+
 def search_flows(flows: Iterable[Flow], terms: Sequence[str]) -> list[Flow]:
-    return [flow for _, flow in _scored(flows, Query.from_terms(terms), _flow_fields)]
+    return [flow for _, flow in _scored(flows, Query.from_terms(terms, PREFIX_MIN), _flow_fields)]
 
 
 def search_concepts(concepts: Iterable[Concept], terms: Sequence[str]) -> list[Concept]:
-    return [concept for _, concept in _scored(concepts, Query.from_terms(terms), _concept_fields)]
+    return [concept for _, concept in _scored(concepts, Query.from_terms(terms, PREFIX_MIN), _concept_fields)]
 
 
 def suggest(commands: Iterable[Command], terms: Sequence[str]) -> list[str]:
@@ -164,7 +184,9 @@ def diagnose(library: Library, problem: str, platform: str | None = None) -> Dia
     # A command or concept must cover two aspects of the problem, so one generic word ("user") is not enough.
     min_groups = min(2, len(query.groups))
     flows = _relevant(_scored(filter(on_platform, library.flows), query, _flow_fields), 1)
-    commands = _scored(filter(on_platform, library.commands), query, _command_fields, tiebreak=_command_tiebreak)
+    # A free-text symptom often matches a sentence rather than a command, so prose counts here; the
+    # two-aspect rule below is what keeps it precise.
+    commands = _scored(filter(on_platform, library.commands), query, _command_prose_fields, tiebreak=_command_tiebreak)
     concepts = _scored(filter(on_platform, library.concepts), query, _concept_fields)
     return Diagnosis(
         understood,
@@ -230,13 +252,24 @@ def _relevant(scored: list[tuple[Score, T]], min_groups: int) -> list[T]:
 
 
 def _command_fields(command: Command) -> list[tuple[str, int]]:
-    return [
-        (command.cmd, 5),
-        (" ".join(command.tags), 3),
-        (command.desc, 2),
-        (command.topic, 1),
-        (" ".join((command.notes, command.example)), 1),
-    ]
+    """What the command is about. The topic is deliberately not here: topic membership is a filter (`-t`),
+    not relevance, and scoring it made every word of a topic slug return that whole topic."""
+    return [(command.cmd, 5), (" ".join(command.tags), 3), (command.desc, 2)]
+
+
+def _command_prose_fields(command: Command) -> list[tuple[str, int]]:
+    return [*_command_fields(command), (" ".join((command.notes, command.example)), 1)]
+
+
+def _phrase_bonus(phrase: str, cmd: str) -> int:
+    """Rank the commands the query names over the ones that merely contain the word: the whole phrase
+    somewhere in the syntax, and more when the syntax leads with it ('radius enable' before
+    'eapol multihost radius-non-eap-enable')."""
+    normalized = normalize(cmd)
+    if phrase not in normalized:
+        return 0
+    leading = normalize(re.sub(r"^(show|no|default|clear|monitor)\s+", "", cmd, flags=re.IGNORECASE))
+    return 20 if leading.startswith(phrase) else 10
 
 
 def _flow_fields(flow: Flow) -> list[tuple[str, int]]:

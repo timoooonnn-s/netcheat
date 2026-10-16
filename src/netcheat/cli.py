@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import random
 import sys
 from pathlib import Path
@@ -29,7 +30,16 @@ from netcheat.render import (
     print_topics,
     print_undo,
 )
-from netcheat.search import Filters, diagnose, normalize, search_commands, search_concepts, search_flows, suggest
+from netcheat.search import (
+    Filters,
+    diagnose,
+    normalize,
+    prose_only_matches,
+    search_commands,
+    search_concepts,
+    search_flows,
+    suggest,
+)
 from netcheat.state import State
 
 EXAMPLES = """\
@@ -83,7 +93,7 @@ def cmd_search(args: argparse.Namespace, library: Library, console: Console) -> 
     phrase = " ".join(args.terms)
     flow = library.flow(phrase)
     if flow:
-        return _show_flow(flow, args.set, console)
+        return _show_flow(flow, args.set, library, console)
     if args.set:
         return _fail(console, "--set only applies when opening a flow, e.g. ncs radius-replace --set new_radius=10.1.1.5")
     concept = _exact_concept(library, phrase)
@@ -93,30 +103,36 @@ def cmd_search(args: argparse.Namespace, library: Library, console: Console) -> 
         _remember(concept)
 
     filters = Filters(args.platform, args.topic, args.kind, args.rare)
-    results = search_commands(library.commands, args.terms, filters)
+    results = search_commands(library.commands, args.terms, filters, in_prose=args.notes)
     shown = results if args.limit is None else results[: args.limit]
+    in_prose = 0 if args.notes else len(prose_only_matches(library.commands, args.terms, filters))
 
     def on_platform(item: Flow | Concept) -> bool:
         return args.platform in (None, item.platform)
 
     print_search(
         console,
+        library,
         shown,
         search_flows(filter(on_platform, library.flows), args.terms)[:5],
         [c for c in search_concepts(filter(on_platform, library.concepts), args.terms)[:5] if c is not concept],
         detail=args.detail or len(shown) <= 2,
         total=len(results),
         suggestions=suggest(library.commands, args.terms) if not (results or concept) else [],
+        in_prose=in_prose,
     )
     return 0 if results or concept else 1
 
 
 def cmd_fix(args: argparse.Namespace, library: Library, console: Console) -> int:
+    from netcheat.config import entries_for
+
     diagnosis = diagnose(library, " ".join(args.problem), args.platform)
     if not (diagnosis.flows or diagnosis.commands):
         console.print("Nothing fits yet. Describe the symptom differently, or look around with: ncs", style="meta")
         return 1
-    print_diagnosis(console, diagnosis)
+    steps = diagnosis.flows[0].with_values().commands() if diagnosis.flows else []
+    print_diagnosis(console, library, diagnosis, entries_for(library, steps))
     return 0
 
 
@@ -131,7 +147,7 @@ def cmd_what(args: argparse.Namespace, library: Library, console: Console) -> in
     lines = read_lines(text)
     explanations = [explain(library, line) for line in lines]
     for explanation in explanations:
-        print_explanation(console, explanation, detail=args.detail or detail or len(lines) == 1)
+        print_explanation(console, library, explanation, detail=args.detail or detail or len(lines) == 1)
         console.print()
     if len(explanations) == 1 and explanations[0].commands:
         _remember(explanations[0].commands[0])
@@ -196,7 +212,7 @@ def cmd_browse(args: argparse.Namespace, library: Library, console: Console) -> 
 
     if not (sys.stdin.isatty() and sys.stdout.isatty()):
         return _fail(console, "The browser needs a terminal. Piped or redirected, use: ncs <words>, ncs list")
-    run_browser(library, args.terms)
+    run_browser(library, args.terms, args.platform)
     return 0
 
 
@@ -206,7 +222,7 @@ def cmd_tip(args: argparse.Namespace, library: Library, console: Console) -> int
         console.print("No commands marked as rare.", style="meta")
         return 1
     console.print(Text("Command you might have forgotten:", style="label"))
-    console.print(command_block(random.choice(gems), detail=True))
+    console.print(command_block(random.choice(gems), detail=True, library=library))
     return 0
 
 
@@ -241,11 +257,14 @@ HANDLERS: dict[str, Handler] = {
 # --- helpers --------------------------------------------------------------------------------------------------
 
 
-def _show_flow(flow: Flow, assignments: Optional[list[tuple[str, str]]], console: Console) -> int:
+def _show_flow(flow: Flow, assignments: Optional[list[tuple[str, str]]], library: Library, console: Console) -> int:
+    from netcheat.config import entries_for
+
     try:
-        console.print(flow_block(flow.with_values(_checked_values(flow, assignments))))
+        filled = flow.with_values(_checked_values(flow, assignments))
     except ValueError as err:
         return _fail(console, str(err))
+    console.print(flow_block(filled, entries=entries_for(library, filled.commands())))
     _remember(flow)
     return 0
 
@@ -339,22 +358,28 @@ def _parser() -> argparse.ArgumentParser:
 
     values = argparse.ArgumentParser(add_help=False)
     values.add_argument("--set", type=_assignment, action="append", metavar="NAME=VALUE", help="your value for a {name} of a flow; repeatable")
+    # One platform switch for every command that lists commands, so `NCS_PLATFORM=fe` in the shell profile
+    # keeps Junos out of the way on an Extreme-only day without typing -p every time.
+    platform = argparse.ArgumentParser(add_help=False)
+    platform.add_argument(
+        "-p", "--platform", type=_platform, default=os.environ.get("NCS_PLATFORM") or None,
+        help="only this platform: fe | srx (default: $NCS_PLATFORM)",
+    )
 
-    search = sub.add_parser("search", parents=[values], help="search commands; an exact flow id or concept opens it (default command)")
+    search = sub.add_parser("search", parents=[values, platform], help="search commands; an exact flow id or concept opens it (default command)")
     search.add_argument("terms", nargs="*", help="words to search for; all must match")
-    search.add_argument("-p", "--platform", type=_platform, help="fe | srx")
     search.add_argument("-t", "--topic", help="exactly one topic, e.g. spbm-isis (see: ncs list)")
     search.add_argument("-k", "--kind", choices=KINDS, help="type of command")
     search.add_argument("-r", "--rare", action="store_true", help="only the gems: commands you would not remember exist")
     search.add_argument("-d", "--detail", action="store_true", help="show examples, notes and references")
+    search.add_argument("--notes", action="store_true", help="also search notes and examples, not only what a command is about")
     search.add_argument("-n", "--limit", type=_positive_int, metavar="N", help="show at most N results")
 
-    browse = sub.add_parser("browse", help="full-screen browser (also: ncs without arguments)")
+    browse = sub.add_parser("browse", parents=[platform], help="full-screen browser (also: ncs without arguments)")
     browse.add_argument("terms", nargs="*", help="optional words to start the filter with")
 
-    fix = sub.add_parser("fix", help="describe a problem in your own words, get a flow and commands")
+    fix = sub.add_parser("fix", parents=[platform], help="describe a problem in your own words, get a flow and commands")
     fix.add_argument("problem", nargs="+", help="e.g. clients get no ip address (quotes are optional)")
-    fix.add_argument("-p", "--platform", type=_platform, help="fe | srx")
 
     what = sub.add_parser("what", help="explain a command or config line; several lines from stdin")
     what.add_argument("-d", "--detail", action="store_true", help="full details also for several lines")
@@ -373,7 +398,7 @@ def _parser() -> argparse.ArgumentParser:
     listing = sub.add_parser("list", help="list topics, flows, concepts, favourites or recent entries")
     listing.add_argument("section", nargs="?", choices=LIST_SECTIONS, default="topics")
 
-    sub.add_parser("tip", help="show a random gem").add_argument("-p", "--platform", type=_platform)
+    sub.add_parser("tip", parents=[platform], help="show a random gem")
     docs_dir = _default_docs_dir()
     build = sub.add_parser("build-md", help="regenerate the Markdown cheatsheet")
     build.add_argument(

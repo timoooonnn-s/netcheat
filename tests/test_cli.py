@@ -84,7 +84,18 @@ def test_short_missing_data_path_gives_a_data_error():
 
 
 def test_build_md_default_is_this_checkout():
-    assert _default_docs_dir() == Path(__file__).resolve().parents[1] / "docs" / "cheatsheet"
+    """There is a default only when the code runs from a checkout. A stale `build/` directory makes
+    `pip install -e .` fall back to copying the package into site-packages, and then `git pull` stops
+    updating the cheatsheet; this says which of the two you have instead of failing cryptically."""
+    from netcheat import cli
+
+    checkout = Path(__file__).resolve().parents[1]
+    runs_from_checkout = str(Path(cli.__file__).resolve()).startswith(str(checkout / "src"))
+    expected = checkout / "docs" / "cheatsheet" if runs_from_checkout else None
+    assert _default_docs_dir() == expected, (
+        f"netcheat is imported from {cli.__file__}. For an editable install, run:"
+        " rm -rf build && pip install -e ."
+    )
 
 
 def test_exact_concept_opens_it_above_the_commands(capsys):

@@ -84,6 +84,25 @@ discussion on 2026-10-15. Decide after: is the team going to write content for i
 - **Tick off workflow steps:** mark steps done during a change in the browser; progress is kept locally.
 - **Personal notes per command:** your own line under any entry, stored locally, shown in the detail view.
 
+## Done in 3.1.0
+
+- **Search relevance.** `notes` and `example` are prose, so a word found only there is no longer a result
+  (`ncs radius` returned `show i-sid`); the topic slug is no longer scored, so a word in a topic name no
+  longer returns that whole topic; short query words must match a whole word. `--notes` brings the prose
+  search back when you want it.
+- **Platform default.** `$NCS_PLATFORM` sets `-p` for `search`, `browse`, `fix` and `tip`; `p` cycles it in
+  the browser.
+- **Mode prelude.** The detail view says how to reach a command's CLI mode (`enable` -> `configure terminal`
+  -> `interface gigabitEthernet <ports>`), from a fixed set of modes checked by a test.
+- **Flow steps carry their command's caution** (was #8, the matcher half of it): a step command is resolved to
+  its entry, so `cli password rwa ...` and `no radius enable` warn inside the flow, in `ncs <id>`, `ncs fix`,
+  the browser, `ncs export` and the Markdown.
+- **Background concepts on a command:** `see:` is read backwards, so a command names the concepts explaining it.
+- **Browser filters:** `p` platform, `k` kind, `?` for all keys.
+- **A pipe outside `{a | b}` is a literal keyword.** 21 of 420 `cmd` patterns did not compile, so `ncs what`
+  could never explain them; 5 were not output-filter entries and had no fallback at all. A test now fails on
+  any pattern that does not compile.
+
 ## Dropped in 3.0.0
 
 `ncs add`, the release filter (`-R`, `NCS_RELEASE`, `-s/--since`) and the `cisco:` and `removed:` fields are gone;

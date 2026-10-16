@@ -89,7 +89,7 @@ commands:
     rare: true
     ref: https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/command/show-system-core-dumps.html
 
-  - cmd: request support information | save /var/tmp/rsi-<date>.txt
+  - cmd: request support information | save <file>
     desc: Collect the full support information (RSI) into a file for a JTAC case.
     kind: action
     mode: operational

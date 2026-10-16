@@ -68,3 +68,36 @@ def test_broken_notation_is_reported(broken):
     with pytest.raises(SyntaxParseError):
         compile_patterns(broken)
     assert try_compile(broken) == ()
+
+
+@pytest.mark.parametrize(
+    "pattern, line",
+    [
+        ("show log messages | last <n>", "show log messages | last 50"),
+        ("show configuration <section> | display set", "show configuration security | display set"),
+        ("show configuration | compare rollback <n>", "show configuration | compare rollback 2"),
+    ],
+)
+def test_a_pipe_outside_a_choice_is_a_literal_keyword(pattern, line):
+    """Some entries carry the switch's output filter in their own `cmd`. The pipe there is a keyword,
+    not the `{a | b}` alternation metacharacter, so the pattern has to compile and match."""
+    assert match(compile_patterns(pattern), line) is not None
+
+
+def test_a_pipe_inside_a_choice_is_still_alternation():
+    patterns = compile_patterns("radius server host <ip> used-by {cli | eapol} [priority <1-10>]")
+    assert match(patterns, "radius server host 10.0.0.5 used-by eapol priority 3") is not None
+    assert match(patterns, "radius server host 10.0.0.5 used-by | priority 3") is None
+
+
+def test_every_shipped_command_pattern_compiles():
+    """`try_compile` hides a broken pattern, which silently makes the entry unexplainable by `ncs what`."""
+    from netcheat.loader import load_library
+
+    broken = []
+    for command in load_library().commands:
+        try:
+            compile_patterns(command.cmd)
+        except SyntaxParseError as err:
+            broken.append(f"{command.cmd}: {err}")
+    assert broken == []

@@ -48,12 +48,16 @@ When the in-use key expires, the switch rolls over to the next key without traff
 
 ### `boot config flags macsec`
 
+Get there: `enable` → `configure terminal`
+
 Mutually exclusive with `boot config flags ipv6-egress-filter`. It only takes effect after save config and a reboot.
 
 > ▲ **Caution:** Needs a reboot.
 
 
 ### `macsec connectivity-association <name> connectivity-association-key <cak>`
+
+Get there: `enable` → `configure terminal`
 
 ```
 macsec connectivity-association CA-CORE connectivity-association-key 0123456789abcdef0123456789abcdef
@@ -68,6 +72,8 @@ This example is static CAK mode (no MKA). The CA name is 5-32 characters, the ke
 
 ### `macsec mka profile <name>`
 
+Get there: `enable` → `configure terminal`
+
 ```
 macsec mka profile MKACORE
   confidentiality-offset 30
@@ -81,6 +87,8 @@ Profile names may only use letters and digits and are case sensitive.
 
 ### `macsec mka profile <name> / macsec mka enable (interface)`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 ```
 interface gigabitEthernet 1/49
   macsec mka profile MKACORE
@@ -92,6 +100,8 @@ Order matters. Apply the MKA profile first, then the CA or keychain, then enable
 
 
 ### `macsec mka keychain <name> / key <ckn> cak <cak> endtime <MMddyyyyhhmmss | unlimited>`
+
+Get there: `enable` → `configure terminal` (also in MKA Keychain Config)
 
 ```
 macsec mka keychain KC-CORE
@@ -109,4 +119,11 @@ The endtime is UTC, whatever the switch time zone is. The CKN/CAK pairs must mat
 
 ### `macsec cipher-suite {gcm-aes-128 | gcm-aes-256 | gcm-aes-xpn-128 | gcm-aes-xpn-256}`
 
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
+
 The XPN suites (9.3+, on 7830, 7520-48YE-8CE and 5720-VIM-2CE) avoid frequent SAK rekeying on fast links and need MKA. Both ends must use the same suite.
+
+
+### `macsec confidentiality-offset <30 | 50>`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`

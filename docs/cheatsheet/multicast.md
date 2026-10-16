@@ -29,6 +29,8 @@ Legend: » show · ✎ config · ► action · ↺ clear · ◆ rarely used gem 
 
 ### `show ip igmp interface [vlan <vid>] [vrf <vrf>]`
 
+Get there: `enable`
+
 ```
 show ip igmp interface vlan 100
 ```
@@ -36,7 +38,14 @@ show ip igmp interface vlan 100
 A VLAN with an I-SID and IGMP snooping shows mode snoop-spb, which means IP multicast over Fabric Connect for an L2 VSN. The IGMP version must match what the hosts and the access switches outside the fabric use.
 
 
+### `show ip igmp snooping [vrf <vrf>]`
+
+Get there: `enable`
+
+
 ### `show ip igmp group [group <group-ip>] [vrf <vrf>]`
+
+Get there: `enable`
 
 ```
 show ip igmp group group 239.1.1.10
@@ -47,7 +56,14 @@ Shows dynamically learned and static groups. If a receiver is missing, the join 
 
 ### `show ip igmp sender [group <group-ip>] [vrf <vrf>]`
 
+Get there: `enable`
+
 A stream only enters the fabric if it reaches a BEB. If the source is missing here, look at the sending side first.
+
+
+### `show ip igmp snoop-trace [group <group-ip>] [source <src-ip>]`
+
+Get there: `enable`
 
 
 ### `show isis spbm ip-multicast-route [all | detail]`
@@ -62,10 +78,14 @@ The reference lists the page as "show isis spb-mcast summary", but the syntax is
 
 ### `spbm 1 multicast enable`
 
+Get there: `enable` → `configure terminal` → `router isis`
+
 Enable it on every BEB that has senders or receivers.
 
 
 ### `ip igmp snooping`
+
+Get there: `enable` → `configure terminal` → `interface vlan <vid>`
 
 ```
 interface vlan 100
@@ -79,14 +99,20 @@ There is no separate L2 VSN multicast command; snooping on a VLAN with an I-SID 
 
 ### `ip igmp snoop-querier / ip igmp snoop-querier-addr <ip>`
 
+Get there: `enable` → `configure terminal` → `interface vlan <vid>`
+
 Snooping does not work without a querier. On an L2 VSN, the BEBs act as queriers (default source address 0.0.0.0; set an address if other vendors' devices reject that). The BEB must be the only querier in the VLAN: an upstream multicast router acting as querier in the same VLAN causes traffic loss. Unlike ERS switches, VOSS edge switches need a querier on the receiver VLANs (community tip).
 
 
 ### `ip igmp version <1-3>`
 
+Get there: `enable` → `configure terminal` → `interface vlan <vid>`
+
 IGMPv3 additionally needs SSM snooping enabled on the VLAN (see the User Guide).
 
 
 ### `ip spb-multicast enable`
+
+Get there: `enable` → `configure terminal` → `interface vlan <vid>`
 
 Needs `spbm 1 multicast enable` and, for the GRT, IP shortcuts. Use `l2 tracemroute source <src> group <grp>` to trace a stream across the fabric.

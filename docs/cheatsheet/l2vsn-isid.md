@@ -55,6 +55,8 @@ Tells you which remote switch a client MAC sits behind. Map the B-MAC to a name 
 
 ### `vlan i-sid <vid> <isid>`
 
+Get there: `enable` → `configure terminal`
+
 ```
 vlan create 100 name "CLIENTS" type port-mstprstp 0
 vlan i-sid 100 20100
@@ -67,6 +69,8 @@ Only the I-SID has to match across the fabric; the local VLAN ID can be differen
 
 ### `i-sid name <isid> "<name>"`
 
+Get there: `enable` → `configure terminal`
+
 ```
 i-sid name 20100 "CLIENTS"
 ```
@@ -75,6 +79,8 @@ Show the names with `show i-sid name`.
 
 
 ### `i-sid <isid> elan`
+
+Get there: `enable` → `configure terminal`
 
 ```
 i-sid 20200 elan
@@ -88,12 +94,26 @@ show i-sid elan
 With S-UNI, the same VLAN tag on different ports can belong to different services, and one port can carry several services. Run `flex-uni enable` on the ports first. Spanning tree is disabled on S-UNI ports, so protect them against loops with SLPP Guard or BPDU Guard.
 
 
+### `c-vid <vid> {port <ports> | mlt <mlt-id>}`
+
+Get there: `enable` → `configure terminal` → `i-sid <isid> elan`
+
+
+### `untagged-traffic port <ports> [bpdu enable]`
+
+Get there: `enable` → `configure terminal` → `i-sid <isid> elan`
+
+
 ### `flex-uni enable`
+
+Get there: `enable` → `configure terminal` → `interface gigabitEthernet <ports>`
 
 The port variant first appears in the 9.2 command reference (the MLT variant, `flex-uni` in MLT Interface Config, is older). Since 9.2 an EAP-enabled port can also be a Flex UNI with an untagged S-UNI.
 
 
 ### `i-sid <isid> elan-transparent`
+
+Get there: `enable` → `configure terminal`
 
 ```
 i-sid 20300 elan-transparent
@@ -102,3 +122,8 @@ i-sid 20300 elan-transparent
 ```
 
 Typical uses are a customer handoff or a link that has to be carried transparently. Check it with `show i-sid elan-transparent`.
+
+
+### `show interfaces gigabitEthernet i-sid <ports>`
+
+Get there: `enable`
